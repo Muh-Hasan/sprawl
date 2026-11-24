@@ -2,6 +2,7 @@ import { BrowserWindow, dialog, ipcMain, shell, type IpcMainInvokeEvent } from '
 import { z } from 'zod'
 import { IPC, type MainEventName, type MainEvents } from '@shared/api'
 import {
+  canvasApplyInput,
   openExternalInput,
   openVaultInput,
   settingsGetInput,
@@ -9,6 +10,7 @@ import {
   type SettingKey,
   type Settings,
 } from '@shared/schemas'
+import type { CanvasService } from '../services/canvas'
 import type { SettingsService } from '../services/settings'
 import type { VaultService } from '../services/vault'
 import { parseInput } from './validate'
@@ -41,10 +43,11 @@ export function broadcast<E extends MainEventName>(event: E, payload: MainEvents
 export interface IpcDeps {
   vault: VaultService
   settings: SettingsService
+  canvas: CanvasService
 }
 
-/** Registers one handler per API method (ARCHITECTURE §5). Phase 1: `app.*` and `settings.*`. */
-export function registerIpc({ vault, settings }: IpcDeps): void {
+/** Registers one handler per API method (ARCHITECTURE §5). */
+export function registerIpc({ vault, settings, canvas }: IpcDeps): void {
   // app ----------------------------------------------------------------------------------
   handle(IPC.app.getVaultInfo, noInput, () => vault.info())
 
@@ -77,4 +80,8 @@ export function registerIpc({ vault, settings }: IpcDeps): void {
   handle(IPC.settings.set, settingsSetInput, ({ key, value }) =>
     settings.set(key as SettingKey, value as Settings[SettingKey]),
   )
+
+  // canvas -------------------------------------------------------------------------------
+  handle(IPC.canvas.load, noInput, () => canvas.load())
+  handle(IPC.canvas.apply, canvasApplyInput, (ops) => canvas.apply(ops))
 }

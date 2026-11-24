@@ -41,6 +41,20 @@ export const NAV_SHORTCUTS = {
 /** The label shown in tooltips, e.g. "Ctrl+1". */
 export function shortcutLabel(s: Shortcut): string {
   const code = s.codes[0] ?? ''
-  const key = code.replace(/^(Digit|Numpad|Key)/, '')
-  return [s.ctrl && 'Ctrl', s.shift && 'Shift', s.alt && 'Alt', key].filter(Boolean).join('+')
+  const name = CODE_LABELS[code] ?? code.replace(/^(Digit|Numpad|Key)/, '')
+  return [s.ctrl && 'Ctrl', s.shift && 'Shift', s.alt && 'Alt', name].filter(Boolean).join('+')
 }
+
+const CODE_LABELS: Record<string, string> = { Equal: '=', Minus: '-' }
+
+const key = (code: string): Shortcut => ({ codes: [code] })
+
+/** Canvas shortcuts (PRODUCT §4). Single-key tools only fire when nothing is being typed. */
+export const CANVAS_SHORTCUTS = {
+  toolSelect: key('KeyV'),
+  toolHand: key('KeyH'),
+  zoomIn: { codes: ['Equal', 'NumpadAdd'], ctrl: true },
+  zoomOut: { codes: ['Minus', 'NumpadSubtract'], ctrl: true },
+  zoomReset: { codes: ['Digit0', 'Numpad0'], ctrl: true },
+  zoomFit: { codes: ['Digit1'], shift: true },
+} as const satisfies Record<string, Shortcut>

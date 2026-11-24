@@ -6,10 +6,76 @@ A running log of the build, one phase per session (see `PHASES.md`). Read this f
 |---|---|---|
 | 0 — Project setup | ✅ Done | 2026-11-24 |
 | 1 — Vault, database and app shell | ✅ Done | 2026-11-25 |
-| 2 — Canvas foundations | ⏭ Next | |
-| 3–6 | Not started | |
+| 2 — Canvas foundations | ✅ Done | 2026-11-25 |
+| 3 — Notes on the canvas | ⏭ Next | |
+| 4–6 | Not started | |
 | Dogfood checkpoint | Not started | |
 | 7–12 | Not started | |
+
+---
+
+## Phase 2 — Canvas foundations ✅
+
+**Branch:** `feat/phase-2-canvas` → merged into `main` (no tag).
+
+### Built
+- **Canvas IPC:**
+  - `canvas.load()` / `canvas.apply(ops)`. `services/canvas.ts` runs each batch in one transaction.
+  - The ops so far are `create` (a note card can carry its new note), `update` and `delete` (a note or drawing card's delete soft-deletes it).
+  - The types are in `shared/types.ts`, and the zod op schemas validate kind-specific rules: a link card needs a url, other cards need a refId, and only http, https or mailto urls are allowed.
+- **Viewport** (`views/canvas/Viewport.ts`):
+  - Pan with space+drag, a middle-mouse drag, the Hand tool or the wheel (Shift+wheel scrolls sideways).
+  - Zoom around the cursor with Ctrl+wheel or a pinch, within 10–400%.
+  - Ctrl+= / Ctrl+- / Ctrl+0, and zoom to fit with Shift+1 (animated over 240ms).
+  - The dot grid follows UI_SPEC §4.1.
+  - The viewport is saved to settings (debounced, and flushed on blur, close and leaving the view).
+- **Floating toolbar** (UI_SPEC §4.2): Select (V) and Hand (H) work. Note, Link, Drawing and Image show but are disabled.
+- **Zoom pill** (UI_SPEC §4.4): −, the percentage (click resets to 100%) and +.
+- **Canvas store** (`stores/canvasStore.ts`): applies ops optimistically and batches every op from the same tick into one `canvas.apply`.
+- **Culling:** a 512px `SpatialGrid` with a 200px margin. `useSimplified()` covers zoom below 40%.
+- **Placeholder `NoteCard`:** color, title and "Untitled". Phase 3 fills it in.
+- **Dev seed:** Ctrl+Alt+Shift+S with `npm run dev` (ARCHITECTURE §6).
+- **Tests:**
+  - 102 unit tests (+39): viewport math (round trips, zoom keeps the cursor point fixed, stops, fit, dot grid), the spatial grid (including a brute-force comparison over 1,000 random cards), `CanvasService` (create, update and delete persist; atomic rollback; refusing a missing ref), the canvas op schemas, the canvas shortcuts, and the store's batching and debounced viewport save.
+  - 27 E2E tests (+8): `canvas-viewport.spec.ts` (space-drag, Hand, middle and wheel pan; Ctrl+scroll zoom around the cursor; shortcuts and pill limits; restored after relaunch; culling and simplified rendering; Shift+1 fit; invalid ops rejected), plus a `pages/CanvasPage.ts` page object.
+
+### Exit check
+- ✅ `npm run check` is green: typecheck (3 projects), ESLint + Prettier, 102 unit tests and 27 E2E tests.
+- ✅ **Performance with 1,000 cards.** Measured on this laptop with Playwright driving the built app: rAF frame intervals plus CDP `Performance.getMetrics` for main-thread time per frame.
+  - This display runs at **49–50 Hz**, so the frame rate is capped there. Every pan and zoom held it, with p95 equal to the average (20.2ms) and no dropped frames apart from one frame crossing the 40% threshold.
+  - Main-thread cost per frame against the 16.7ms budget for 60fps:
+
+    | Gesture | Main thread per frame |
+    |---|---|
+    | Pan at 100% (88 cards rendered) | 2.7ms |
+    | Zoom from 100% down to 10% | 3.6ms |
+    | Pan at 10% with all 1,000 cards rendered (worst case) | 8.7ms |
+    | Zoom from 10% up to 400% | 1.1ms |
+
+  - There's headroom for 60fps or more. **To confirm by eye** on a 60Hz+ screen with the DevTools performance panel if you like.
+- ✅ `npm run dev` (temp profile, over CDP): the real dev seed command stored 1,000 cards in one batch, 88 render at 100%, and Shift+1 fit renders all 1,000 at 12%. No console warnings or errors.
+
+### "It should" (checked by automation and screenshots)
+- ✅ Glide around an endless dotted board: the pan E2E tests, plus screenshots at 100% and 12% (dots hidden below 25%, as specified).
+- ✅ Zoom in and out smoothly: the Ctrl+scroll and shortcut E2E tests; the zoom keeps the point under the cursor fixed (unit and E2E).
+- ✅ Still smooth with 1,000 seeded cards: see the measurements above.
+- ⚠️ **To confirm by hand with `npm run dev`:** a real touchpad pinch and two-finger scroll (tests send synthetic ctrl+wheel and wheel events), and the feel of space+drag.
+
+### Decisions and findings (the docs are updated)
+- **Renderer-chosen ids:** new cards and notes get their nanoid in the renderer, so optimistic copies keep their id. `update` and `delete` of a missing card are no-ops; anything else rolls back the batch, and the store then reloads.
+- **`canvas.load()` joins the note's card fields** (`note: { title, color }`) onto note cards, so the canvas needs one call. Phase 3 extends `CardNote` with the preview and chip counts.
+- **Below 40% zoom** the card keeps its 13px (world) title and drops the shadow. 13 *screen* px couldn't fit a card that's 22px wide at 10%.
+- **The viewport skips React** and is written straight to the DOM. `will-change` is toggled only while the view moves (ARCHITECTURE §6).
+- **Zoom stops** for the shortcuts and the pill, and continuous Ctrl+wheel zoom capped at about 22% a notch.
+- **Zoom to fit never zooms past 100%,** and with no cards it centers the origin at 100%.
+- `tsconfig.e2e.json` now includes `src/shared/**` so specs can import shared types.
+
+### Open / carried forward
+- **Phase 3:**
+  - The `restore` and `setColor` ops, undo, selection, marquee, the Note tool and the real NoteCard (preview, hover, chips room).
+  - The Select tool's left-drag on empty space is free for the marquee.
+- **Phase 5:** `setDone`, the "Show done" toggle and the bottom-left status pill (UI_SPEC §4.3; it needs "done today").
+- **README header:** the `docs/readme-header` branch (`brand/readme-header.svg` as the banner) is pushed. Its PR is to be opened and merged in the browser (`gh` isn't installed).
 
 ---
 

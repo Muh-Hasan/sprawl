@@ -291,6 +291,9 @@ interface SprawlAPI {
 - `restore`: the inverse of `delete`. It re-inserts the item with its old id and clears `deleted_at`.
 - `setColor` and `setDone`: note fields that appear in canvas undo (PRODUCT §3.1).
 - `CanvasApplyResult` returns the created rows, so the renderer can replace its optimistic copies.
+- The renderer picks the ids (nanoid) of new cards and notes, so its optimistic copy and the stored row share one id. An `update` or `delete` of a card that's already gone is a no-op, and any other failure rolls back the whole batch.
+- `canvas.load()` returns each note card with a `note` field holding what the card shows of its note (`{ title, color }` so far). The cards of deleted notes are skipped.
+- Types live in `shared/types.ts` and the zod schemas in `shared/schemas.ts` (`canvasApplyInput`: 1–5,000 ops per batch). Phase 2 has `create`, `update` and `delete`. `restore` and `setColor` come in phase 3, and `setDone` in phase 5.
 
 Main also sends these events to the renderer: `vault:changed` (after a vault switch), `nav:open-note` (from a notification click, tray or deep link), `nav:open-list-due` (from the morning summary click), and `data:changed` (after a capture or a reminder state change, so open views refresh).
 
@@ -315,7 +318,8 @@ src/
     styles/        globals.css (Tailwind v4 + shadcn theme vars, dark only + Sprawl tokens)
     stores/        canvasStore.ts, uiStore.ts, vaultStore.ts, notesCache.ts, historyStore.ts
     views/
-      canvas/      Canvas.tsx, Viewport.ts (pan/zoom math), ItemLayer.tsx,
+      canvas/      Canvas.tsx, Viewport.ts (pan/zoom math), spatial.ts (culling grid), ItemLayer.tsx,
+                   useViewportGestures.ts, useSimplified.ts, devSeed.ts (dev only),
                    items/{NoteCard,DrawingCard,ImageCard,LinkCard}.tsx,
                    Toolbar.tsx, Marquee.tsx, ContextMenu.tsx, ZoomControls.tsx, useCanvasKeys.ts
       list/        ListView.tsx, ListFilters.tsx, NoteRow.tsx, DueGroups.tsx
@@ -344,6 +348,12 @@ src/
 - **Pointer events:** use pointer capture. Space held means temporary Hand mode. Wheel with ctrlKey (pinch) zooms, and wheel without it pans. The wheel listener is non-passive so it can `preventDefault()`.
 - **Shortcuts** (`lib/shortcuts.ts`) match on `KeyboardEvent.code` plus modifiers, not `key`. So Shift+1 is `Digit1` with Shift (its `key` is `!`), and Ctrl+= also accepts `NumpadAdd`.
 - The dotted background is a CSS `radial-gradient` on the viewport, with `background-position` and `background-size` driven by the pan and zoom.
+- **Viewport math** (`views/canvas/Viewport.ts`): `screen = world × zoom + (x, y)`, in px from the canvas element's top-left corner. The `viewport` setting stores that `{ x, y, zoom }`.
+- **The viewport bypasses React:** a store subscription writes the world transform, the dot grid and `data-x/y/zoom` (used by the E2E tests) straight to the DOM. Wheel and pointer input are folded into one viewport update per animation frame. `will-change: transform` is set only while the view moves and dropped 150ms after it stops, so text re-rasterizes crisply at the new zoom.
+- **Culling** (`views/canvas/spatial.ts`, `ItemLayer.tsx`): the store keeps a `SpatialGrid` in step with its items. The item layer re-renders only when the set of visible ids changes. `useSimplified()` (zoom below 40%) drops cards to title-only with no shadow.
+- **Zoom:** Ctrl+= / Ctrl+- and the pill step through fixed stops (10, 25, 33, 50, 67, 75, 90, 100, 110, 125, 150, 175, 200, 250, 300 and 400%) around the middle of the canvas. Ctrl+wheel is continuous (about 22% per mouse notch, finer for a pinch). Shift+1 fits every card (never past 100%, with 64px padding) over 240ms, or instantly with reduced motion.
+- **Saving the viewport:** 400ms after it stops moving, plus on window blur, `beforeunload` and leaving the canvas view.
+- **Dev seed:** with `npm run dev`, **Ctrl+Alt+Shift+S** on the canvas places 1,000 placeholder notes (a 40-column grid around the view center) in one `canvas.apply` batch (`views/canvas/devSeed.ts`). It's left out of production builds.
 
 ### Editor notes (BlockNote)
 - Lazy-load the editor with `React.lazy` when the note panel first opens, to protect the 1.5s cold start. The canvas renders previews from `body_text` and doesn't need BlockNote.
