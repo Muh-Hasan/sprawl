@@ -2,19 +2,19 @@
 
 A running log of the build, one phase per session (see `PHASES.md`). Read this first at the start of every session. Each phase records what was built, how the exit check was verified, decisions that differ from or add to the docs, and anything left open.
 
-| Phase | Status | Tag | Date |
-|---|---|---|---|
-| 0 — Project setup | ✅ Done | `phase-0` | 2026-11-24 |
-| 1 — Vault, database and app shell | ⏭ Next | | |
-| 2–6 | Not started | | |
-| Dogfood checkpoint | Not started | | |
-| 7–12 | Not started | | |
+| Phase | Status | Date |
+|---|---|---|
+| 0 — Project setup | ✅ Done | 2026-11-24 |
+| 1 — Vault, database and app shell | ⏭ Next | |
+| 2–6 | Not started | |
+| Dogfood checkpoint | Not started | |
+| 7–12 | Not started | |
 
 ---
 
 ## Phase 0 — Project setup ✅
 
-**Branch:** `feat/phase-0-setup` → merged into `main`, tagged `phase-0`.
+**Branch:** `feat/phase-0-setup` → merged into `main` (no tag).
 
 ### Built
 - electron-vite 6 + Vite 8 + React 19 + TypeScript 6 (strict, plus `noUncheckedIndexedAccess`). The layout follows ARCHITECTURE §6: `src/{main,preload,shared,renderer}`.
