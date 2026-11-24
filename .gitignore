@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# build output
+out/
+dist/
+
+# test output
+test-results/
+playwright-report/
+blob-report/
+coverage/
+
+# logs
+*.log
+
+# local env and editor/tool state
+.env
+.env.*
+.claude/settings.local.json
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
