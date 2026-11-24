@@ -5,6 +5,7 @@ import { ConfigStore } from './config'
 import { registerProtocol, routeArgv } from './deepLinks'
 import { env } from './env'
 import { registerIpc } from './ipc/register'
+import { CanvasService } from './services/canvas'
 import { SettingsService } from './services/settings'
 import { VaultService } from './services/vault'
 import { createMainWindow, focusWindow } from './window'
@@ -49,7 +50,8 @@ function start(): void {
     })
     vault.restore()
     const settings = new SettingsService({ config, db: () => vault.db() })
-    registerIpc({ vault, settings })
+    const canvas = new CanvasService({ db: () => vault.db() })
+    registerIpc({ vault, settings, canvas })
 
     const openWindow = (): BrowserWindow => {
       const win = createMainWindow({

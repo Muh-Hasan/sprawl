@@ -17,6 +17,10 @@ const api: SprawlAPI = {
     get: (key) => ipcRenderer.invoke(IPC.settings.get, key),
     set: (key, value) => ipcRenderer.invoke(IPC.settings.set, { key, value }),
   },
+  canvas: {
+    load: () => ipcRenderer.invoke(IPC.canvas.load),
+    apply: (ops) => ipcRenderer.invoke(IPC.canvas.apply, ops),
+  },
   on: (event, listener) => {
     if (!MAIN_EVENTS.includes(event)) throw new Error(`Unknown event: ${event}`)
     const wrapped = (_e: IpcRendererEvent, payload: unknown): void =>

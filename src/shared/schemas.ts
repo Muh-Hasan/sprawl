@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { NOTE_COLORS } from './constants'
+import { CANVAS_ITEM_KINDS } from './types'
 
 /**
  * zod schemas shared by main and renderer (ARCHITECTURE §9): the settings schema with its
@@ -137,3 +138,84 @@ export const settingsSetInput = z
 
 export const openVaultInput = absolutePathSchema
 export const openExternalInput = externalUrlSchema
+
+// canvas -----------------------------------------------------------------------------------
+
+/** A nanoid-style id: URL-safe characters only. */
+export const idSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/, 'Expected an id')
+
+/** World coordinates stay well inside float precision. */
+const coordSchema = z.number().finite().min(-1e7).max(1e7)
+const sizeSchema = z.number().finite().positive().max(1e5)
+const zSchema = z.number().int().min(-1e9).max(1e9)
+const labelSchema = z.string().max(1000)
+
+export const canvasItemInputSchema = z
+  .object({
+    id: idSchema,
+    kind: z.enum(CANVAS_ITEM_KINDS),
+    refId: idSchema.nullable(),
+    url: externalUrlSchema.nullable(),
+    title: labelSchema.nullable(),
+    x: coordSchema,
+    y: coordSchema,
+    w: sizeSchema,
+    h: sizeSchema,
+    z: zSchema,
+  })
+  .strict()
+  .superRefine((item, ctx) => {
+    if (item.kind === 'link') {
+      if (item.url === null)
+        ctx.addIssue({ code: 'custom', path: ['url'], message: 'A link card needs a url' })
+      if (item.refId !== null)
+        ctx.addIssue({ code: 'custom', path: ['refId'], message: 'A link card has no refId' })
+    } else {
+      if (item.refId === null)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['refId'],
+          message: `A ${item.kind} card needs a refId`,
+        })
+      if (item.url !== null)
+        ctx.addIssue({ code: 'custom', path: ['url'], message: 'Only link cards have a url' })
+    }
+  })
+
+export const newNoteSchema = z
+  .object({ id: idSchema, title: z.string().max(10_000), color: noteColorSchema })
+  .strict()
+
+export const canvasItemPatchSchema = z
+  .object({
+    x: coordSchema,
+    y: coordSchema,
+    w: sizeSchema,
+    h: sizeSchema,
+    z: zSchema,
+    url: externalUrlSchema,
+    title: labelSchema.nullable(),
+  })
+  .strict()
+  .partial()
+  .refine((patch) => Object.keys(patch).length > 0, { message: 'Empty patch' })
+
+export const canvasOpSchema = z.discriminatedUnion('op', [
+  z
+    .object({
+      op: z.literal('create'),
+      item: canvasItemInputSchema,
+      note: newNoteSchema.optional(),
+    })
+    .strict()
+    .superRefine((op, ctx) => {
+      if (op.note && (op.item.kind !== 'note' || op.item.refId !== op.note.id)) {
+        ctx.addIssue({ code: 'custom', path: ['note'], message: "The note must be the card's ref" })
+      }
+    }),
+  z.object({ op: z.literal('update'), id: idSchema, patch: canvasItemPatchSchema }).strict(),
+  z.object({ op: z.literal('delete'), id: idSchema }).strict(),
+])
+
+/** One `canvas.apply` batch. 5,000 ops covers a big paste or the dev seed with room to spare. */
+export const canvasApplyInput = z.array(canvasOpSchema).min(1).max(5000)

@@ -1,4 +1,5 @@
 import type { SettingKey, Settings } from './schemas'
+import type { CanvasApplyResult, CanvasItem, CanvasOp } from './types'
 
 /**
  * The `window.sprawl` API shared by preload and renderer (ARCHITECTURE §5). Every method is an
@@ -28,6 +29,13 @@ export interface SettingsAPI {
   set<K extends SettingKey>(key: K, value: Settings[K]): Promise<void>
 }
 
+export interface CanvasAPI {
+  /** Every card on the canvas, with its note's card fields for note cards. */
+  load(): Promise<CanvasItem[]>
+  /** Runs a batch of ops in one transaction (ARCHITECTURE §5). */
+  apply(ops: CanvasOp[]): Promise<CanvasApplyResult>
+}
+
 /** Events main sends to the renderer, with their payloads. */
 export interface MainEvents {
   'vault:changed': VaultInfo
@@ -39,6 +47,7 @@ export type MainEventName = keyof MainEvents
 export interface SprawlAPI {
   app: AppAPI
   settings: SettingsAPI
+  canvas: CanvasAPI
   /** Subscribes to a main-process event. Returns the unsubscribe function. */
   on<E extends MainEventName>(event: E, listener: (payload: MainEvents[E]) => void): () => void
 }
@@ -55,6 +64,10 @@ export const IPC = {
     getAll: 'settings:getAll',
     get: 'settings:get',
     set: 'settings:set',
+  },
+  canvas: {
+    load: 'canvas:load',
+    apply: 'canvas:apply',
   },
 } as const
 

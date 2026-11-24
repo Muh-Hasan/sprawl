@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { IpcInputError, parseInput } from '../../../src/main/ipc/validate'
 import {
+  canvasApplyInput,
+  canvasOpSchema,
   defaultSettings,
   isAllowedExternalUrl,
   openExternalInput,
@@ -99,5 +101,65 @@ describe('IPC input schemas', () => {
       key: 'snap',
       value: true,
     })
+  })
+})
+
+describe('canvas op schemas', () => {
+  const item = {
+    id: 'c1',
+    kind: 'note',
+    refId: 'n1',
+    url: null,
+    title: null,
+    x: 10.5,
+    y: -20,
+    w: 220,
+    h: 96,
+    z: 3,
+  }
+  const valid = (op: unknown) =>
+    expect(canvasOpSchema.safeParse(op).success, JSON.stringify(op)).toBe(true)
+  const invalid = (op: unknown) =>
+    expect(canvasOpSchema.safeParse(op).success, JSON.stringify(op)).toBe(false)
+
+  it('accepts well-formed create, update and delete ops', () => {
+    valid({ op: 'create', item })
+    valid({ op: 'create', item, note: { id: 'n1', title: 'Hi', color: 'sky' } })
+    valid({
+      op: 'create',
+      item: { ...item, kind: 'link', refId: null, url: 'https://example.com', title: 'Ex' },
+    })
+    valid({ op: 'update', id: 'c1', patch: { x: 1, y: 2 } })
+    valid({ op: 'update', id: 'c1', patch: { title: null } })
+    valid({ op: 'delete', id: 'c1' })
+  })
+
+  it('rejects malformed ops', () => {
+    invalid({ op: 'explode', id: 'c1' })
+    invalid({ op: 'delete', id: '' })
+    invalid({ op: 'delete', id: 'bad id/../' })
+    invalid({ op: 'create', item: { ...item, kind: 'group' } })
+    invalid({ op: 'create', item: { ...item, x: Number.POSITIVE_INFINITY } })
+    invalid({ op: 'create', item: { ...item, w: 0 } })
+    invalid({ op: 'create', item: { ...item, z: 1.5 } })
+    invalid({ op: 'create', item: { ...item, extra: true } })
+    invalid({ op: 'create', item: { ...item, refId: null } })
+    invalid({ op: 'create', item: { ...item, kind: 'link', refId: null, url: null } })
+    invalid({
+      op: 'create',
+      item: { ...item, kind: 'link', refId: null, url: 'file:///C:/x.exe' },
+    })
+    invalid({ op: 'create', item, note: { id: 'other', title: '', color: 'sky' } })
+    invalid({ op: 'create', item, note: { id: 'n1', title: '', color: 'red' } })
+    invalid({ op: 'update', id: 'c1', patch: {} })
+    invalid({ op: 'update', id: 'c1', patch: { kind: 'link' } })
+    invalid({ op: 'update', id: 'c1', patch: { x: Number.NaN } })
+  })
+
+  it('takes batches of 1 to 5,000 ops', () => {
+    const del = { op: 'delete', id: 'c1' }
+    expect(canvasApplyInput.safeParse([del]).success).toBe(true)
+    expect(canvasApplyInput.safeParse([]).success).toBe(false)
+    expect(canvasApplyInput.safeParse(Array(5001).fill(del)).success).toBe(false)
   })
 })
