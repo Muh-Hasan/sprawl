@@ -5,10 +5,81 @@ A running log of the build, one phase per session (see `PHASES.md`). Read this f
 | Phase | Status | Date |
 |---|---|---|
 | 0 — Project setup | ✅ Done | 2026-11-24 |
-| 1 — Vault, database and app shell | ⏭ Next | |
-| 2–6 | Not started | |
+| 1 — Vault, database and app shell | ✅ Done | 2026-11-25 |
+| 2 — Canvas foundations | ⏭ Next | |
+| 3–6 | Not started | |
 | Dogfood checkpoint | Not started | |
 | 7–12 | Not started | |
+
+---
+
+## Phase 1 — Vault, database and app shell ✅
+
+**Branch:** `feat/phase-1-vault-shell` → merged into `main` (no tag).
+
+### Built
+- **DB:** the full ARCHITECTURE §4 schema in Drizzle (`main/db/schema.ts`). drizzle-kit generated `0000_init.sql`, with the FTS5 `search_index` appended by hand. A small runner tracks `PRAGMA user_version`, and the SQL is bundled via `?raw` imports. WAL, `foreign_keys` and `synchronous=NORMAL` are set.
+- **Vault** (`services/vault.ts`): onboarding when there's no vault. `SPRAWL_VAULT` skips onboarding and isn't remembered. The vault path is remembered in `config.json`. A remembered folder that's gone brings onboarding back (rather than an empty vault in its place). Settings → Change… opens or creates the chosen folder's vault after a confirm dialog.
+- **config.json** (`main/config.ts`): the vault path, the window state and the machine settings. Each field is validated on its own, and writes are atomic.
+- **Settings service:** one zod schema with defaults for every key (`shared/schemas.ts`). Vault keys go to the `settings` table and machine keys to `config.json`. Bad stored values fall back to the default.
+- **IPC:** the typed preload API (`app.getVaultInfo/pickVaultFolder/openVault/openExternal`, `settings.get/set/getAll`, and `on(event)` for main events). Every input is zod-validated in main, with typed `[invalid-input]` errors, and only our own windows may call.
+- **Windows plumbing:**
+  - The AppUserModelId (with the `process.execPath` fallback in dev).
+  - The single-instance lock: a second launch restores and focuses the first.
+  - The `sprawl://` registration (packaged builds only) and argv routing (`shared/deepLink.ts`), which sends `nav:*` events the renderer will handle from phases 4 and 6.
+  - The window state remembered, with off-screen protection.
+- **Shell:**
+  - The Rail (logo, the four views, Search disabled until phase 10, and Settings) with the white active bar and label + shortcut tooltips.
+  - The 40px top bar (drag region, 140px caption clearance, transparent on the canvas).
+  - Empty Canvas, List, Log and Drawings views (using the PRODUCT §5 empty states), and Ctrl+1/2/3/4.
+- **Onboarding** (UI_SPEC §10) and **Settings** (UI_SPEC §9): Vault works; the other rows show their stored values but are disabled until their phase. About has a working GitHub link.
+- **Wrappers** (no edits to `components/ui`): `IconButton`, `HintTooltip` (popover-colored, no arrow, 400ms delay), `ShortcutKbd`, `TopBar`, `EmptyState`, `ConfirmDialog`.
+- **Tests:**
+  - 63 unit tests: migrations, the config store, settings (defaults, rejection, which store each key lands in, corrupt values), the vault service, window bounds, deep links, every IPC schema, and the shortcut matcher.
+  - 19 E2E tests: `vault`, `shell`, `instance`, `settings`, plus `launch` extended.
+
+### Changes requested during the phase
+- **Icons → Tabler** (`@tabler/icons-react`); `lucide-react` was removed. DESIGN_SYSTEM §5 has the full icon map, and UI_SPEC now uses Tabler names. `components.json` keeps `iconLibrary: "lucide"` on purpose: the shadcn CLI doesn't rewrite icons for the new-york style, and stock components (checkbox, select, …) will bring `lucide-react` back for their internal glyphs when they're added.
+- **New brand** (Truchet arcs). `brand/` was pruned to the sources and the two `.ico` files. `build/icon.ico`, `resources/icon.ico` (window icon), `resources/tray.ico` and `src/renderer/assets/brand/` were synced from it. `brand/README.md` is the source of truth.
+- **Fonts → Outfit** (UI), **Geist Mono** (times, kbd, code, paths) and **Sora 600** (`font-brand`, only the onboarding title and the About name). Weights: 500 for labels and buttons, 600 for titles. Font files come from `@fontsource-variable/outfit` and `@fontsource/sora`, and Geist Sans was removed. The E2E suite checks the _rendered_ fonts via CDP. There's no third-party notices file (removed on request).
+- **shadcn MCP server** added in `.mcp.json` (wrapped in `cmd /c` for Windows).
+
+### Exit check
+- ✅ `npm run check` is green: typecheck (3 projects), ESLint + Prettier, 63 unit tests and 19 E2E tests.
+- ✅ Relaunching keeps the vault (`vault.spec`: Start, close, relaunch → shell).
+- ✅ Deleting `config.json` brings onboarding back, and the vault on disk is untouched (`vault.spec`).
+- ✅ Launching a second copy just focuses the first (`instance.spec`: minimize, spawn a second process on the same profile → it exits 0, and the first window is restored, visible and still alone).
+- ✅ `npm run dev` (on an isolated temp profile): over CDP, the renderer console only showed Vite's debug lines and React's DevTools notice. The shell rendered in Outfit, and no network requests were made.
+
+### "It should" (checked by automation and screenshots)
+- ✅ First run asks where to keep your notes: the onboarding screen with Documents\Sprawl prefilled, Choose… and Start (screenshot).
+- ✅ After that it opens straight into the app frame (relaunch test).
+- ✅ You can click between Canvas, List, Log, Drawings and Settings (rail and Ctrl+1–4 tests, white bar position checked).
+- ✅ `sprawl.db` appears in the chosen folder (vault and launch tests).
+- ⚠️ **To confirm by eye with `npm run dev`:** the real Windows folder picker (tests stub it), dragging the window by the top bar, the caption buttons not overlapping anything, and the new icon in the taskbar.
+
+### Decisions and findings (the docs are updated)
+- **API:** `chooseVault()` became `pickVaultFolder()` (dialog only) plus `openVault(path)`, so onboarding and Settings can confirm before opening. `VaultInfo` is `{ path | null, defaultPath }`. All API methods return promises.
+- **Migrations** start at `0000_init.sql` (drizzle-kit's numbering), not 0001.
+- **Change vault** opens or creates; it doesn't move data. The old vault stays put.
+- **Protocol registration is packaged-only**, so dev and E2E never touch the machine's `sprawl://` handler. The `vault.spec` first-run tests do run with `SPRAWL_E2E=0` as PHASES asks.
+- **shadcn registry change:** stock components import `cn` from the shadcn-maintained `cn` package and primitives from `radix-ui`. Both were added (`cn` approved by you). Our own code keeps `@/lib/utils`.
+- **`@custom-variant dark (&:is(.dark *))`** in `globals.css`, so stock `dark:` classes follow `<html class="dark">` rather than the Windows theme.
+- **Playwright's `app.close()` doesn't fire the window `close` event.** The window-state test closes the window the way a user does.
+- **esbuild** (pulled in by drizzle-kit) is denied in `allowScripts`; drizzle-kit works without its postinstall.
+
+### Open / carried forward
+- **Your machine still has npm 9.5.** The shadcn CLI shells out to `npm`, so `shadcn add` fails on `engine-strict` until you run `npm i -g npm@11`.
+- **Phase 2:** the canvas viewport, dot grid, toolbar and zoom pill go into the empty `Canvas`. The `viewport` setting already exists.
+- **Later phases:**
+  - Phase 4: the `nav:open-note` handler.
+  - Phase 5: the "Show done" top-bar toggle.
+  - Phase 6: the List rail badge, the `nav:open-list-due` handler, tray and keep-in-tray (`window-all-closed` still quits), and possibly a dev protocol registration for clicking real toasts.
+  - Phase 10: the Search rail button.
+  - Phase 11: the corrupt or locked DB screen (a remembered vault that fails to open currently logs and shows onboarding).
+  - Phase 12: the welcome note, the version in About, and the Settings placeholders still to wire up.
+- **Phase 12 packaging:** `build/icon.ico` is now ready. Still to do: `npmRebuild: false` and unpacking `better-sqlite3/prebuilds/*.node`. The bundled fonts are OFL-licensed, and OFL expects its license text to ship with the font files, so decide then whether the installer includes it.
+- **From phase 3:** component tests need `jsdom` and `@testing-library/react`.
 
 ---
 
@@ -54,6 +125,4 @@ A running log of the build, one phase per session (see `PHASES.md`). Read this f
 - **The Vitest config is `vitest.config.mts`** (ESM), to avoid Vite's CommonJS-config warning.
 
 ### Open / carried forward
-- **Phase 12 packaging:** electron-builder is installed but `npm run dist` hasn't been run. Set `npmRebuild: false`, make sure `better-sqlite3/prebuilds/*.node` is unpacked from the asar, and generate the multi-size `build/icon.ico`.
-- **Phase 1:** the AppUserModelId, the single-instance lock (it'll be keyed on `SPRAWL_USER_DATA` automatically), and making `SPRAWL_VAULT` skip onboarding. `env.vault` and `env.e2e` are read but not used yet.
-- **From phase 3:** component tests need `jsdom` and `@testing-library/react` added (listed in the stack, not installed yet).
+- All carried items moved to phase 1's list above (the phase 1 ones are done).

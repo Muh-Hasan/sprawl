@@ -1,11 +1,32 @@
-/**
- * Phase 0: an empty dark window. The 40px top strip is the window drag region
- * (UI_SPEC §1); the rail, top bar and views arrive in phase 1.
- */
+import { useEffect } from 'react'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { useVaultStore } from '@/stores/vaultStore'
+import { ChooseVault } from '@/views/onboarding/ChooseVault'
+import { Shell } from './Shell'
+
+/** Onboarding until a vault is open, then the app frame. */
 export function App() {
+  const info = useVaultStore((s) => s.info)
+  const load = useVaultStore((s) => s.load)
+  const subscribe = useVaultStore((s) => s.subscribe)
+
+  useEffect(() => {
+    void load()
+    return subscribe()
+  }, [load, subscribe])
+
   return (
-    <div data-testid="app-root" className="flex h-full flex-col bg-background">
-      <div data-testid="title-bar" className="h-10 shrink-0 [-webkit-app-region:drag]" />
-    </div>
+    <TooltipProvider delayDuration={400}>
+      <div data-testid="app-root" className="h-full bg-background">
+        {info === null ? (
+          // Blank for the few ms until main answers, so onboarding never flashes.
+          <div className="h-10 [-webkit-app-region:drag]" />
+        ) : info.path === null ? (
+          <ChooseVault defaultPath={info.defaultPath} />
+        ) : (
+          <Shell />
+        )}
+      </div>
+    </TooltipProvider>
   )
 }

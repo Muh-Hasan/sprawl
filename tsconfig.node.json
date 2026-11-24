@@ -15,6 +15,7 @@
     "src/preload/**/*",
     "src/shared/**/*",
     "tests/unit/main/**/*",
-    "tests/unit/shared/**/*"
+    "tests/unit/shared/**/*",
+    "tests/unit/helpers/**/*"
   ]
 }

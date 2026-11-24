@@ -23,7 +23,7 @@ Rules for every phase:
 **Build**
 - electron-vite + React 19 + TypeScript strict, with the folder layout from ARCHITECTURE §6.
 - Security settings (contextIsolation, sandbox, CSP), the window settings from UI_SPEC §1 (dark background, title bar style), and no application menu (`Menu.setApplicationMenu(null)`, ARCHITECTURE §2).
-- Tailwind v4 + `shadcn init` (new-york, zinc), with the full `globals.css` from DESIGN_SYSTEM §9. Geist fonts bundled locally.
+- Tailwind v4 + `shadcn init` (new-york, zinc), with the full `globals.css` from DESIGN_SYSTEM §9. Fonts bundled locally (DESIGN_SYSTEM §3).
 - ESLint + Prettier (ignoring `components/ui/**`), and the npm scripts from ARCHITECTURE §10.5.
 - Vitest configured. better-sqlite3's N-API prebuild loads in both Node and Electron with no rebuild (ARCHITECTURE §10.2). Prove it with a test that opens an in-memory DB.
 - The Playwright e2e fixture (`tests/e2e/fixtures.ts`) with a temp vault, a temp userData, the `SPRAWL_E2E`, `SPRAWL_USER_DATA` and `SPRAWL_VAULT` variables (ARCHITECTURE §10.3), and the console check with an empty `tests/e2e/known-warnings.ts`.

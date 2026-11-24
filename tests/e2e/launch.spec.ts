@@ -1,21 +1,33 @@
-import { expect, test } from './fixtures'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { expect, renderedFonts, test } from './fixtures'
 
-test('opens a dark "Sprawl" window', async ({ window }) => {
+test('opens a dark "Sprawl" window on the vault', async ({ window, dirs }) => {
   await expect(window.getByTestId('app-root')).toBeVisible()
+  await expect(window.getByTestId('shell')).toBeVisible()
+  expect(existsSync(join(dirs.vault, 'sprawl.db'))).toBe(true)
   expect(await window.title()).toBe('Sprawl')
 
   const bodyBg = await window.evaluate(() => getComputedStyle(document.body).backgroundColor)
   expect(bodyBg).toBe('rgb(9, 9, 11)') // #09090B
 })
 
-test('loads the bundled Geist fonts', async ({ window }) => {
-  // Fonts load lazily, and the phase 0 window has no text, so request them explicitly.
-  // A face that resolves proves the @font-face URL is bundled and allowed by the CSP.
+test('loads the bundled fonts', async ({ window }) => {
+  // A face that resolves proves its @font-face URL is bundled and allowed by the CSP.
   const loaded = await window.evaluate(async () => ({
-    sans: (await document.fonts.load('13px Geist')).length,
+    sans: (await document.fonts.load('13px Outfit')).length,
     mono: (await document.fonts.load('13px "Geist Mono"')).length,
+    brand: (await document.fonts.load('600 13px Sora')).length,
   }))
-  expect(loaded).toEqual({ sans: 1, mono: 1 })
+  expect(loaded).toEqual({ sans: 1, mono: 1, brand: 1 })
+})
+
+test('renders UI text in Outfit and paths and keys in Geist Mono', async ({ window }) => {
+  await window.getByTestId('rail-settings').click()
+  await expect(window.getByTestId('settings-vault-path')).toBeVisible()
+  expect(await renderedFonts(window, '[data-testid="top-bar"] > div')).toEqual(['Outfit'])
+  expect(await renderedFonts(window, '[data-testid="settings-vault-path"]')).toEqual(['Geist Mono'])
+  expect(await renderedFonts(window, '[data-testid="settings-about-name"]')).toEqual(['Sora'])
 })
 
 test('keeps the renderer sandboxed behind window.sprawl', async ({ window }) => {

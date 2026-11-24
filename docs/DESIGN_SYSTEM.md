@@ -11,23 +11,18 @@ Reference feel: Linear, Vercel, Raycast. Quiet chrome, sharp type, content first
 ## 1. Brand
 
 ### Logo
-The mark is **three parallel strokes**, like quick marker lines across a page or ideas spreading out. The middle stroke is longest, and the outer two are offset in opposite directions, so the shape leans and moves.
+The mark is **two thick arcs from a Truchet tile**: a square tile with two quarter-circle curves. Rotated at random and placed side by side, Truchet tiles join into an endless winding pattern. One tile is a single note; many tiles are the sprawl.
 
-Files are in `brand/` (copy them to `resources/` and `build/` in the repo):
-
-| File | Use |
-|---|---|
-| `sprawl-icon.svg` / `sprawl-icon-1024.png` | App icon (dock, taskbar, installer). electron-builder builds `.icns` and `.ico` from the 1024px PNG. |
-| `sprawl-mark-light.svg` | Mark only, white, for dark backgrounds (in-app, README dark). Also the **Windows tray icon** (export 16 and 32px PNGs and a multi-size `.ico`). |
-| `sprawl-mark-dark.svg` | Mark only, black, for light backgrounds (README light mode, docs). |
-| `sprawl-mark-gradient.svg` | White-to-zinc gradient mark for hero moments (onboarding, About). |
-| `sprawl-lockup-dark-bg.svg` / `-light-bg.svg` | Mark plus the "sprawl" wordmark (Geist SemiBold, outlined). README header, website. |
+**`brand/README.md` is the source of truth** for the geometry, every brand file and where each one is copied in the repo (`build/icon.ico`, `resources/icon.ico`, `resources/tray.ico`, `src/renderer/assets/brand/`). In the app:
+- The rail logo is `sprawl-mark-light.svg` (flat white).
+- Onboarding and About use `sprawl-mark-gradient.svg` (white → zinc-400).
+- The window, taskbar and installer use `icon.ico`, and the tray uses `tray.ico`.
 
 **Rules:**
-- The wordmark is always lowercase: **sprawl**.
-- Keep clear space around the mark equal to one stroke's thickness.
-- Don't recolor the mark beyond white, black or the white→zinc-400 gradient, and don't rotate, outline or add effects to it.
-- The minimum size is 16px for the mark and 80px wide for the lockup.
+- The wordmark is always lowercase: **sprawl**. It's set in Sora SemiBold, outlined in the brand SVGs (see §3 for where Sora appears in the app).
+- Keep clear space around the mark of at least half the stroke width.
+- Don't recolor the mark beyond white, black or the white→zinc-400 gradient. Don't rotate it, outline it, add effects to it or swap the arcs.
+- The minimum size is 16px for the mark and the tray, and 96px wide for the lockup.
 
 ### Voice (UI copy)
 Short, plain and lowercase-friendly. Use sentence case everywhere, with no exclamation marks and no "successfully". Examples: "Saved", "Marked done", "Nothing logged yet."
@@ -91,7 +86,13 @@ The token names are `--note-{name}-{bg|border|text|swatch}`, and the Tailwind cl
 
 ## 3. Typography
 
-**Geist Sans** for UI and notes, **Geist Mono** for code, times and shortcuts. Install the `geist` npm package and bundle the `.woff2` files locally with `@font-face` in `globals.css`. Don't load fonts from the network.
+Three fonts, all bundled locally as `.woff2` with `@font-face` in `globals.css` (never loaded from the network):
+
+| Font | Class | Use | Package |
+|---|---|---|---|
+| **Outfit** (variable, 100–900) | `font-sans` (default) | The whole app UI and note text | `@fontsource-variable/outfit` |
+| **Geist Mono** (variable) | `font-mono` | Times, `kbd`, code blocks, the zoom %, the vault path, the List row's edited time | `geist` |
+| **Sora** SemiBold (600 only) | `font-brand` | **Only** the onboarding title "Welcome to sprawl" and the app name in About. The logo wordmark is already outlined in the brand SVGs, so Sora appears nowhere else. | `@fontsource/sora` |
 
 | Token | Size / line height | Weight | Use |
 |---|---|---|---|
@@ -105,9 +106,10 @@ The token names are `--note-{name}-{bg|border|text|swatch}`, and the Tailwind cl
 | `text-title` | 24 / 32 | 600 | Note title in the panel (−0.01em tracking) |
 | Editor H1 / H2 / H3 | 24 / 20 / 17 | 600 | |
 
+- **Weights** (Outfit runs light): 400 for body text; **500 for UI labels and buttons** (settings row labels, tooltip labels, top-bar labels, button text); **600 for titles** (card title, panel title, log date, view titles, editor headings). Never below 400, and no 700+ anywhere in the app.
 - **Tracking:** −0.01em at 18px and above, and 0 below.
-- **Numbers:** use `font-variant-numeric: tabular-nums` for times, zoom percentages and counts.
-- **Mono:** log times, `kbd`, code blocks and the zoom percentage.
+- **Numbers:** Outfit's figures are proportional, so every time display (log entry times, reminder times, due chip times, the zoom %, the List edited time) uses `font-mono`. Counts such as the checklist chip "3/5" stay in Outfit. Don't add `tabular-nums` to Outfit text.
+- **Third-party surfaces:** the BlockNote editor must inherit Outfit (override its font variable if it sets its own), and its code blocks use Geist Mono. Leave Excalidraw's hand-drawn font alone.
 
 ---
 
@@ -130,30 +132,39 @@ The token names are `--note-{name}-{bg|border|text|swatch}`, and the Tailwind cl
 
 ## 5. Iconography
 
-- Use **lucide-react** at 16px with a 1.75 stroke (`strokeWidth={1.75}`) by default, 14px in chips and 18px in the rail and toolbar.
+- Use **Tabler** (`@tabler/icons-react`) at 16px with a 1.75 stroke (`stroke={1.75}`) by default, 14px in chips and 18px in the rail and toolbar. Size icons with Tailwind `size-*` classes (or let the wrapping button size them); don't rely on Tabler's 24px default.
 - Icons are `--muted-foreground` at rest and `--foreground` on hover or when active.
-- Icon assignments:
+- Stock shadcn components keep their own internal `lucide-react` glyphs (check marks, chevrons, close X); don't edit them to swap icons (ARCHITECTURE §1).
+- Icon assignments (UI_SPEC uses these component names):
 
 | Purpose | Icon |
 |---|---|
-| Canvas | `LayoutDashboard` |
-| List | `ListTodo` |
-| Log | `NotebookText` |
-| Drawings | `PenTool` |
-| Search | `Search` |
-| Settings | `Settings2` |
-| Select tool | `MousePointer2` |
-| Hand tool | `Hand` |
-| Note tool | `StickyNote` |
-| Link tool | `Link2` |
-| Drawing tool | `PenTool` |
-| Image tool | `ImagePlus` |
-| Due date | `CalendarClock` |
-| Done | `Check` / `CircleCheck` |
-| Attachment | `Paperclip` |
-| Reminder | `Bell` |
-| Show on canvas | `Crosshair` |
-| Quick capture | `Zap` |
+| Canvas | `IconLayoutDashboard` |
+| List | `IconListCheck` |
+| Log | `IconNotebook` |
+| Drawings, drawing tool, drawing refs | `IconScribble` |
+| Search | `IconSearch` |
+| Settings | `IconSettings` |
+| Select tool | `IconPointer` |
+| Hand tool | `IconHandStop` |
+| Note tool | `IconNote` |
+| Link tool, links chip | `IconLink` |
+| Image tool | `IconPhotoPlus` |
+| Due date | `IconCalendarDue` |
+| Checklist chip | `IconChecklist` |
+| Done | `IconCheck` / `IconCircleCheck` |
+| Attachment | `IconPaperclip` |
+| Reminder | `IconBell` |
+| Show on canvas | `IconFocus2` |
+| Quick capture | `IconBolt` |
+| Show done toggle | `IconEye` / `IconEyeOff` |
+| Full page / back to panel | `IconArrowsDiagonal` / `IconArrowsDiagonalMinimize2` |
+| More menu | `IconDots` |
+| Close | `IconX` |
+| Open in browser | `IconExternalLink` |
+| Month picker | `IconCalendar` |
+| New | `IconPlus` |
+| Drag handle | `IconGripVertical` |
 
 ---
 
@@ -194,7 +205,7 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 - **Hover on cards:** border goes up one step (note `border` → +8% white) plus `--shadow-lift`, with no movement.
 - **Done state (when "Show done" is on):** 45% opacity and a struck-through title.
 - **Focus:** every interactive element has a visible `--ring` focus. Never remove an outline without replacing it.
-- **Empty states:** a lucide icon at 20px in `--subtle-foreground`, one 13px line, and an optional ghost button. No illustrations.
+- **Empty states:** a Tabler icon at 20px in `--subtle-foreground`, one 13px line, and an optional ghost button. No illustrations.
 
 ---
 
@@ -204,7 +215,11 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@font-face { font-family: "Geist"; src: url("../assets/fonts/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; font-display: block; }
+/* Stock shadcn components use dark: variants; tie them to <html class="dark">, not the OS theme. */
+@custom-variant dark (&:is(.dark *));
+
+@font-face { font-family: "Outfit"; src: url("../assets/fonts/outfit-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-display: block; }
+@font-face { font-family: "Sora"; src: url("../assets/fonts/sora-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: block; }
 @font-face { font-family: "Geist Mono"; src: url("../assets/fonts/GeistMono-Variable.woff2") format("woff2"); font-weight: 100 900; font-display: block; }
 
 :root {
@@ -254,8 +269,9 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 }
 
 @theme inline {
-  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-brand: "Sora", "Outfit", sans-serif;
 
   --color-background: var(--background);   --color-foreground: var(--foreground);
   --color-card: var(--card);               --color-card-foreground: var(--card-foreground);
@@ -304,7 +320,6 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   html, body, #root { height: 100%; }
   body {
     @apply bg-background text-foreground font-sans text-sm antialiased;
-    font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     user-select: none;               /* app chrome; re-enable in editors/inputs */
   }

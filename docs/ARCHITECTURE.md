@@ -17,12 +17,12 @@ Read `PRODUCT.md` first. This document covers how to build it.
 | Search | **SQLite FTS5** (built in) | No extra search library |
 | UI components | **shadcn/ui** (Radix primitives, copied into `components/ui/`) | Accessible menus, dialogs, popovers and so on, owned in the repo |
 | Styling | **Tailwind CSS v4** + shadcn's CSS-variable theme (zinc base, **dark only**) + `tw-animate-css` | All colors come from the theme variables in `globals.css` |
-| Fonts | **`geist`** (npm) | Geist Sans and Mono `.woff2` files, bundled locally |
+| Fonts | **`@fontsource-variable/outfit`**, **`geist`**, **`@fontsource/sora`** (npm) | Outfit (UI), Geist Mono (times, code, kbd) and Sora 600 (brand moments only) as `.woff2` files copied into `src/renderer/assets/fonts/` and bundled locally (DESIGN_SYSTEM §3) |
 | Note editor | **BlockNote** (`@blocknote/core`, `@blocknote/react`, **`@blocknote/shadcn`**), lazy-loaded when the note panel first opens | A Notion-style editor that renders with our shadcn components and theme. **Do not use `@blocknote/xl-*` packages**, because their licenses are incompatible with MIT. |
 | Markdown export | **`@blocknote/server-util`** (main process only) | Runs BlockNote's markdown conversion in Node, so export doesn't need the renderer |
 | Drawings | **`@excalidraw/excalidraw`** | Lazy-loaded, only when a drawing opens |
 | Canvas | **Hand-built**: DOM items inside one CSS-transformed layer | No canvas library needed |
-| Icons | **`lucide-react`** | shadcn's default set, tree-shaken |
+| Icons | **`@tabler/icons-react`** | Large, consistent outline set, tree-shaken. Every icon Sprawl draws comes from Tabler. Stock shadcn files still import `lucide-react` for their few internal glyphs (check marks, chevrons, close X), so `components.json` keeps `iconLibrary: "lucide"`: the CLI only rewrites icons for its newer styles, not new-york, and with `tabler` set it would add files importing `lucide-react` without installing it. |
 | Command palette | **shadcn `Command`** (cmdk) | |
 | Toasts | **shadcn `Sonner`** | |
 | Dates | **date-fns** + shadcn `Calendar` (react-day-picker) | |
@@ -74,10 +74,10 @@ Read `PRODUCT.md` first. This document covers how to build it.
 
 **Windows app plumbing** (main process):
 - **AppUserModelId**, which Windows needs for toast notifications: `app.setAppUserModelId('dev.sprawl.app')` in the packaged app, where the installer creates the Start-menu shortcut with the same ID. In dev (`!app.isPackaged`) use `process.execPath` instead, or toasts won't show.
-- **Deep links:** `app.setAsDefaultProtocolClient('sprawl')` (the installer registers it too). Links look like `sprawl://note/<id>` and `sprawl://list/due`.
+- **Deep links:** `app.setAsDefaultProtocolClient('sprawl')`, **only in the packaged app** (the installer registers it too), so `npm run dev` and E2E runs never repoint your machine's handler at a dev build. Phase 6 may add a dev registration for clicking real toasts. Links look like `sprawl://note/<id>` and `sprawl://list/due`.
 - `app.requestSingleInstanceLock()`: a second launch (or a protocol activation from a toast) focuses the existing instance. Its `second-instance` handler reads any `sprawl://` URL from argv and routes it (`nav:open-note`, `nav:open-list-due`). The first instance also checks its own argv on startup.
 - **No application menu:** `Menu.setApplicationMenu(null)`. Otherwise Electron's default menu takes Ctrl+0, Ctrl+= and Ctrl+- (zooming the whole UI instead of the canvas), Ctrl+R (reload) and Ctrl+Shift+I (devtools). Electron already disables visual (pinch) zoom by default, so don't re-enable it. Register the canvas wheel listener with `{ passive: false }`, so it can `preventDefault()` the ctrl+wheel events a touchpad pinch sends.
-- **Tray:** a `Tray` with the `sprawl-mark-light` 16/32px icon and the menu from PRODUCT §3.8. Closing the main window hides it when "keep running" is on, and real quit happens only from the tray menu.
+- **Tray:** a `Tray` with `resources/tray.ico` (multi-size, from `brand/tray-source.svg`) and the menu from PRODUCT §3.8. Closing the main window hides it when "keep running" is on, and real quit happens only from the tray menu.
 - **Start at login:** `app.setLoginItemSettings({ openAtLogin, args: ['--hidden'] })`. With `--hidden`, the app starts in the tray and no window is shown.
 - **Quick capture window:** a second `BrowserWindow` (frameless, `alwaysOnTop`, `skipTaskbar`, transparent background with rounded corners, 520 wide) created once at startup and kept hidden. The global shortcut shows and focuses it, and blurring it or pressing Esc hides it. It has its own small renderer entry (`src/renderer/capture.html`) that uses the same preload, API and styles.
   - **Hiding without activating the main window:** when a focused window hides, Windows hands focus to the app's next window, which would bring the main window forward. Call `minimize()` and then `hide()` on the capture window, so focus goes back to the app the user was in. Restore it (un-minimize) before the next show. Check this by hand (tests/MANUAL.md).
@@ -101,11 +101,14 @@ Documents\Sprawl\          (user-chosen; default = app.getPath('documents') + '/
 ```
 
 - The DB uses `PRAGMA journal_mode=WAL; foreign_keys=ON; synchronous=NORMAL`.
+- **Migrations:** `drizzle-kit generate` writes SQL from `db/schema.ts` into `db/migrations/` (the first one is `0000_init.sql`, drizzle-kit's numbering). Each file is imported with Vite's `?raw` in `db/migrations/index.ts`, so the SQL is bundled into main and there's no folder to ship in the asar. `db/client.ts` applies the ones newer than `PRAGMA user_version`, each in a transaction, and refuses a vault from a newer schema. The FTS5 table is hand-written at the end of `0000_init.sql`, since Drizzle can't express virtual tables.
+- **Startup:** `SPRAWL_VAULT` wins (not remembered); otherwise the vault in `config.json` opens. If that folder no longer exists (deleted, unplugged drive), onboarding shows instead of silently recreating an empty vault there.
+- **Changing the vault** (Settings → Change…) opens the chosen folder's vault, or creates an empty one there, after a confirm dialog. The old vault stays where it is; nothing is moved.
 - Attachments are **copied** into the vault on drop or paste, and a SHA-256 hash is stored. When the hash already exists, the existing file is reused.
 - Files are served to the renderer through a custom protocol, `sprawl-file://`, with two routes:
   - `sprawl-file://attachment/<attachmentId>`: looks up the path in the DB and streams the file. It only serves files inside the vault.
   - `sprawl-file://thumb/<drawingId>?v=<updated_at>`: serves the drawing's `thumb_png` blob as `image/png`. The `v` parameter busts the cache after each save.
-- `app.getPath('userData')/config.json` holds the **machine settings**: the last opened vault path, the window bounds, and the settings marked *machine* in §4. Everything else lives in the vault's `settings` table.
+- `app.getPath('userData')/config.json` holds the **machine settings**: `{ vaultPath, window: { x, y, width, height, maximized }, settings: { …machine keys } }`. Each field is validated on its own, so a bad field is dropped without losing the rest, and writes are atomic (temp file + rename). The window state is saved debounced while moving or resizing and immediately on close; a saved position is reused only if its title bar is still on a connected display. Everything else lives in the vault's `settings` table.
 
 ---
 
@@ -245,11 +248,14 @@ CREATE VIRTUAL TABLE search_index USING fts5(
 
 ## 5. IPC API (preload → main)
 
-Every call is `ipcRenderer.invoke` with zod-validated input in main. The types live in `src/shared/api.ts` and are imported by both sides.
+Every call is `ipcRenderer.invoke` (so the renderer sees promises) with zod-validated input in main. `ipc/register.ts` parses each input with its schema from `shared/schemas.ts`, throws `IpcInputError` (message prefixed `[invalid-input] <channel>`) on bad input, and only answers senders that are one of our windows. The types live in `src/shared/api.ts` and are imported by both sides.
 
 ```ts
 interface SprawlAPI {
-  app:      { getVaultInfo(): VaultInfo; chooseVault(): VaultInfo | null; openExternal(url: string): void };
+  app:      { getVaultInfo(): VaultInfo;                     // { path: string | null (null = onboarding), defaultPath }
+              pickVaultFolder(): string | null;                 // native folder picker only; nothing is opened
+              openVault(path: string): VaultInfo;               // open or create, remember, emit vault:changed
+              openExternal(url: string): void };
   notes:    { list(q: NoteListQuery): NoteListRow[];            // List view: filter, sort, colors, text
               placeOnCanvas(id, at?: {x,y}): CanvasItem;
               get(id): Note; create(p: NewNote): Note; update(id, patch: NotePatch): Note;
@@ -267,6 +273,7 @@ interface SprawlAPI {
               carriedOver(day: string): NoteSummary[] };
   search:   { query(q: string, limit?: number): SearchResult[] };
   settings: { getAll(): Settings; get<K>(k: K): Settings[K]; set<K>(k: K, v: Settings[K]): void };
+  on(event, listener): () => void;                              // main → renderer events (below); returns unsubscribe
   vault:    { exportMarkdown(dir?: string): string; exportNote(id: string): string | null; backupNow(): string };
   capture:  { submit(p: { mode: 'note' | 'log'; text: string }): { ok: true; noteId?: string };
               hide(): void };                                   // capture window only
@@ -295,18 +302,18 @@ Main also sends these events to the renderer: `vault:changed` (after a vault swi
 
 ```
 src/
-  main/            index.ts, window.ts, protocol.ts, menu.ts
+  main/            index.ts, env.ts, config.ts (config.json), window.ts, windowState.ts, deepLinks.ts, protocol.ts
     db/            client.ts, schema.ts, migrations/, derive.ts
     services/      notes.ts, canvas.ts, drawings.ts, files.ts, log.ts, search.ts, vault.ts, export.ts,
                    reminders.ts, notify.ts, tray.ts, capture.ts (window + global shortcut), clock.ts (injectable now())
-    ipc/           register.ts (one handler per API method, zod-validated)
+    ipc/           register.ts (one handler per API method), validate.ts (zod parsing, IpcInputError)
   preload/         index.ts
-  shared/          api.ts, types.ts, constants.ts, schemas.ts (zod), parseCapture.ts,
+  shared/          api.ts, types.ts, constants.ts, schemas.ts (zod + the settings schema), deepLink.ts, parseCapture.ts,
                    blocknoteSchema.ts (blocks + ref inline; used by the editor and the export)
   renderer/
-    main.tsx, App.tsx, capture.html + capture.tsx (quick-capture window entry)
+    main.tsx, App.tsx (onboarding or shell), Shell.tsx (rail + views, Ctrl+1–4), capture.html + capture.tsx (quick-capture window entry)
     styles/        globals.css (Tailwind v4 + shadcn theme vars, dark only + Sprawl tokens)
-    stores/        canvasStore.ts, uiStore.ts, notesCache.ts, historyStore.ts
+    stores/        canvasStore.ts, uiStore.ts, vaultStore.ts, notesCache.ts, historyStore.ts
     views/
       canvas/      Canvas.tsx, Viewport.ts (pan/zoom math), ItemLayer.tsx,
                    items/{NoteCard,DrawingCard,ImageCard,LinkCard}.tsx,
@@ -322,7 +329,7 @@ src/
     components/
       ui/          shadcn components: generated by the CLI, NEVER edited by hand
                    ── Sprawl components below wrap ui/ ──
-                   Rail.tsx, IconButton.tsx, Chip.tsx, DuePicker.tsx (Popover + Calendar + time + remind select),
+                   Rail.tsx, TopBar.tsx, IconButton.tsx, HintTooltip.tsx, ShortcutKbd.tsx, EmptyState.tsx, Chip.tsx, DuePicker.tsx (Popover + Calendar + time + remind select),
                    ShortcutRecorder.tsx,
                    ColorSwatches.tsx, ConfirmDialog.tsx (AlertDialog)
     lib/           utils.ts (shadcn cn()), debounce.ts, dates.ts, shortcuts.ts, noteColors.ts
@@ -425,8 +432,10 @@ vitest.config.ts
 | Spec | Covers |
 |---|---|
 | `launch.spec.ts` | The app opens, a vault is created, the window has no console errors |
-| `vault.spec.ts` | Onboarding on first run; relaunch skips it |
-| `shell.spec.ts` | Rail and Ctrl+1–4 navigation |
+| `vault.spec.ts` | Onboarding on first run; relaunch skips it; deleting `config.json` (or the vault folder) brings it back; Settings → Change… |
+| `shell.spec.ts` | Rail and Ctrl+1–4 navigation; the window state is remembered |
+| `instance.spec.ts` | A second launch focuses the first window and exits |
+| `settings.spec.ts` | Settings persist across a relaunch; main rejects invalid IPC input |
 | `canvas-viewport.spec.ts` | Pan, zoom, viewport restored after relaunch |
 | `canvas.spec.ts` | Double-click creates a note; drag moves it; the position persists after relaunch; marquee select plus delete; undo restores |
 | `note-panel.spec.ts` | Open, edit title and body, add a checklist and see "1/2" on the card, add a link, set a due date with time and reminder, see the chip, change the color |
@@ -444,6 +453,8 @@ vitest.config.ts
 | `backup.spec.ts` | Back up now creates a zip with the DB and attachments; rotation keeps 7 |
 | `relaunch.spec.ts` | Close mid-typing and relaunch: the text is saved, and the viewport, panel width and list filter are restored |
 
+- **Fixture helpers:** `relaunch()` reopens the same dirs and always closes the app, even when an assertion fails (otherwise the SQLite files stay locked for the teardown). `stubFolderPicker()` replaces `dialog.showOpenDialog` in main, so no test ever creates a vault in the real Documents. `renderedFonts()` reads the fonts Chromium actually rendered (CDP `CSS.getPlatformFontsForNode`).
+- **Closing:** Playwright's `app.close()` quits without firing the window's `close` event. To test close-time saves, call `BrowserWindow.close()` through `app.evaluate` and wait for the app's `close` event.
 - **No visual screenshot tests.** They're too brittle to be worth it. Visual polish is checked by hand against UI_SPEC in phase 12.
 
 ### 10.4 Manual test checklist (Windows only, things automation can't cover)

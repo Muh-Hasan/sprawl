@@ -1,12 +1,25 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* Stock shadcn components use `dark:` variants. Tie them to <html class="dark"> (always set)
+   rather than the OS color scheme, so they render the same whatever Windows' theme is. */
+@custom-variant dark (&:is(.dark *));
+
+/* UI and note text. Bundled locally; never loaded from the network. */
 @font-face {
-  font-family: 'Geist';
-  src: url('../assets/fonts/Geist-Variable.woff2') format('woff2');
+  font-family: 'Outfit';
+  src: url('../assets/fonts/outfit-latin-wght-normal.woff2') format('woff2');
   font-weight: 100 900;
   font-display: block;
 }
+/* Brand only: the onboarding title and the About name (font-brand). */
+@font-face {
+  font-family: 'Sora';
+  src: url('../assets/fonts/sora-latin-600-normal.woff2') format('woff2');
+  font-weight: 600;
+  font-display: block;
+}
+/* Times, kbd, code, zoom %, paths. */
 @font-face {
   font-family: 'Geist Mono';
   src: url('../assets/fonts/GeistMono-Variable.woff2') format('woff2');
@@ -88,8 +101,9 @@
 }
 
 @theme inline {
-  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --font-brand: 'Sora', 'Outfit', sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -190,7 +204,6 @@
   }
   body {
     @apply bg-background text-foreground font-sans text-sm antialiased;
-    font-feature-settings: 'ss01', 'cv11';
     -webkit-font-smoothing: antialiased;
     user-select: none; /* app chrome; re-enable in editors/inputs */
   }

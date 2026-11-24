@@ -1,15 +1,30 @@
 import { join } from 'node:path'
-import { BrowserWindow, shell } from 'electron'
-import { APP_BG, TITLE_BAR_HEIGHT, TITLE_BAR_SYMBOL } from '@shared/constants'
-import icon from '../../resources/icon.png?asset'
+import { BrowserWindow, screen, shell } from 'electron'
+import { APP_BG, TITLE_BAR_HEIGHT, TITLE_BAR_SYMBOL, WINDOW_MIN } from '@shared/constants'
+import { isAllowedExternalUrl } from '@shared/schemas'
+import icon from '../../resources/icon.ico?asset'
+import type { WindowState } from './config'
+import { initialBounds, trackWindowState } from './windowState'
+
+export interface MainWindowOptions {
+  /** The window state remembered in config.json. */
+  saved: WindowState | null
+  onStateChange: (state: WindowState) => void
+}
 
 /** Creates the main window with the settings from UI_SPEC §1 and the security rules from ARCHITECTURE §2. */
-export function createMainWindow(): BrowserWindow {
+export function createMainWindow({ saved, onStateChange }: MainWindowOptions): BrowserWindow {
+  const bounds = initialBounds(
+    saved,
+    screen.getAllDisplays().map((d) => d.workArea),
+  )
   const win = new BrowserWindow({
-    width: 1440,
-    height: 900,
-    minWidth: 960,
-    minHeight: 600,
+    x: bounds.x,
+    y: bounds.y,
+    width: bounds.width,
+    height: bounds.height,
+    minWidth: WINDOW_MIN.width,
+    minHeight: WINDOW_MIN.height,
     show: false,
     title: 'Sprawl',
     icon,
@@ -28,12 +43,16 @@ export function createMainWindow(): BrowserWindow {
   // Pinch never zooms the whole page: Electron disables visual zoom by default, so don't
   // call setVisualZoomLevelLimits. The canvas handles pinch itself (ctrl+wheel, phase 2).
 
-  win.once('ready-to-show', () => win.show())
+  win.once('ready-to-show', () => {
+    if (bounds.maximized) win.maximize()
+    win.show()
+  })
+  trackWindowState(win, onStateChange)
 
   // Never open new Electron windows from the renderer; external links go to the browser,
   // and only for the allowed schemes.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^(https?|mailto):/i.test(url)) void shell.openExternal(url)
+    if (isAllowedExternalUrl(url)) void shell.openExternal(url)
     return { action: 'deny' }
   })
   win.webContents.on('will-navigate', (event, url) => {
@@ -45,4 +64,11 @@ export function createMainWindow(): BrowserWindow {
   else void win.loadFile(join(__dirname, '../renderer/index.html'))
 
   return win
+}
+
+/** Brings a window to the front: shows it, un-minimizes it and focuses it. */
+export function focusWindow(win: BrowserWindow): void {
+  if (win.isMinimized()) win.restore()
+  if (!win.isVisible()) win.show()
+  win.focus()
 }
