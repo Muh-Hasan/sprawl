@@ -6,5 +6,5 @@
     "types": ["node"],
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/e2e.tsbuildinfo"
   },
-  "include": ["playwright.config.ts", "tests/e2e/**/*", "src/preload/index.d.ts"]
+  "include": ["playwright.config.ts", "tests/e2e/**/*", "src/preload/index.d.ts", "src/shared/**/*"]
 }
