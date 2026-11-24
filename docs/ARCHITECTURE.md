@@ -76,7 +76,7 @@ Read `PRODUCT.md` first. This document covers how to build it.
 - **AppUserModelId**, which Windows needs for toast notifications: `app.setAppUserModelId('dev.sprawl.app')` in the packaged app, where the installer creates the Start-menu shortcut with the same ID. In dev (`!app.isPackaged`) use `process.execPath` instead, or toasts won't show.
 - **Deep links:** `app.setAsDefaultProtocolClient('sprawl')` (the installer registers it too). Links look like `sprawl://note/<id>` and `sprawl://list/due`.
 - `app.requestSingleInstanceLock()`: a second launch (or a protocol activation from a toast) focuses the existing instance. Its `second-instance` handler reads any `sprawl://` URL from argv and routes it (`nav:open-note`, `nav:open-list-due`). The first instance also checks its own argv on startup.
-- **No application menu:** `Menu.setApplicationMenu(null)`. Otherwise Electron's default menu takes Ctrl+0, Ctrl+= and Ctrl+- (zooming the whole UI instead of the canvas), Ctrl+R (reload) and Ctrl+Shift+I (devtools). Also call `webContents.setVisualZoomLevelLimits(1, 1)`, and register the canvas wheel listener with `{ passive: false }` so it can `preventDefault()` pinch-zoom.
+- **No application menu:** `Menu.setApplicationMenu(null)`. Otherwise Electron's default menu takes Ctrl+0, Ctrl+= and Ctrl+- (zooming the whole UI instead of the canvas), Ctrl+R (reload) and Ctrl+Shift+I (devtools). Electron already disables visual (pinch) zoom by default, so don't re-enable it. Register the canvas wheel listener with `{ passive: false }`, so it can `preventDefault()` the ctrl+wheel events a touchpad pinch sends.
 - **Tray:** a `Tray` with the `sprawl-mark-light` 16/32px icon and the menu from PRODUCT §3.8. Closing the main window hides it when "keep running" is on, and real quit happens only from the tray menu.
 - **Start at login:** `app.setLoginItemSettings({ openAtLogin, args: ['--hidden'] })`. With `--hidden`, the app starts in the tray and no window is shown.
 - **Quick capture window:** a second `BrowserWindow` (frameless, `alwaysOnTop`, `skipTaskbar`, transparent background with rounded corners, 520 wide) created once at startup and kept hidden. The global shortcut shows and focuses it, and blurring it or pressing Esc hides it. It has its own small renderer entry (`src/renderer/capture.html`) that uses the same preload, API and styles.
@@ -396,7 +396,10 @@ vitest.config.ts
 
 ### 10.2 Unit and component tests (Vitest)
 - **Main/services:** derive.ts (text, checklist counts, refs), the log's day math across timezones, DST and midnight, the done/undo-done transaction, the FTS index upkeep, attachment de-duplication by hash, the markdown export of a note with an image and a ref, `remind_at` derivation for every remind option, and the reminder scheduler (with a fake clock: the soonest is armed, fired ones aren't repeated, missed ones are summarized, and done cancels). These use a real `better-sqlite3` in-memory DB with the migrations applied.
-- **Native module ABI:** `better-sqlite3` is compiled for Electron (by `postinstall`, see §10.5), and that build won't load in plain Node. So Vitest runs **inside Electron's Node** (`ELECTRON_RUN_AS_NODE=1`) through `scripts/vitest-electron.mjs`. It's a few lines that spawn the Electron binary on Vitest's CLI with that env var, forwarding args and the exit code (no `cross-env` dependency). One build of the module then works for unit tests, e2e and `npm run dev`.
+- **Native module:** `better-sqlite3` (v13+) ships **N-API prebuilt binaries** in its npm package (`prebuilds/win32-x64.node`, with `"gypfile": false`). N-API is ABI-stable, so the same binary loads in plain Node (Vitest) and in Electron. There's **no rebuild step**: no `postinstall`, no `electron-builder install-app-deps`, and no build tools needed. (This was verified in phase 0 with Node 26 and Electron 45.)
+  - It needs **npm ≥ 11**. Older npm ignores `"gypfile": false` and tries to compile with node-gyp, which fails without Visual Studio. `package.json` `engines` plus `.npmrc` `engine-strict=true` make an old npm fail with a clear message.
+  - npm 11's install-script allowlist (`allowScripts` in `package.json`) denies better-sqlite3's implicit `node-gyp rebuild`.
+  - Packaging (phase 12): set electron-builder's `npmRebuild: false`, and make sure the `.node` file is unpacked from the asar.
 - **Shared:** `parseCapture` (every `!date` form, times, removing the token, ignoring a `!` that isn't a date) and the `notes.list` query builder (each filter, sort, the color filter and the due grouping).
 - **Renderer logic:** viewport math (screen↔world, zoom around the cursor), canvas op inversion (undo/redo), spatial culling, the shortcut dispatcher, and due-state calculation.
 - **Components** (`@testing-library/react` + jsdom): NoteCard chips, NoteRow, DuePicker (with time and remind), ColorSwatches, ShortcutRecorder and the log Entry.
@@ -461,11 +464,11 @@ Kept in `tests/MANUAL.md`, and run before each tagged release:
 "scripts": {
   "dev": "electron-vite dev",
   "build": "electron-vite build",
-  "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-  "postinstall": "electron-builder install-app-deps",          // rebuild better-sqlite3 for Electron
-  "lint": "eslint .",                                          // eslint config ignores src/renderer/components/ui/**
-  "test": "node scripts/vitest-electron.mjs run",              // Vitest inside Electron's Node (§10.2)
-  "test:watch": "node scripts/vitest-electron.mjs",
+  "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.e2e.json",
+  "lint": "eslint . && prettier --check .",                    // both ignore src/renderer/components/ui/**
+  "format": "prettier --write .",
+  "test": "vitest run",
+  "test:watch": "vitest",
   "test:e2e": "npm run build && playwright test",
   "check": "npm run typecheck && npm run lint && npm test && npm run test:e2e",
   "dist": "electron-vite build && electron-builder --win nsis"

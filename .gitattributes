@@ -1,0 +1,7 @@
+# Keep LF in the repo and in the working tree, so Git and Prettier agree on every OS.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.woff2 binary
+*.ttf binary
