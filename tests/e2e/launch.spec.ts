@@ -1,7 +1,11 @@
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { expect, test } from './fixtures'
 
-test('opens a dark "Sprawl" window', async ({ window }) => {
+test('opens a dark "Sprawl" window on the vault', async ({ window, dirs }) => {
   await expect(window.getByTestId('app-root')).toBeVisible()
+  await expect(window.getByTestId('shell')).toBeVisible()
+  expect(existsSync(join(dirs.vault, 'sprawl.db'))).toBe(true)
   expect(await window.title()).toBe('Sprawl')
 
   const bodyBg = await window.evaluate(() => getComputedStyle(document.body).backgroundColor)

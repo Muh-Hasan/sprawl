@@ -1,6 +1,10 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* Stock shadcn components use `dark:` variants. Tie them to <html class="dark"> (always set)
+   rather than the OS color scheme, so they render the same whatever Windows' theme is. */
+@custom-variant dark (&:is(.dark *));
+
 @font-face {
   font-family: 'Geist';
   src: url('../assets/fonts/Geist-Variable.woff2') format('woff2');
