@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="brand/sprawl-lockup-dark-bg.svg" alt="sprawl" width="240" />
+  <img src="brand/readme-header.svg" alt="Sprawl" width="100%" />
 </p>
 
 Sticky notes, to-dos, Notion-style notes, Excalidraw sketches and a daily log, all on one open canvas. Local-first, dark only, and open source.
