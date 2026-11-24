@@ -79,6 +79,26 @@ export async function relaunch(
   }
 }
 
+/**
+ * The font families Chromium actually rendered the element's text with (DevTools' "Rendered
+ * Fonts"), via the CDP. Proves a face is used, not just declared. Chromium reports the face's
+ * full name, so a family comes back as e.g. "Outfit Thin" (the variable font's default
+ * instance name; the weight axis still applies) or "Sora SemiBold". Returns the family part.
+ */
+export async function renderedFonts(page: Page, selector: string): Promise<string[]> {
+  const cdp = await page.context().newCDPSession(page)
+  try {
+    await cdp.send('DOM.enable')
+    await cdp.send('CSS.enable')
+    const { root } = await cdp.send('DOM.getDocument', { depth: -1 })
+    const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector })
+    const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId })
+    return fonts.map((f) => f.familyName.replace(/ (Thin|SemiBold|Regular)$/, ''))
+  } finally {
+    await cdp.detach()
+  }
+}
+
 /** Makes the native folder picker answer `path` without showing a dialog. */
 export async function stubFolderPicker(app: ElectronApplication, path: string): Promise<void> {
   await app.evaluate(({ dialog }, picked) => {

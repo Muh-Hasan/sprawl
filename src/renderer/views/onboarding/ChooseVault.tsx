@@ -46,7 +46,7 @@ export function ChooseVault({ defaultPath }: { defaultPath: string }) {
       <div className="flex flex-1 items-center justify-center pb-10">
         <div className="flex w-[360px] flex-col items-center text-center">
           <img src={markGradient} alt="" aria-hidden className="size-12" draggable={false} />
-          <h1 data-testid="onboarding-title" className="mt-6 text-title">
+          <h1 data-testid="onboarding-title" className="mt-6 font-brand text-title">
             Welcome to sprawl
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">

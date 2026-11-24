@@ -31,7 +31,7 @@ export function SettingsRow({
   return (
     <div className="flex min-h-12 items-center justify-between gap-6 py-1.5">
       <div className="flex min-w-0 flex-col">
-        <span className="text-sm">{label}</span>
+        <span className="text-sm font-medium">{label}</span>
         {description && <span className="text-xs text-muted-foreground">{description}</span>}
       </div>
       {children && <div className="flex shrink-0 items-center gap-2">{children}</div>}

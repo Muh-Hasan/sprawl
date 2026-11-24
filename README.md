@@ -35,4 +35,4 @@ npm run check      # typecheck, lint, unit tests and e2e tests
 
 ## License
 
-[MIT](LICENSE). Geist fonts are under the [SIL Open Font License](src/renderer/assets/fonts/OFL.txt).
+[MIT](LICENSE). The bundled fonts (Outfit, Sora and Geist Mono) are under the [SIL Open Font License 1.1](https://openfontlicense.org).

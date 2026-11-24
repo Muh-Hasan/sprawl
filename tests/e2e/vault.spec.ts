@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ElectronApplication, Page } from '@playwright/test'
-import { expect, relaunch, stubFolderPicker, test, type TestDirs } from './fixtures'
+import { expect, relaunch, renderedFonts, stubFolderPicker, test, type TestDirs } from './fixtures'
 
 // The real first-run flow: no SPRAWL_VAULT, and (PHASES.md) the E2E flag off.
 const FIRST_RUN = { useVault: false, env: { SPRAWL_E2E: '0' } }
@@ -28,6 +28,7 @@ test.describe('vault', () => {
   }) => {
     await expect(window.getByTestId('onboarding')).toBeVisible()
     await expect(window.getByText('Welcome to sprawl')).toBeVisible()
+    expect(await renderedFonts(window, '[data-testid="onboarding-title"]')).toEqual(['Sora'])
     // Prefilled with Documents\Sprawl.
     await expect(window.getByTestId('onboarding-path')).toHaveValue(/[\\/]Sprawl$/)
 

@@ -120,7 +120,10 @@ export function SettingsView() {
             <div className="flex items-center gap-3 py-2">
               <img src={markGradient} alt="" aria-hidden className="size-8" draggable={false} />
               <div className="flex flex-col">
-                <span data-testid="settings-about-name" className="text-sm font-semibold">
+                <span
+                  data-testid="settings-about-name"
+                  className="font-brand text-sm font-semibold"
+                >
                   sprawl
                 </span>
                 <span className="text-xs text-muted-foreground">

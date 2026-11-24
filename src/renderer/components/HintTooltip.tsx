@@ -25,7 +25,7 @@ export function HintTooltip({ label, shortcut, side = 'bottom', children }: Hint
         className="rounded-md border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-(--shadow-popover) [&>span:last-child]:hidden"
       >
         <div className="flex items-center gap-2">
-          <span>{label}</span>
+          <span className="font-medium">{label}</span>
           {shortcut && <ShortcutKbd>{shortcut}</ShortcutKbd>}
         </div>
       </TooltipContent>
