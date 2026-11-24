@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { BrowserWindow, shell } from 'electron'
 import { APP_BG, TITLE_BAR_HEIGHT, TITLE_BAR_SYMBOL } from '@shared/constants'
-import icon from '../../resources/icon.png?asset'
+import icon from '../../resources/icon.ico?asset'
 
 /** Creates the main window with the settings from UI_SPEC §1 and the security rules from ARCHITECTURE §2. */
 export function createMainWindow(): BrowserWindow {
