@@ -102,11 +102,11 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
   - **Links chip:** `IconLink` plus the count.
   - **Attachments chip:** `IconPaperclip` plus the count.
   - **Due chip:** `IconCalendarDue` plus a label ("Today", "Tomorrow", "Fri" or "12 Dec"), styled by state: overdue is `--due-overdue` text on `--due-overdue-bg`, soon is `--due-soon` on `--due-soon-bg`, and later is `--due-later` on `--due-later-bg`.
-- **Hover:** border +8% white and `--shadow-lift`. A **checkmark button** fades in at the top-right (20×20, ghost, `IconCheck` 14px) for a one-click Mark done.
+- **Hover:** border +8% white and `--shadow-lift`. An **open button** fades in at the top-right (20×20, ghost, `IconArrowsDiagonal` 14px, 70% then 100% on its own hover; tooltip "Open · Enter") and opens the panel; the title keeps 14px clear for it. Phase 5 adds a **checkmark button** next to it (20×20, ghost, `IconCheck` 14px) for a one-click Mark done.
 - **Dragging:** scale 1.02, `--shadow-lift`, 95% opacity.
 - **Below 40% zoom:** the card shows only the title at 13px, with the chips and preview hidden.
 - **Editing the title on the card:** double-clicking the title text (not the card) edits it inline: a textarea that grows with the text, with the old title selected. Enter saves (one `notes.update`) and moves on to writing the body; clicking away saves; Esc puts the old title back.
-- **Writing in the card:** double-clicking anywhere else on the card replaces the preview with the note editor (BlockNote, `card` variant): `text-xs` at 18px line height in the note's text color, headings 15/14/13px, 12px checkboxes in the text color, no drag handle. The card grows with the text to its 320 max and then scrolls (the wheel scrolls the text, not the canvas, until it reaches the end). The `/` menu and formatting toolbar render outside the zoomed canvas layer, at full size. Esc (after any open menu) or focus going elsewhere ends it, and the preview comes back. Enter with the card selected (or Open in the menu) opens the panel instead; one place edits a note at a time.
+- **Writing in the card:** double-clicking anywhere else on the card replaces the preview with the note editor's quick `card` variant, styled exactly like the preview (`text-xs`, 16px line height, the note's text color at 70%, no gap between lines). Plain text: no markdown shortcuts except `[] ` (an 11px checkbox in the text color), no `/` menu, no toolbar, no drag handle, and pasted markdown stays text. A heading made in the panel shows as bold card-size text. The card grows with the text to its 320 max and then scrolls (the wheel scrolls the text, not the canvas, until it reaches the end). Esc or focus going elsewhere ends it, and the preview comes back. An open panel stays open and follows the typing live.
 
 ### 4.6 Drawing card
 - Default 280×200. `--card` background with a 1px `--border` and radius 10, plus 6px padding.
@@ -166,7 +166,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 
 ### 5.1 Editor styling (BlockNote via `@blocknote/shadcn`)
 - `@blocknote/shadcn` brings its own shadcn components (on Base UI), styled by the same theme variables, so menus and popovers match (ARCHITECTURE §6, Editor notes). Set `theme="dark"` and override BlockNote's CSS variables to the tokens: editor background transparent, text `--foreground`, menus `--popover`, hover `--muted`, borders `--border`.
-- **Body** uses Outfit (override BlockNote's font variable so it inherits `--font-sans`) at `text-editor` (15/26) with 4px between blocks. H1, H2 and H3 are 24, 20 and 17px at weight 600, with 20px above and 4px below.
+- **Body** uses Outfit (override BlockNote's font variable so it inherits `--font-sans`) at `text-editor` (15/26) with 4px between blocks. There's one heading level, 16px at weight 600 (smaller than the 24px title, the note's main heading), with 16px above and 4px below. The `/` menu calls it "Heading".
 - **Checklist:** a 16px checkbox with radius 4 and a 1.5px `--border-strong` border. Checked boxes are white-filled with a black check, and their text gets `--muted-foreground` with a strike-through.
 - **Code block:** Geist Mono 13px on an `--inset` background with a 1px border, radius 8 and 12px padding.
 - **Quote:** a 2px `--border-strong` left bar (radius 0), 12px left padding, muted text.
