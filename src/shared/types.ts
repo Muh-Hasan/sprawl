@@ -1,4 +1,4 @@
-import type { NoteColor } from './constants'
+import type { NoteColor, RemindOption } from './constants'
 
 /**
  * Data types shared by main and renderer (ARCHITECTURE §4–5). IDs are nanoid text and
@@ -16,12 +16,18 @@ export interface CanvasRect {
   h: number
 }
 
-/** What a note card shows of its note. later: phase-4 adds the chip counts and the due day. */
+/** What a note card shows of its note: the title, preview and the chips row (UI_SPEC §4.5). */
 export interface CardNote {
   title: string
   color: NoteColor
   /** The start of the body as plain text (`body_text`), for the card preview. */
   preview: string
+  checkTotal: number
+  checkDone: number
+  attachCount: number
+  linkCount: number
+  dueDay: string | null
+  dueTime: string | null
 }
 
 /** The fields the renderer chooses for a card (the rest is set by main). */
@@ -58,7 +64,16 @@ export interface NewNote {
   copyOf?: string
 }
 
-/** A note as stored (ARCHITECTURE §4). */
+/** An external URL attached to a note (`note_links`). */
+export interface NoteLink {
+  id: string
+  noteId: string
+  url: string
+  label: string | null
+  position: number
+}
+
+/** A note as stored (ARCHITECTURE §4), with its links in order. */
 export interface Note {
   id: string
   title: string
@@ -68,7 +83,7 @@ export interface Note {
   color: NoteColor
   dueDay: string | null
   dueTime: string | null
-  remind: string
+  remind: RemindOption
   remindAt: number | null
   remindedAt: number | null
   doneAt: number | null
@@ -78,12 +93,29 @@ export interface Note {
   createdAt: number
   updatedAt: number
   deletedAt: number | null
+  links: NoteLink[]
 }
 
-/** The note fields `notes.update` can change so far. later: phase-4 adds the body and due. */
+/**
+ * The note fields `notes.update` changes. Main derives the rest on save: `body_text`, the
+ * checklist and attachment counts from the body, and `remind_at` from the due fields
+ * (ARCHITECTURE §4). Clearing `dueDay` clears the time and reminder too.
+ */
 export interface NotePatch {
   title?: string
   color?: NoteColor
+  /** The BlockNote document as JSON (an array of blocks). */
+  bodyJson?: string
+  /** `YYYY-MM-DD`, local. */
+  dueDay?: string | null
+  /** `HH:mm`, local; null = due "sometime that day". */
+  dueTime?: string | null
+  remind?: RemindOption
+}
+
+export interface NoteLinkPatch {
+  url?: string
+  label?: string | null
 }
 
 export type CanvasItemPatch = Partial<

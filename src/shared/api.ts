@@ -1,5 +1,14 @@
 import type { SettingKey, Settings } from './schemas'
-import type { CanvasApplyResult, CanvasItem, CanvasOp, NewNote, Note, NotePatch } from './types'
+import type {
+  CanvasApplyResult,
+  CanvasItem,
+  CanvasOp,
+  NewNote,
+  Note,
+  NoteLink,
+  NoteLinkPatch,
+  NotePatch,
+} from './types'
 
 /**
  * The `window.sprawl` API shared by preload and renderer (ARCHITECTURE §5). Every method is an
@@ -21,6 +30,11 @@ export interface AppAPI {
   openVault(path: string): Promise<VaultInfo>
   /** Opens an http, https or mailto URL in the system browser. */
   openExternal(url: string): Promise<void>
+  /**
+   * The answer to `app:before-close`: everything pending is saved, so the window can close.
+   * Main closes it anyway after a short timeout.
+   */
+  readyToClose(): Promise<void>
 }
 
 export interface SettingsAPI {
@@ -39,6 +53,17 @@ export interface NotesAPI {
   /** Soft delete; purged for good after 30 days. */
   remove(id: string): Promise<void>
   restore(id: string): Promise<void>
+  /** The note's external links (`note_links`), kept in `position` order. */
+  links: NoteLinksAPI
+}
+
+export interface NoteLinksAPI {
+  /** Adds a link at the end of the list. */
+  add(noteId: string, url: string, label: string | null): Promise<NoteLink>
+  update(id: string, patch: NoteLinkPatch): Promise<NoteLink>
+  remove(id: string): Promise<void>
+  /** `ids` must list every link of the note, in the new order. */
+  reorder(noteId: string, ids: string[]): Promise<NoteLink[]>
 }
 
 export interface CanvasAPI {
@@ -53,6 +78,8 @@ export interface MainEvents {
   'vault:changed': VaultInfo
   'nav:open-note': { id: string }
   'nav:open-list-due': undefined
+  /** The window is closing: save what's pending, then call `app.readyToClose()`. */
+  'app:before-close': undefined
 }
 export type MainEventName = keyof MainEvents
 
@@ -72,6 +99,7 @@ export const IPC = {
     pickVaultFolder: 'app:pickVaultFolder',
     openVault: 'app:openVault',
     openExternal: 'app:openExternal',
+    readyToClose: 'app:readyToClose',
   },
   settings: {
     getAll: 'settings:getAll',
@@ -85,6 +113,12 @@ export const IPC = {
     duplicate: 'notes:duplicate',
     remove: 'notes:remove',
     restore: 'notes:restore',
+    links: {
+      add: 'notes:links:add',
+      update: 'notes:links:update',
+      remove: 'notes:links:remove',
+      reorder: 'notes:links:reorder',
+    },
   },
   canvas: {
     load: 'canvas:load',
@@ -96,4 +130,5 @@ export const MAIN_EVENTS: readonly MainEventName[] = [
   'vault:changed',
   'nav:open-note',
   'nav:open-list-due',
+  'app:before-close',
 ]

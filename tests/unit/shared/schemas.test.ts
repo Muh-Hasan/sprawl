@@ -3,7 +3,11 @@ import { IpcInputError, parseInput } from '../../../src/main/ipc/validate'
 import {
   canvasApplyInput,
   canvasOpSchema,
+  dayKeySchema,
   defaultSettings,
+  linksAddInput,
+  linksReorderInput,
+  linksUpdateInput,
   noteIdInput,
   notesCreateInput,
   notesUpdateInput,
@@ -197,5 +201,59 @@ describe('notes input schemas', () => {
     expect(notesUpdateInput.safeParse({ id: 'n1', patch: {} }).success).toBe(false)
     expect(notesUpdateInput.safeParse({ id: 'n1', patch: { doneAt: 5 } }).success).toBe(false)
     expect(notesUpdateInput.safeParse({ id: 'n1', patch: { color: 'teal' } }).success).toBe(false)
+  })
+})
+
+describe('note patch: body and due fields', () => {
+  const patch = (p: Record<string, unknown>) =>
+    notesUpdateInput.safeParse({ id: 'n1', patch: p }).success
+
+  it('takes a body that is a JSON array, and nothing else', () => {
+    expect(patch({ bodyJson: '[]' })).toBe(true)
+    expect(patch({ bodyJson: JSON.stringify([{ type: 'paragraph' }]) })).toBe(true)
+    expect(patch({ bodyJson: '{}' })).toBe(false)
+    expect(patch({ bodyJson: '[' })).toBe(false)
+    expect(patch({ bodyJson: 5 })).toBe(false)
+  })
+
+  it('takes real days, HH:mm times, the remind options, and nulls to clear', () => {
+    expect(patch({ dueDay: '2026-11-28', dueTime: '15:00', remind: '1h' })).toBe(true)
+    expect(patch({ dueDay: null, dueTime: null, remind: 'none' })).toBe(true)
+    expect(patch({ dueDay: '2026-02-30' })).toBe(false)
+    expect(patch({ dueDay: '28/11/2026' })).toBe(false)
+    expect(patch({ dueTime: '24:00' })).toBe(false)
+    expect(patch({ dueTime: '9:00' })).toBe(false)
+    expect(patch({ remind: '2h' })).toBe(false)
+    expect(patch({ remindAt: 5 })).toBe(false)
+  })
+
+  it('checks day keys against the calendar, leap years included', () => {
+    expect(dayKeySchema.safeParse('2028-02-29').success).toBe(true)
+    expect(dayKeySchema.safeParse('2026-02-29').success).toBe(false)
+    expect(dayKeySchema.safeParse('2026-13-01').success).toBe(false)
+  })
+})
+
+describe('note link schemas', () => {
+  it('adds only links Sprawl can open', () => {
+    const add = (url: string) => linksAddInput.safeParse({ noteId: 'n1', url, label: null }).success
+    expect(add('https://example.com')).toBe(true)
+    expect(add('mailto:a@b.dev')).toBe(true)
+    expect(add('javascript:alert(1)')).toBe(false)
+    expect(add('file:///C:/x')).toBe(false)
+  })
+
+  it('updates a url or label, never with an empty patch', () => {
+    expect(linksUpdateInput.safeParse({ id: 'k1', patch: { label: 'Docs' } }).success).toBe(true)
+    expect(linksUpdateInput.safeParse({ id: 'k1', patch: { label: null } }).success).toBe(true)
+    expect(linksUpdateInput.safeParse({ id: 'k1', patch: {} }).success).toBe(false)
+    expect(linksUpdateInput.safeParse({ id: 'k1', patch: { url: 'ftp://x.dev' } }).success).toBe(
+      false,
+    )
+  })
+
+  it('reorders with distinct ids', () => {
+    expect(linksReorderInput.safeParse({ noteId: 'n1', ids: ['a', 'b'] }).success).toBe(true)
+    expect(linksReorderInput.safeParse({ noteId: 'n1', ids: ['a', 'a'] }).success).toBe(false)
   })
 })

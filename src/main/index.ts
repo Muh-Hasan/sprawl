@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, Menu } from 'electron'
 import { APP_USER_MODEL_ID } from '@shared/constants'
+import { guardClose, readyToClose } from './closeGuard'
 import { ConfigStore } from './config'
 import { registerProtocol, routeArgv } from './deepLinks'
 import { env } from './env'
@@ -55,13 +56,14 @@ function start(): void {
     const settings = new SettingsService({ config, db: () => vault.db() })
     const notes = new NotesService({ db: () => vault.db() })
     const canvas = new CanvasService({ db: () => vault.db() })
-    registerIpc({ vault, settings, notes, canvas })
+    registerIpc({ vault, settings, notes, canvas, onReadyToClose: readyToClose })
 
     const openWindow = (): BrowserWindow => {
       const win = createMainWindow({
         saved: config.get().window,
         onStateChange: (state) => config.update((c) => void (c.window = state)),
       })
+      guardClose(win)
       win.on('closed', () => {
         if (mainWindow === win) mainWindow = null
       })

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { NOTE_COLORS } from './constants'
+import { NOTE_COLORS, PANEL_WIDTH, REMIND_OPTIONS } from './constants'
 import { CANVAS_ITEM_KINDS } from './types'
 
 /**
@@ -10,6 +10,19 @@ import { CANVAS_ITEM_KINDS } from './types'
 // primitives -------------------------------------------------------------------------------
 
 export const noteColorSchema = z.enum(NOTE_COLORS)
+
+/** A local day key, `YYYY-MM-DD`, that names a real date. */
+export const dayKeySchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD')
+  .refine(
+    (day) => {
+      const [y, m, d] = day.split('-').map(Number) as [number, number, number]
+      const date = new Date(Date.UTC(y, m - 1, d))
+      return date.getUTCMonth() === m - 1 && date.getUTCDate() === d
+    },
+    { message: 'Not a real date' },
+  )
 
 /** `HH:mm`, 24-hour. */
 export const timeOfDaySchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Expected HH:mm')
@@ -88,7 +101,11 @@ export const SETTINGS = {
   showDone: def('vault', z.boolean(), false),
   snap: def('vault', z.boolean(), true),
   autoBackup: def('vault', z.boolean(), true),
-  panelWidth: def('vault', z.number().int().min(320).max(720), 420),
+  panelWidth: def(
+    'vault',
+    z.number().int().min(PANEL_WIDTH.min).max(PANEL_WIDTH.max),
+    PANEL_WIDTH.default,
+  ),
   listFilter: def('vault', listFilterSchema, { tab: 'open', colors: [], sort: 'edited' }),
   remindersOn: def('vault', z.boolean(), true),
   morningSummary: def('vault', morningSummarySchema, { on: false, time: '09:00' }),
@@ -235,8 +252,35 @@ export const canvasApplyInput = z.array(canvasOpSchema).min(1).max(5000)
 
 // notes ------------------------------------------------------------------------------------
 
+/** The largest note body main accepts (BlockNote JSON). Images live in attachments, not here. */
+export const MAX_BODY_JSON = 5_000_000
+
+/** A BlockNote document: JSON for an array (of blocks). */
+export const bodyJsonSchema = z
+  .string()
+  .max(MAX_BODY_JSON)
+  .refine(
+    (json) => {
+      try {
+        return Array.isArray(JSON.parse(json))
+      } catch {
+        return false
+      }
+    },
+    { message: 'Expected a JSON array of blocks' },
+  )
+
+export const remindSchema = z.enum(REMIND_OPTIONS)
+
 export const notePatchSchema = z
-  .object({ title: noteTitleSchema, color: noteColorSchema })
+  .object({
+    title: noteTitleSchema,
+    color: noteColorSchema,
+    bodyJson: bodyJsonSchema,
+    dueDay: dayKeySchema.nullable(),
+    dueTime: timeOfDaySchema.nullable(),
+    remind: remindSchema,
+  })
   .strict()
   .partial()
   .refine((patch) => Object.keys(patch).length > 0, { message: 'Empty patch' })
@@ -244,3 +288,27 @@ export const notePatchSchema = z
 export const noteIdInput = idSchema
 export const notesCreateInput = newNoteSchema
 export const notesUpdateInput = z.object({ id: idSchema, patch: notePatchSchema }).strict()
+
+// note links -------------------------------------------------------------------------------
+
+export const linkLabelSchema = z.string().max(1000)
+
+export const linksAddInput = z
+  .object({ noteId: idSchema, url: externalUrlSchema, label: linkLabelSchema.nullable() })
+  .strict()
+
+export const linksUpdateInput = z
+  .object({
+    id: idSchema,
+    patch: z
+      .object({ url: externalUrlSchema, label: linkLabelSchema.nullable() })
+      .strict()
+      .partial()
+      .refine((patch) => Object.keys(patch).length > 0, { message: 'Empty patch' }),
+  })
+  .strict()
+
+export const linksReorderInput = z
+  .object({ noteId: idSchema, ids: z.array(idSchema).max(1000) })
+  .strict()
+  .refine(({ ids }) => new Set(ids).size === ids.length, { message: 'Duplicate ids' })

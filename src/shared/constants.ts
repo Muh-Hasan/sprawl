@@ -31,3 +31,25 @@ export const WINDOW_MIN = { width: 960, height: 600 } as const
 /** The user's note color tags (DESIGN_SYSTEM §2.3). `stone` is the default. */
 export const NOTE_COLORS = ['stone', 'sand', 'sage', 'sky', 'lilac', 'rose'] as const
 export type NoteColor = (typeof NOTE_COLORS)[number]
+
+/**
+ * "Remind me" options (PRODUCT §3.2): at the due time, 15 min or 1 hour before it, 09:00 on
+ * the due day, or 09:00 the day before. One reminder per note.
+ */
+export const REMIND_OPTIONS = ['none', 'at', '15m', '1h', 'morning', '1d'] as const
+export type RemindOption = (typeof REMIND_OPTIONS)[number]
+
+/** The reminders that count back from the due time, so they need one. */
+export const REMIND_NEEDS_TIME: ReadonlySet<RemindOption> = new Set(['at', '15m', '1h'])
+
+/** Morning reminders ("Morning of", "1 day before") fire at this local time. */
+export const MORNING_REMINDER_TIME = '09:00'
+
+/** Note panel width in px (UI_SPEC §5): the default and the resize limits. */
+export const PANEL_WIDTH = { default: 420, min: 320, max: 720 } as const
+
+/** Autosave waits this long after the last change (PRODUCT §3.2). */
+export const AUTOSAVE_MS = 500
+
+/** How much of `body_text` a card gets for its preview (it shows at most four lines). */
+export const PREVIEW_CHARS = 400

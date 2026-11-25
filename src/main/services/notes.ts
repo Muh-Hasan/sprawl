@@ -1,10 +1,11 @@
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, asc, eq, isNull } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
-import type { NoteColor } from '@shared/constants'
-import type { NewNote, Note, NotePatch } from '@shared/types'
+import type { NoteColor, RemindOption } from '@shared/constants'
+import { dayKey, deriveRemindAt, normalizeDue } from '@shared/due'
+import type { NewNote, Note, NoteLink, NoteLinkPatch, NotePatch } from '@shared/types'
 import type { DbHandle } from '../db/client'
-import { textToBody } from '../db/derive'
-import { notes } from '../db/schema'
+import { deriveBody, textToBody } from '../db/derive'
+import { noteLinks, notes } from '../db/schema'
 
 /** Soft-deleted notes and drawings are purged for good this long after deletion. */
 export const PURGE_AFTER_MS = 30 * 24 * 60 * 60 * 1000
@@ -34,11 +35,18 @@ export class NotesService {
     return handle
   }
 
-  /** The note, deleted or not. Throws if there's no such note. */
+  /** The note, deleted or not, with its links. Throws if there's no such note. */
   get(id: string): Note {
-    const row = this.handle().db.select().from(notes).where(eq(notes.id, id)).get()
+    const { db } = this.handle()
+    const row = db.select().from(notes).where(eq(notes.id, id)).get()
     if (!row) throw new Error(`No such note (${id})`)
-    return toNote(row)
+    const links = db
+      .select()
+      .from(noteLinks)
+      .where(eq(noteLinks.noteId, id))
+      .orderBy(asc(noteLinks.position))
+      .all()
+    return toNote(row, links)
   }
 
   create(note: NewNote): Note {
@@ -47,17 +55,129 @@ export class NotesService {
     return this.get(note.id)
   }
 
-  /** Changes a live note. Throws for a missing or deleted note. */
+  /**
+   * Changes a live note, in one transaction with what's derived from it (ARCHITECTURE §4): a
+   * new body gives the plain text and counts, and new due fields give `remind_at` (a changed
+   * due date or reminder arms it again). Every save marks the note active today. Throws for a
+   * missing or deleted note.
+   */
   update(id: string, patch: NotePatch): Note {
+    const { sqlite, db } = this.handle()
+    sqlite.transaction(() => {
+      const now = this.now()
+      const current = this.liveRow(id)
+      const set: Partial<NoteRow> = { updatedAt: now }
+      if (patch.title !== undefined) set.title = patch.title
+      if (patch.color !== undefined) set.color = patch.color
+      if (patch.bodyJson !== undefined) {
+        set.bodyJson = patch.bodyJson
+        Object.assign(set, deriveBody(JSON.parse(patch.bodyJson) as unknown[]))
+      }
+      if ('dueDay' in patch || 'dueTime' in patch || patch.remind !== undefined) {
+        const before = {
+          dueDay: current.dueDay,
+          dueTime: current.dueTime,
+          remind: current.remind as RemindOption,
+        }
+        const due = normalizeDue({
+          dueDay: patch.dueDay === undefined ? before.dueDay : patch.dueDay,
+          dueTime: patch.dueTime === undefined ? before.dueTime : patch.dueTime,
+          remind: patch.remind ?? before.remind,
+        })
+        const changed =
+          due.dueDay !== before.dueDay ||
+          due.dueTime !== before.dueTime ||
+          due.remind !== before.remind
+        if (changed) {
+          Object.assign(set, due, { remindAt: deriveRemindAt(due), remindedAt: null })
+        }
+      }
+      db.update(notes).set(set).where(eq(notes.id, id)).run()
+      this.touchActivity(id, now)
+    })()
+    return this.get(id)
+  }
+
+  // links ------------------------------------------------------------------------------------
+
+  /** Adds a link at the end of a live note's list. */
+  addLink(noteId: string, url: string, label: string | null): NoteLink {
+    const { sqlite, db } = this.handle()
+    return sqlite.transaction(() => {
+      this.liveRow(noteId)
+      const last = sqlite
+        .prepare('SELECT max(position) FROM note_links WHERE note_id = ?')
+        .pluck()
+        .get(noteId) as number | null
+      const link = { id: nanoid(), noteId, url, label, position: (last ?? -1) + 1 }
+      db.insert(noteLinks).values(link).run()
+      this.touch(noteId)
+      return link
+    })()
+  }
+
+  updateLink(id: string, patch: NoteLinkPatch): NoteLink {
+    const { sqlite, db } = this.handle()
+    return sqlite.transaction(() => {
+      const row = db.update(noteLinks).set(patch).where(eq(noteLinks.id, id)).returning().get()
+      if (!row) throw new Error(`No such link (${id})`)
+      this.touch(row.noteId)
+      return row
+    })()
+  }
+
+  removeLink(id: string): void {
+    const { sqlite, db } = this.handle()
+    sqlite.transaction(() => {
+      const row = db.delete(noteLinks).where(eq(noteLinks.id, id)).returning().get()
+      if (row) this.touch(row.noteId)
+    })()
+  }
+
+  /** Puts a note's links in the given order. `ids` must be exactly the note's links. */
+  reorderLinks(noteId: string, ids: readonly string[]): NoteLink[] {
+    const { sqlite, db } = this.handle()
+    sqlite.transaction(() => {
+      const existing = db
+        .select({ id: noteLinks.id })
+        .from(noteLinks)
+        .where(eq(noteLinks.noteId, noteId))
+        .all()
+        .map((r) => r.id)
+      const same = existing.length === ids.length && ids.every((id) => existing.includes(id))
+      if (!same) throw new Error(`The new order must list every link of the note (${noteId})`)
+      const setPosition = sqlite.prepare('UPDATE note_links SET position = ? WHERE id = ?')
+      ids.forEach((id, position) => setPosition.run(position, id))
+      this.touch(noteId)
+    })()
+    return this.get(noteId).links
+  }
+
+  // helpers ----------------------------------------------------------------------------------
+
+  private liveRow(id: string): NoteRow {
     const { db } = this.handle()
     const row = db
-      .update(notes)
-      .set({ ...patch, updatedAt: this.now() })
+      .select()
+      .from(notes)
       .where(and(eq(notes.id, id), isNull(notes.deletedAt)))
-      .returning()
       .get()
     if (!row) throw new Error(`Can't update a missing note (${id})`)
-    return toNote(row)
+    return row
+  }
+
+  /** A change to a note's links counts as an edit of the note. */
+  private touch(noteId: string): void {
+    const now = this.now()
+    this.handle().db.update(notes).set({ updatedAt: now }).where(eq(notes.id, noteId)).run()
+    this.touchActivity(noteId, now)
+  }
+
+  /** Marks the note as worked on today (for "carried over" in the daily log). */
+  private touchActivity(noteId: string, now: number): void {
+    this.handle()
+      .sqlite.prepare('INSERT OR IGNORE INTO note_activity (note_id, day) VALUES (?, ?)')
+      .run(noteId, dayKey(now))
   }
 
   /** A new note with a copy of the title, body, color and links, but not the due date or done. */
@@ -164,6 +284,13 @@ export function purgeDeleted({ sqlite }: DbHandle, now: number): PurgeResult {
   })()
 }
 
-export function toNote(row: NoteRow): Note {
-  return { ...row, color: row.color as NoteColor }
+type LinkRow = typeof noteLinks.$inferSelect
+
+export function toNote(row: NoteRow, links: LinkRow[]): Note {
+  return {
+    ...row,
+    color: row.color as NoteColor,
+    remind: row.remind as RemindOption,
+    links: links.map((l) => ({ ...l })),
+  }
 }
