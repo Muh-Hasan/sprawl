@@ -7,7 +7,7 @@ import {
 
 /**
  * The note body schema (PRODUCT §3.2, ARCHITECTURE §6), shared by the editor and (phase 11)
- * the markdown export: paragraph, headings 1–3, bullet, numbered and check lists, quote, code
+ * the markdown export: paragraph, one heading level, bullet, numbered and check lists, quote, code
  * block, divider, image and file. No tables, toggles, audio or video.
  *
  * Styles are the text ones only (bold, italic, underline, strike, code): the app is
@@ -17,7 +17,8 @@ import {
 export const noteSchema = BlockNoteSchema.create({
   blockSpecs: {
     paragraph: defaultBlockSpecs.paragraph,
-    heading: createHeadingBlockSpec({ levels: [1, 2, 3], allowToggleHeadings: false }),
+    // One heading level, styled smaller than the note's title (the title is the main heading).
+    heading: createHeadingBlockSpec({ levels: [1], allowToggleHeadings: false }),
     bulletListItem: defaultBlockSpecs.bulletListItem,
     numberedListItem: defaultBlockSpecs.numberedListItem,
     checkListItem: defaultBlockSpecs.checkListItem,

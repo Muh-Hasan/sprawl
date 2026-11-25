@@ -163,28 +163,50 @@ test.describe('note panel', () => {
     await expect(canvas.selected).toHaveCount(1)
   })
 
-  test('the panel and writing in the card take turns: a note is edited in one place', async ({
+  test('the panel stays open while writing in the card, and follows it live', async ({
     window: page,
   }) => {
     const canvas = new CanvasPage(page)
     const panel = new NotePanel(page)
     await canvas.ready()
-    await canvas.seed([{ key: 'a', x: 100, y: 120, title: 'Plan' }])
-    const card = canvas.cards.first()
-    await card.click()
-    await page.keyboard.press('Enter')
+    await canvas.seed([
+      { key: 'a', x: 100, y: 120, title: 'Plan' },
+      { key: 'b', x: 100, y: 320, title: 'Other' },
+    ])
+    const card = canvas.card('Plan')
+    // The hover button opens the panel.
+    await card.hover()
+    await card.getByTestId('note-card-open').click()
     await panel.ready()
-    // Writing in the card closes the panel.
+    await expect(panel.title).toHaveValue('Plan')
+
+    // Type in the panel, then go straight to the card, before the panel's typing is saved: the
+    // card starts from what the panel shows, never from the stale stored body.
+    await panel.typeLines('# Hero', 'from the panel')
     await dblclickBody(page, card)
-    await expect(card.getByTestId('note-card-editor')).toBeVisible()
-    await expect(panel.root).toHaveCount(0)
-    await page.keyboard.type('from the card')
-    // Esc ends it; Enter opens the panel, with what was written.
-    await page.keyboard.press('Escape')
-    await expect(card.getByTestId('note-card-editor')).toHaveCount(0)
+    const cardEditor = card.getByTestId('note-card-editor')
+    await expect(cardEditor).toBeVisible()
+    await expect(cardEditor).toContainText('from the panel')
+    await expect(panel.root).toBeVisible()
     await page.keyboard.press('Enter')
-    await panel.ready()
+    await page.keyboard.type('from the card')
+    // The panel follows live, before any save, and keeps its heading.
     await expect(panel.editor).toContainText('from the card')
+    await expect(panel.editor.locator('[data-content-type="heading"]')).toHaveText('Hero')
+    await expect
+      .poll(async () => (await panel.stored()).bodyText)
+      .toBe('Hero\nfrom the panel\nfrom the card')
+
+    // Typing in the panel ends writing in the card; the card shows it once saved.
+    await panel.typeLines(' too')
+    await expect(cardEditor).toHaveCount(0)
+    await expect(card.getByTestId('note-card-preview')).toHaveText(
+      'Hero\nfrom the panel\nfrom the card too',
+    )
+
+    // Writing in another card moves the panel to that note.
+    await dblclickBody(page, canvas.card('Other'))
+    await expect(panel.title).toHaveValue('Other')
   })
 
   test('the menu opens a note and its due date', async ({ window: page }) => {

@@ -58,12 +58,16 @@ function usePanelKeys(): void {
   }, [])
 }
 
-/** Loads the open note and saves on window blur, panel close and unmount. */
+/**
+ * Holds the open note in the note store (shared with a card being written in), and saves on
+ * window blur and unload. Releasing it on close or switch saves what's pending.
+ */
 function useOpenNote(id: string | null): void {
   useEffect(() => {
+    if (id === null) return
     const notes = useNoteStore.getState()
-    if (id === null) notes.close()
-    else void notes.open(id)
+    void notes.acquire(id)
+    return () => notes.release(id)
   }, [id])
   useEffect(() => {
     const flush = (): void => useNoteStore.getState().flush()
@@ -72,7 +76,6 @@ function useOpenNote(id: string | null): void {
     return () => {
       window.removeEventListener('blur', flush)
       window.removeEventListener('beforeunload', flush)
-      useNoteStore.getState().close()
     }
   }, [])
 }

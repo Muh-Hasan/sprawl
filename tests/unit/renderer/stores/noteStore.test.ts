@@ -15,7 +15,8 @@ vi.stubGlobal('window', {
   },
 })
 
-const { useNoteStore } = await import('../../../../src/renderer/stores/noteStore')
+const { currentBody, liveBody, useNoteStore } =
+  await import('../../../../src/renderer/stores/noteStore')
 const { useCanvasStore } = await import('../../../../src/renderer/stores/canvasStore')
 const { flushAll } = await import('../../../../src/renderer/lib/flushes')
 
@@ -56,6 +57,8 @@ const card: CanvasItem = {
   note: cardNote({ title: 'Plan' }),
 }
 
+/** An editor whose document is `blocks`. */
+const source = (blocks: unknown[], id = 'editor') => ({ id, document: () => blocks })
 const cardNoteNow = () => useCanvasStore.getState().items.get('c1')?.note
 const settle = async () => {
   for (let i = 0; i < 5; i++) await Promise.resolve()
@@ -70,10 +73,10 @@ beforeEach(async () => {
   })
   apply.mockReset().mockResolvedValue({ created: [] })
   useCanvasStore.setState({ ready: true, items: new Map([['c1', card]]) })
-  await useNoteStore.getState().open('n1')
+  await useNoteStore.getState().acquire('n1')
 })
 afterEach(() => {
-  useNoteStore.getState().close()
+  useNoteStore.getState().release('n1')
   vi.useRealTimers()
 })
 
@@ -83,7 +86,7 @@ describe('note store autosave', () => {
     notes.edit({ title: 'P' })
     vi.advanceTimersByTime(300)
     notes.edit({ title: 'Pl' })
-    notes.bodyChanged(() => '[{"type":"paragraph"}]')
+    notes.bodyChanged(source([{ type: 'paragraph' }]))
     vi.advanceTimersByTime(499)
     expect(update).not.toHaveBeenCalled()
     expect(useNoteStore.getState().status).toBe('saving')
@@ -98,11 +101,18 @@ describe('note store autosave', () => {
   })
 
   it('serializes the body only when the save runs', () => {
-    const serialize = vi.fn(() => '[1]')
-    for (let i = 0; i < 20; i++) useNoteStore.getState().bodyChanged(serialize)
-    expect(serialize).not.toHaveBeenCalled()
+    const document = vi.fn(() => [1])
+    for (let i = 0; i < 20; i++) useNoteStore.getState().bodyChanged({ id: 'ed', document })
+    expect(document).not.toHaveBeenCalled()
     vi.advanceTimersByTime(500)
-    expect(serialize).toHaveBeenCalledTimes(1)
+    expect(document).toHaveBeenCalledTimes(1)
+  })
+
+  it('saves titles trimmed, but keeps spaces while typing', () => {
+    useNoteStore.getState().edit({ title: 'Plan ' })
+    expect(useNoteStore.getState().note?.title).toBe('Plan ')
+    flushAll()
+    expect(update).toHaveBeenCalledWith('n1', { title: 'Plan' })
   })
 
   it('flushes at once on demand (blur, close, quit)', () => {
@@ -111,14 +121,50 @@ describe('note store autosave', () => {
     expect(update).toHaveBeenCalledWith('n1', { title: 'Now' })
   })
 
-  it('saves on close', () => {
-    useNoteStore.getState().edit({ title: 'Bye' })
-    useNoteStore.getState().close()
+  it('saves when the last holder lets go, not before', async () => {
+    const notes = useNoteStore.getState()
+    await notes.acquire('n1') // the panel and a card both hold it
+    notes.edit({ title: 'Bye' })
+    notes.release('n1')
+    expect(update).not.toHaveBeenCalled()
+    expect(useNoteStore.getState().note?.id).toBe('n1')
+    notes.release('n1')
     expect(update).toHaveBeenCalledWith('n1', { title: 'Bye' })
+    expect(useNoteStore.getState().note).toBeNull()
+    expect(get).toHaveBeenCalledTimes(1) // the second holder didn't load it again
+    await notes.acquire('n1') // for afterEach
+  })
+
+  it('a new editor starts from the live one, and from its snapshot once it has gone', () => {
+    const notes = useNoteStore.getState()
+    expect(currentBody()).toEqual([]) // the stored body
+    notes.bodyChanged(source([{ type: 'paragraph', id: 'typed' }], 'panel'))
+    expect(currentBody()).toEqual([{ type: 'paragraph', id: 'typed' }])
+    notes.detachBody('panel', '[{"type":"paragraph","id":"snap"}]')
+    expect(liveBody()).toBeNull()
+    expect(currentBody()).toEqual([{ type: 'paragraph', id: 'snap' }])
+    // The pending save still has the body.
+    vi.advanceTimersByTime(500)
+    expect(update).toHaveBeenCalledWith('n1', { bodyJson: '[{"type":"paragraph","id":"snap"}]' })
+  })
+
+  it("an editor that wasn't the live one leaves nothing behind", () => {
+    const notes = useNoteStore.getState()
+    notes.bodyChanged(source([{ type: 'paragraph' }], 'panel'))
+    notes.detachBody('card', '[]')
+    expect(liveBody()?.id).toBe('panel')
+  })
+
+  it("tells the note's other editor what was typed", () => {
+    const panel = source([{ type: 'paragraph', content: 'hi' }], 'panel')
+    const rev = useNoteStore.getState().bodyRev
+    useNoteStore.getState().bodyChanged(panel)
+    expect(useNoteStore.getState().bodyRev).toBe(rev + 1)
+    expect(liveBody()?.id).toBe('panel')
   })
 
   it("doesn't write a body that didn't change", async () => {
-    useNoteStore.getState().bodyChanged(() => '[]')
+    useNoteStore.getState().bodyChanged(source([]))
     vi.advanceTimersByTime(500)
     expect(update).not.toHaveBeenCalled()
     await settle()
@@ -138,7 +184,7 @@ describe('the card follows the panel', () => {
   it('shows the title as it is typed, and the derived counts after a save', async () => {
     useNoteStore.getState().edit({ title: 'Plan B' })
     expect(cardNoteNow()?.title).toBe('Plan B')
-    useNoteStore.getState().bodyChanged(() => '[{"type":"checkListItem"}]')
+    useNoteStore.getState().bodyChanged(source([{ type: 'checkListItem' }]))
     vi.advanceTimersByTime(500)
     await settle()
     expect(cardNoteNow()).toMatchObject({ preview: 'derived text', checkTotal: 2, checkDone: 1 })

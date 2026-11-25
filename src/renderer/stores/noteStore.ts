@@ -14,21 +14,39 @@ export type SaveStatus = 'saved' | 'saving' | 'error'
 /** The patch fields edited directly (the body goes through `bodyChanged`, color `setColor`). */
 export type NoteEdit = Pick<NotePatch, 'title' | 'dueDay' | 'dueTime' | 'remind'>
 
+/** An editor showing the open note's body (the panel's, or a card's). */
+export interface BodySource {
+  id: string
+  /** The editor's current document (BlockNote blocks). */
+  document(): unknown[]
+}
+
 interface NoteState {
-  /** The note open in the panel, with local edits applied. */
+  /**
+   * The note being edited, with local edits applied. The panel and a card being written in can
+   * hold the same note at once; a note is loaded on its first `acquire` and saved and dropped on
+   * its last `release`.
+   */
   note: Note | null
   status: SaveStatus
-  /** Loads a note into the panel (saving the previous one first). */
-  open(id: string): Promise<void>
-  /** Saves what's pending and forgets the note (the panel closed). */
-  close(): void
+  /** Bumped on every body edit, so the note's other editor can follow it. */
+  bodyRev: number
+  /** Holds a note open (the panel, or a card being written in), loading it if needed. */
+  acquire(id: string): Promise<void>
+  /** Lets go of a note; the last holder saves what's pending and forgets it. */
+  release(id: string): void
   /** Edits the title or due fields. Due edits are discrete choices, so they save at once. */
   edit(patch: NoteEdit): void
   /**
-   * The editor's document changed. It's serialized only when the save runs, so typing never
-   * pays for `JSON.stringify` of the whole body.
+   * An editor's document changed. It's serialized only when the save runs, so typing never pays
+   * for `JSON.stringify` of the whole body; the note's other editor copies it in.
    */
-  bodyChanged(serialize: () => string): void
+  bodyChanged(source: BodySource): void
+  /**
+   * An editor is going away: if it was the live one, its document (as JSON) becomes the note's
+   * current body, so the next editor starts from it and a pending save still has it.
+   */
+  detachBody(id: string, json: string | null): void
   /** On the canvas this is an undoable `setColor` op (PRODUCT §3.1); otherwise a note update. */
   setColor(color: NoteColor): void
   addLink(url: string, label: string | null): Promise<void>
@@ -44,11 +62,37 @@ const RETRY_MS = 2000
 
 let pending: NotePatch = {}
 let bodySource: (() => string) | null = null
+/** The editor typed in last; another editor of the same note follows it. */
+let live: BodySource | null = null
+/** How many places hold each note open. */
+const holders = new Map<string, number>()
+/** The note being loaded, so a second holder doesn't load it again. */
+let loadingId: string | null = null
 /** The body main last confirmed for the open note: a change back to it needn't be sent. */
 let savedBody = '[]'
 let inFlight = 0
 let loadToken = 0
 let retryTimer: ReturnType<typeof setTimeout> | null = null
+
+/** The editor typed in last, for the note's other editor to copy from. */
+export function liveBody(): BodySource | null {
+  return live
+}
+
+/**
+ * What a newly opened editor starts from: the live editor's document if one is open (typed
+ * in, maybe not saved yet), else the note's latest body.
+ */
+export function currentBody(): unknown[] | null {
+  if (live) return JSON.parse(JSON.stringify(live.document())) as unknown[]
+  const json = useNoteStore.getState().note?.bodyJson
+  if (!json) return null
+  try {
+    return JSON.parse(json) as unknown[]
+  } catch {
+    return null
+  }
+}
 
 const hasPending = (): boolean => bodySource !== null || Object.keys(pending).length > 0
 
@@ -76,6 +120,8 @@ export const useNoteStore = create<NoteState>()((set, get) => {
     const note = get().note
     if (!note || !hasPending()) return
     const patch: NotePatch = { ...pending }
+    // Titles are stored trimmed, as the card's inline edit saves them (spaces stay while typing).
+    if (patch.title !== undefined) patch.title = patch.title.trim()
     const source = bodySource
     if (source) {
       delete patch.bodyJson
@@ -102,6 +148,7 @@ export const useNoteStore = create<NoteState>()((set, get) => {
           set({
             note: {
               ...current,
+              bodyJson: patch.bodyJson ?? current.bodyJson,
               bodyText: saved.bodyText,
               checkTotal: saved.checkTotal,
               checkDone: saved.checkDone,
@@ -149,21 +196,32 @@ export const useNoteStore = create<NoteState>()((set, get) => {
   return {
     note: null,
     status: 'saved',
+    bodyRev: 0,
 
-    open: async (id) => {
-      if (get().note?.id === id) return
+    acquire: async (id) => {
+      holders.set(id, (holders.get(id) ?? 0) + 1)
+      if (get().note?.id === id || loadingId === id) return
       save()
+      live = null
+      loadingId = id
       const token = ++loadToken
       const note = await window.sprawl.notes.get(id)
       if (token !== loadToken) return
+      loadingId = null
       savedBody = note.bodyJson
       hadCard = useCanvasStore.getState().cardOf(id) !== null
       set({ note, status: 'saved' })
     },
 
-    close: () => {
+    release: (id) => {
+      const count = (holders.get(id) ?? 0) - 1
+      if (count > 0) return void holders.set(id, count)
+      holders.delete(id)
+      if (get().note?.id !== id && loadingId !== id) return
       save()
       loadToken++
+      loadingId = null
+      live = null
       set({ note: null, status: 'saved' })
     },
 
@@ -185,11 +243,21 @@ export const useNoteStore = create<NoteState>()((set, get) => {
       queue(patch, touchesDue)
     },
 
-    bodyChanged: (serialize) => {
+    bodyChanged: (source) => {
       if (!get().note) return
-      bodySource = serialize
-      set({ status: 'saving' })
+      live = source
+      bodySource = () => JSON.stringify(source.document())
+      set((s) => ({ status: 'saving', bodyRev: s.bodyRev + 1 }))
       saveSoon()
+    },
+
+    detachBody: (id, json) => {
+      if (live?.id !== id) return
+      live = null
+      const note = get().note
+      if (json === null || !note) return
+      if (bodySource) bodySource = () => json
+      set({ note: { ...note, bodyJson: json } })
     },
 
     setColor: (color) => {

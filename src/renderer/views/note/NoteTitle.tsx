@@ -22,6 +22,10 @@ export function NoteTitle({ onEnter }: NoteTitleProps) {
       onChange={(e) =>
         useNoteStore.getState().edit({ title: e.target.value.replace(/\s*\n\s*/g, ' ') })
       }
+      onBlur={(e) => {
+        const trimmed = e.currentTarget.value.trim()
+        if (trimmed !== e.currentTarget.value) useNoteStore.getState().edit({ title: trimmed })
+      }}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
           e.preventDefault()

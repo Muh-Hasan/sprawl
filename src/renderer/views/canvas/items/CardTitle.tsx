@@ -21,7 +21,7 @@ export function CardTitle({ itemId, title, editing }: CardTitleProps) {
       <p
         data-card-title
         data-testid="note-card-title"
-        className={cn('line-clamp-2 text-card-title break-words', !title && 'opacity-60')}
+        className={cn('line-clamp-2 pr-3.5 text-card-title break-words', !title && 'opacity-60')}
       >
         {/* The text itself: a double-click on it edits the title, elsewhere opens the panel. */}
         <span data-card-title-text>{title || 'Untitled'}</span>

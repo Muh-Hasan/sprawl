@@ -29,19 +29,18 @@ export function openSelectedNote({ due = false }: { due?: boolean } = {}): void 
   const [id] = selected
   const item = id === undefined ? undefined : canvas().items.get(id)
   if (item?.kind !== 'note' || item.refId === null) return
-  // A note is edited in one place at a time: the panel takes over from the card.
-  selection().setBodyEditing(null)
   useUiStore.getState().openNote(item.refId, { due })
 }
 
 /**
  * Starts writing in a note card's body, right on the canvas (double-click on the body, or Enter
- * after the card's title). The panel closes: a note is edited in one place at a time.
+ * after the card's title). An open panel moves to this note and follows the typing live.
  */
 export function editCardBody(id: string): void {
   const item = canvas().items.get(id)
   if (item?.kind !== 'note' || item.refId === null) return
-  useUiStore.getState().closeNote()
+  const ui = useUiStore.getState()
+  if (ui.openNoteId !== null && ui.openNoteId !== item.refId) ui.openNote(item.refId)
   selection().select([id])
   selection().setEditing(null)
   selection().setBodyEditing(id)

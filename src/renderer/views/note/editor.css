@@ -43,18 +43,10 @@
   padding-block: 0;
 }
 
-/* Headings: 24 / 20 / 17px at 600, 20px above and 4px below. */
+/* One heading level: 16px at 600, smaller than the 24px title (the note's main heading). */
 .sprawl-editor [data-content-type='heading'] {
+  --level: 16px;
   font-weight: 600;
-}
-.sprawl-editor [data-content-type='heading'][data-level='1'] {
-  --level: 24px;
-}
-.sprawl-editor [data-content-type='heading'][data-level='2'] {
-  --level: 20px;
-}
-.sprawl-editor [data-content-type='heading'][data-level='3'] {
-  --level: 17px;
 }
 .sprawl-editor .bn-block-outer:not(:first-child) > .bn-block > [data-content-type='heading'] {
   margin-top: 16px;
@@ -146,36 +138,35 @@
 }
 
 /*
- * Writing in a canvas card (UI_SPEC §4.5): the card's own text size and the note's text color
- * (the card sets `color`), so the card looks the same while it's written in.
+ * Writing in a canvas card (UI_SPEC §4.5): exactly the card preview's look (text-xs, the note's
+ * text color at 70%), so typing in the card looks like the card. Blocks made in the panel stay
+ * quiet: a heading is bold body text, lists and checklists are compact.
  */
 .sprawl-editor-card.bn-container {
   --bn-colors-editor-text: currentColor;
 }
 .sprawl-editor-card .bn-editor {
   font-size: var(--text-xs);
-  line-height: 18px;
+  line-height: var(--text-xs--line-height);
   color: currentColor;
+  opacity: 0.7;
 }
 .sprawl-editor-card .bn-block-outer:not(:first-child) {
-  margin-top: 2px;
+  margin-top: 0;
 }
-.sprawl-editor-card [data-content-type='heading'][data-level='1'] {
-  --level: 15px;
-}
-.sprawl-editor-card [data-content-type='heading'][data-level='2'] {
-  --level: 14px;
-}
-.sprawl-editor-card [data-content-type='heading'][data-level='3'] {
-  --level: 13px;
+.sprawl-editor-card [data-content-type='heading'] {
+  --level: var(--text-xs);
 }
 .sprawl-editor-card .bn-block-outer:not(:first-child) > .bn-block > [data-content-type='heading'] {
-  margin-top: 6px;
+  margin-top: 4px;
+}
+.sprawl-editor-card [data-content-type='heading'] {
+  margin-bottom: 0;
 }
 .sprawl-editor-card .bn-block-content[data-content-type='checkListItem'] > div > input {
-  width: 12px;
-  height: 12px;
-  margin: 3px 6px 0 0;
+  width: 11px;
+  height: 11px;
+  margin: 2px 6px 0 0;
   border-color: currentColor;
   border-radius: 3px;
   opacity: 0.8;
