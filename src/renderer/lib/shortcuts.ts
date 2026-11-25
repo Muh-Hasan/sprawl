@@ -58,7 +58,14 @@ const key = (code: string): Shortcut => ({ codes: [code] })
 /** Note panel shortcuts (PRODUCT §4). */
 export const PANEL_SHORTCUTS = {
   fullPage: { codes: ['Enter', 'NumpadEnter'], ctrl: true, shift: true },
+  markDone: { codes: ['Enter', 'NumpadEnter'], ctrl: true },
   close: key('Escape'),
+} as const satisfies Record<string, Shortcut>
+
+/** Daily log shortcuts (PRODUCT §4): the same keys as restacking on the canvas. */
+export const LOG_SHORTCUTS = {
+  prevDay: { codes: ['BracketLeft'], ctrl: true },
+  nextDay: { codes: ['BracketRight'], ctrl: true },
 } as const satisfies Record<string, Shortcut>
 
 /** Canvas shortcuts (PRODUCT §4). Single-key tools only fire when nothing is being typed. */
@@ -75,6 +82,7 @@ export const CANVAS_SHORTCUTS = {
   sendToBack: { codes: ['BracketLeft'], ctrl: true },
   delete: { codes: ['Delete', 'Backspace'] },
   open: { codes: ['Enter', 'NumpadEnter'] },
+  markDone: { codes: ['Enter', 'NumpadEnter'], ctrl: true },
   clear: key('Escape'),
   zoomIn: { codes: ['Equal', 'NumpadAdd'], ctrl: true },
   zoomOut: { codes: ['Minus', 'NumpadSubtract'], ctrl: true },

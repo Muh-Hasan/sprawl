@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid'
 import { toast } from 'sonner'
 import type { NoteColor } from '@shared/constants'
 import type { CanvasOp, CanvasRect } from '@shared/types'
-import { useCanvasStore } from '@/stores/canvasStore'
+import { shownItems, useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
 import { useUiStore } from '@/stores/uiStore'
 import { showUndoToast } from '@/components/UndoToast'
@@ -182,7 +182,41 @@ export function setSelectionColor(color: NoteColor) {
 }
 
 export function selectAll() {
-  selection().select(canvas().items.keys())
+  selection().select(shownItems().keys())
+}
+
+/**
+ * Marks note cards done, or not done, as one undoable step (PRODUCT §3.1). Done cards fade off
+ * the canvas unless "Show done" is on, and leave the selection; "Marked done · Undo" follows.
+ */
+export function setCardsDone(ids: Iterable<string>, done: boolean): void {
+  const { items, apply } = canvas()
+  const ops = [...ids]
+    .filter((id) => {
+      const note = items.get(id)?.note
+      return note !== undefined && (note.doneAt !== null) !== done
+    })
+    .map((id): CanvasOp => ({ op: 'setDone', id, done }))
+  const step = apply(ops)
+  if (step === null || !done) return
+  if (!canvas().showDone) {
+    const gone = new Set(ops.map((op) => (op.op === 'setDone' ? op.id : '')))
+    selection().select([...selection().selected].filter((id) => !gone.has(id)))
+    if (gone.has(selection().bodyEditing ?? '')) selection().setBodyEditing(null)
+  }
+  showUndoToast('Marked done', () => canvas().undoStep(step))
+}
+
+/**
+ * Ctrl+Enter and the menu's Mark done: marks the selected notes done, or, if every one is done
+ * already (shown with "Show done"), not done.
+ */
+export function toggleSelectionDone(): void {
+  const { items } = canvas()
+  const notes = [...selection().selected].filter((id) => items.get(id)?.note)
+  if (notes.length === 0) return
+  const allDone = notes.every((id) => items.get(id)?.note?.doneAt != null)
+  setCardsDone(notes, !allDone)
 }
 
 /**

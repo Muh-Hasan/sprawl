@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch'
 import markGradient from '@/assets/brand/sprawl-mark-gradient.svg'
 import { ShortcutKbd } from '@/components/ShortcutKbd'
 import { TopBar } from '@/components/TopBar'
+import { useCanvasStore } from '@/stores/canvasStore'
 import { useVaultStore } from '@/stores/vaultStore'
 import { SettingsRow, SettingsSection } from './SettingsLayout'
 import { VaultSection } from './VaultSection'
@@ -17,9 +18,9 @@ function PlaceholderSwitch({ checked, label }: { checked: boolean | undefined; l
 }
 
 /**
- * Settings (UI_SPEC §9). Phase 1 wires the Vault section; the other rows show their stored
- * values but stay disabled. later: phase-5 (show done), phase-6 (notifications, quick capture,
- * system), phase-11 (backup, export, snap), phase-12 (version in About).
+ * Settings (UI_SPEC §9). Phase 1 wires the Vault section and phase 5 "Show done notes"; the
+ * other rows show their stored values but stay disabled. later: phase-6 (notifications, quick
+ * capture, system), phase-11 (backup, export, snap), phase-12 (version in About).
  */
 export function SettingsView() {
   const vaultPath = useVaultStore((s) => s.info?.path)
@@ -48,7 +49,17 @@ export function SettingsView() {
               <PlaceholderSwitch label="Snap to grid" checked={settings?.snap} />
             </SettingsRow>
             <SettingsRow label="Show done notes">
-              <PlaceholderSwitch label="Show done notes" checked={settings?.showDone} />
+              {/* The same setting as the canvas top bar's toggle (PRODUCT §3.1). */}
+              <Switch
+                data-testid="settings-show-done"
+                aria-label="Show done notes"
+                checked={settings?.showDone ?? false}
+                disabled={!settings}
+                onCheckedChange={(showDone) => {
+                  setSettings((s) => (s ? { ...s, showDone } : s))
+                  useCanvasStore.getState().setShowDone(showDone)
+                }}
+              />
             </SettingsRow>
           </SettingsSection>
 

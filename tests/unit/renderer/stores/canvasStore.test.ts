@@ -11,7 +11,9 @@ const calls: string[] = []
 // The store talks to main only through window.sprawl.
 vi.stubGlobal('window', { sprawl: { canvas: { apply }, settings: { set }, notes: { update } } })
 
-const { canvasGrid, useCanvasStore } = await import('../../../../src/renderer/stores/canvasStore')
+const { canvasGrid, DONE_EXIT_MS, shownItems, useCanvasStore } =
+  await import('../../../../src/renderer/stores/canvasStore')
+const { useLogStore } = await import('../../../../src/renderer/stores/logStore')
 const { canvasHistory } = await import('../../../../src/renderer/stores/historyStore')
 const { useSelectionStore } = await import('../../../../src/renderer/stores/selectionStore')
 
@@ -235,5 +237,61 @@ describe('renameNote', () => {
     expect(update).toHaveBeenCalledWith('n-a', { title: 'Groceries' })
     renameNote('a', 'Groceries')
     expect(update).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('done cards', () => {
+  const everywhere = { x: -1000, y: -1000, w: 4000, h: 4000 }
+  const inGrid = () => [...canvasGrid.query(everywhere)].sort()
+
+  beforeEach(() => {
+    useCanvasStore.setState({ showDone: false, leaving: new Set() })
+  })
+
+  it('fade out, then leave the grid and the selection; undo brings them back', async () => {
+    vi.useFakeTimers()
+    const { apply: storeApply } = useCanvasStore.getState()
+    storeApply([create('a'), create('b', 300)], { record: false })
+    useSelectionStore.getState().select(['a', 'b'])
+    storeApply([{ op: 'setDone', id: 'a', done: true }])
+    expect(items().get('a')?.note?.doneAt).not.toBeNull()
+    expect(useCanvasStore.getState().leaving.has('a')).toBe(true)
+    expect(inGrid()).toEqual(['a', 'b'])
+    vi.advanceTimersByTime(DONE_EXIT_MS)
+    expect(useCanvasStore.getState().leaving.size).toBe(0)
+    expect(inGrid()).toEqual(['b'])
+    expect([...shownItems().keys()]).toEqual(['b'])
+    expect([...useSelectionStore.getState().selected]).toEqual(['b'])
+    expect(items().has('a')).toBe(true)
+
+    useCanvasStore.getState().undo()
+    expect(items().get('a')?.note?.doneAt).toBeNull()
+    expect(inGrid()).toEqual(['a', 'b'])
+  })
+
+  it('stay on show with "Show done", and hide when it goes off; the setting is saved', () => {
+    const { apply: storeApply, setShowDone } = useCanvasStore.getState()
+    storeApply([create('a')], { record: false })
+    setShowDone(true)
+    expect(set).toHaveBeenCalledWith('showDone', true)
+    storeApply([{ op: 'setDone', id: 'a', done: true }])
+    expect(useCanvasStore.getState().leaving.size).toBe(0)
+    expect(inGrid()).toEqual(['a'])
+    setShowDone(false)
+    expect(set).toHaveBeenLastCalledWith('showDone', false)
+    expect(inGrid()).toEqual([])
+    expect(shownItems().size).toBe(0)
+  })
+
+  it('tell the log to refresh once main has stored the done', async () => {
+    const { apply: storeApply } = useCanvasStore.getState()
+    storeApply([create('a')], { record: false })
+    await tick()
+    const rev = useLogStore.getState().rev
+    storeApply([{ op: 'setDone', id: 'a', done: true }])
+    expect(useLogStore.getState().rev).toBe(rev)
+    await tick()
+    await tick()
+    expect(useLogStore.getState().rev).toBe(rev + 1)
   })
 })

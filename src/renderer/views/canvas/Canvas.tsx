@@ -1,4 +1,6 @@
 import { memo, useEffect, useRef } from 'react'
+import { IconEye, IconEyeOff } from '@tabler/icons-react'
+import { IconButton } from '@/components/IconButton'
 import { TopBar } from '@/components/TopBar'
 import { registerFlush } from '@/lib/flushes'
 import { cn } from '@/lib/utils'
@@ -7,6 +9,7 @@ import { CanvasContextMenu } from './ContextMenu'
 import { ItemLayer } from './ItemLayer'
 import { Marquee } from './Marquee'
 import { SelectionToolbar } from './SelectionToolbar'
+import { StatusPill } from './StatusPill'
 import { Toolbar } from './Toolbar'
 import { useCanvasKeys } from './useCanvasKeys'
 import { useSelectGestures } from './useSelectGestures'
@@ -120,6 +123,23 @@ function useCanvasLifecycle(): void {
   }, [])
 }
 
+/** "Show done" in the canvas top bar (UI_SPEC §3): the same setting as in Settings. */
+function ShowDoneToggle() {
+  const showDone = useCanvasStore((s) => s.showDone)
+  return (
+    <IconButton
+      data-testid="show-done-toggle"
+      aria-pressed={showDone}
+      icon={showDone ? IconEye : IconEyeOff}
+      label={showDone ? 'Hide done notes' : 'Show done notes'}
+      tooltipSide="bottom"
+      active={showDone}
+      className="size-7"
+      onClick={() => useCanvasStore.getState().setShowDone(!showDone)}
+    />
+  )
+}
+
 /** The canvas (UI_SPEC §4): an endless dotted board, panned and zoomed. */
 export function Canvas() {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -161,13 +181,14 @@ export function Canvas() {
         >
           {ready && <MemoItemLayer />}
         </div>
-        {/* The top bar is transparent on the canvas. later: phase-5 adds "Show done". */}
+        {/* The top bar is transparent on the canvas. */}
         <div data-canvas-chrome className="absolute inset-x-0 top-0">
-          <TopBar transparent />
+          <TopBar transparent right={ready && <ShowDoneToggle />} />
         </div>
         <Marquee />
         <SelectionToolbar />
         <Toolbar />
+        <StatusPill />
         <ZoomControls />
       </div>
     </CanvasContextMenu>

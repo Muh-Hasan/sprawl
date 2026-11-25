@@ -1,15 +1,20 @@
 import { create } from 'zustand'
-import type { CanvasOp, CardNote } from '@shared/types'
+import type { CanvasItem, CanvasOp, CardNote } from '@shared/types'
 import { debounce } from '@/lib/debounce'
 import { invertOps, reduceOps, type Items } from '@/views/canvas/ops'
 import { SpatialGrid } from '@/views/canvas/spatial'
 import { lerpViewport, type Size, type Viewport } from '@/views/canvas/Viewport'
+import { clockNow } from './clockStore'
 import { canvasHistory } from './historyStore'
+import { useLogStore } from './logStore'
 
 export type CanvasTool = 'select' | 'hand' | 'note'
 
 /** The viewport is saved this long after it stops moving (and on blur or close). */
 const VIEWPORT_SAVE_MS = 400
+
+/** A card marked done fades out over this long before it's hidden (DESIGN_SYSTEM §6). */
+export const DONE_EXIT_MS = 180
 
 interface CanvasState {
   ready: boolean
@@ -24,6 +29,10 @@ interface CanvasState {
   panning: boolean
   /** The `snap` setting: moves and resizes snap to the 8px grid. */
   snap: boolean
+  /** The `showDone` setting: done cards show, faded and struck through, instead of hiding. */
+  showDone: boolean
+  /** Cards just marked done, still playing their exit before they hide. */
+  leaving: ReadonlySet<string>
   /** Loads the cards and the saved viewport for the open vault. */
   load(): Promise<void>
   /** Sends what's pending and forgets the loaded state (the canvas view closed). */
@@ -57,6 +66,8 @@ interface CanvasState {
   setTool(tool: CanvasTool): void
   setSpaceHeld(held: boolean): void
   setPanning(panning: boolean): void
+  /** Shows or hides done cards, and saves the `showDone` setting. */
+  setShowDone(on: boolean): void
   /** Sends the pending ops and viewport now (on blur, unmount and close). */
   flush(): void
 }
@@ -70,15 +81,41 @@ export const canvasGrid = new SpatialGrid()
  */
 const deletedNotes = new Map<string, CardNote>()
 
-/** Brings the spatial grid in line with `items` for the ids that `ops` touched. */
-function syncGrid(items: Items, ops: readonly CanvasOp[]): void {
-  for (const op of ops) {
-    const id = op.op === 'create' || op.op === 'restore' ? op.item.id : op.id
-    const item = items.get(id)
-    if (item) canvasGrid.set(id, item)
+/**
+ * True if the card is on show: anything but a done note, unless "Show done" is on or it's still
+ * fading out. Hidden cards stay in `items` (undo brings them back) but not in the spatial grid,
+ * so culling, the marquee and hit tests never find them.
+ */
+export function isShown(
+  item: CanvasItem,
+  { showDone, leaving }: Pick<CanvasState, 'showDone' | 'leaving'>,
+): boolean {
+  return showDone || !item.note?.doneAt || leaving.has(item.id)
+}
+
+/** The cards on show (for the selection, select all and zoom to fit). */
+export function shownItems(): Items {
+  const state = useCanvasStore.getState()
+  const shown = new Map<string, CanvasItem>()
+  for (const item of state.items.values()) if (isShown(item, state)) shown.set(item.id, item)
+  return shown
+}
+
+/** Brings the spatial grid in line with `items` for the given ids (or every card). */
+function syncGrid(
+  state: Pick<CanvasState, 'items' | 'showDone' | 'leaving'>,
+  ids?: Iterable<string>,
+) {
+  if (!ids) canvasGrid.clear()
+  for (const id of ids ?? state.items.keys()) {
+    const item = state.items.get(id)
+    if (item && isShown(item, state)) canvasGrid.set(id, item)
     else canvasGrid.delete(id)
   }
 }
+
+const opIds = (ops: readonly CanvasOp[]): string[] =>
+  ops.map((op) => (op.op === 'create' || op.op === 'restore' ? op.item.id : op.id))
 
 /** Looks a note up among the live cards (built on first use) or the deleted ones. */
 function noteLookup(items: Items): (noteId: string) => CardNote | undefined {
@@ -131,8 +168,10 @@ export const useCanvasStore = create<CanvasState>()((set, get) => {
     if (pendingOps.length === 0) return
     const ops = pendingOps
     pendingOps = []
+    const touchesLog = ops.some((op) => op.op === 'setDone')
     window.sprawl.canvas.apply(ops).then(
       ({ created }) => {
+        if (touchesLog) useLogStore.getState().changed()
         if (created.length === 0) return
         // Only take what main adds: the card may have moved locally since this batch went out.
         const items = new Map(get().items)
@@ -167,12 +206,27 @@ export const useCanvasStore = create<CanvasState>()((set, get) => {
       const item = before.get(op.id)
       if (item?.note && item.refId) deletedNotes.set(item.refId, item.note)
     }
-    const items = reduceOps(before, ops, Date.now(), noteLookup(before))
-    syncGrid(items, ops)
-    set({ items })
+    const items = reduceOps(before, ops, clockNow(), noteLookup(before))
+    // A card marked done with "Show done" off fades out first, then hides.
+    const done = get().showDone
+      ? []
+      : ops.flatMap((op) => (op.op === 'setDone' && op.done ? [op.id] : []))
+    const leaving = done.length > 0 ? new Set([...get().leaving, ...done]) : get().leaving
+    syncGrid({ items, leaving, showDone: get().showDone }, opIds(ops))
+    set({ items, leaving })
+    if (done.length > 0) setTimeout(() => finishLeaving(done), DONE_EXIT_MS)
     pendingOps.push(...ops)
     queueSend()
     return inverse
+  }
+
+  const finishLeaving = (ids: readonly string[]): void => {
+    const leaving = new Set(get().leaving)
+    for (const id of ids) leaving.delete(id)
+    const next = { ...get(), leaving }
+    syncGrid(next, ids)
+    set({ leaving })
+    afterHistory?.(shownItems())
   }
 
   const cancelCamera = (): void => {
@@ -190,20 +244,23 @@ export const useCanvasStore = create<CanvasState>()((set, get) => {
     spaceHeld: false,
     panning: false,
     snap: true,
+    showDone: false,
+    leaving: new Set(),
 
     load: async () => {
       const token = ++loadToken
-      const [rows, viewport, snap] = await Promise.all([
+      const [rows, viewport, snap, showDone] = await Promise.all([
         window.sprawl.canvas.load(),
         window.sprawl.settings.get('viewport'),
         window.sprawl.settings.get('snap'),
+        window.sprawl.settings.get('showDone'),
       ])
       if (token !== loadToken) return
       const items = new Map(rows.map((row) => [row.id, row]))
-      canvasGrid.clear()
-      for (const item of items.values()) canvasGrid.set(item.id, item)
-      set({ ready: true, items, viewport, snap })
-      afterHistory?.(items)
+      const leaving = new Set<string>()
+      syncGrid({ items, showDone, leaving })
+      set({ ready: true, items, viewport, snap, showDone, leaving })
+      afterHistory?.(shownItems())
     },
 
     unload: () => {
@@ -223,14 +280,14 @@ export const useCanvasStore = create<CanvasState>()((set, get) => {
       const entry = canvasHistory.takeUndo()
       if (!entry) return
       canvasHistory.pushRedo(run(entry.ops), entry.id)
-      afterHistory?.(get().items)
+      afterHistory?.(shownItems())
     },
 
     redo: () => {
       const entry = canvasHistory.takeRedo()
       if (!entry) return
       canvasHistory.pushUndo(run(entry.ops), entry.id)
-      afterHistory?.(get().items)
+      afterHistory?.(shownItems())
     },
 
     undoStep: (id) => {
@@ -239,7 +296,7 @@ export const useCanvasStore = create<CanvasState>()((set, get) => {
       if (!entry) return
       // Later steps stay undoable; undoing this one becomes a step of its own.
       canvasHistory.record(run(entry.ops))
-      afterHistory?.(get().items)
+      afterHistory?.(shownItems())
     },
 
     renameNote: (itemId, title) => {
@@ -303,6 +360,15 @@ export const useCanvasStore = create<CanvasState>()((set, get) => {
     setTool: (tool) => set({ tool }),
     setSpaceHeld: (spaceHeld) => set({ spaceHeld }),
     setPanning: (panning) => set({ panning }),
+
+    setShowDone: (showDone) => {
+      // Saved even if it looks unchanged: Settings can flip it while the canvas isn't loaded.
+      void window.sprawl.settings.set('showDone', showDone)
+      if (showDone === get().showDone) return
+      syncGrid({ ...get(), showDone })
+      set({ showDone })
+      afterHistory?.(shownItems())
+    },
 
     flush: () => {
       if (flushQueued) sendOps()

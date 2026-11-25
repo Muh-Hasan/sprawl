@@ -16,7 +16,8 @@ function sameIds(a: readonly string[], b: readonly string[]): boolean {
 
 /**
  * The ids of the cards near the viewport, sorted, recomputed only when that set changes. Cards
- * being moved or resized stay rendered even if their stored spot scrolled out of view.
+ * being moved or resized stay rendered even if their stored spot scrolled out of view. Hidden
+ * done cards aren't in the grid, so they're never rendered.
  */
 function useVisibleIds(): string[] {
   const [ids, setIds] = useState<string[]>([])
@@ -30,7 +31,15 @@ function useVisibleIds(): string[] {
     }
     compute()
     const offCanvas = useCanvasStore.subscribe((s, prev) => {
-      if (s.viewport !== prev.viewport || s.size !== prev.size || s.items !== prev.items) compute()
+      if (
+        s.viewport !== prev.viewport ||
+        s.size !== prev.size ||
+        s.items !== prev.items ||
+        // A done card finished fading out, or "Show done" flipped.
+        s.leaving !== prev.leaving ||
+        s.showDone !== prev.showDone
+      )
+        compute()
     })
     const offSelection = useSelectionStore.subscribe((s, prev) => {
       if (s.gesture !== prev.gesture) compute()

@@ -6,6 +6,8 @@ import type { CardNote, Note, NoteLink, NoteLinkPatch, NotePatch } from '@shared
 import { debounce } from '@/lib/debounce'
 import { registerFlush } from '@/lib/flushes'
 import { useCanvasStore } from './canvasStore'
+import { clockNow } from './clockStore'
+import { useLogStore } from './logStore'
 import { useUiStore } from './uiStore'
 
 /** "Saved" / "Saving…" in the panel footer (UI_SPEC §5). */
@@ -49,6 +51,12 @@ interface NoteState {
   detachBody(id: string, json: string | null): void
   /** On the canvas this is an undoable `setColor` op (PRODUCT §3.1); otherwise a note update. */
   setColor(color: NoteColor): void
+  /**
+   * Marks the note done or not (the footer, Ctrl+Enter). On the canvas it's an undoable
+   * `setDone` op; otherwise `notes.setDone`. Pending edits are saved first, so the log entry
+   * gets the title as it reads now.
+   */
+  setDone(done: boolean): void
   addLink(url: string, label: string | null): Promise<void>
   updateLink(id: string, patch: NoteLinkPatch): Promise<void>
   removeLink(id: string): Promise<void>
@@ -269,6 +277,28 @@ export const useNoteStore = create<NoteState>()((set, get) => {
       else queue({ color }, true)
     },
 
+    setDone: (done) => {
+      const note = get().note
+      if (!note || (note.doneAt !== null) === done) return
+      save()
+      set({ note: { ...note, doneAt: done ? clockNow() : null } })
+      const { ready, cardOf, apply } = canvas()
+      const card = ready ? cardOf(note.id) : null
+      if (card !== null) return void apply([{ op: 'setDone', id: card, done }])
+      window.sprawl.notes.setDone(note.id, done).then(
+        (saved) => {
+          const current = get().note
+          if (current?.id === saved.id) set({ note: { ...current, doneAt: saved.doneAt } })
+          useLogStore.getState().changed()
+        },
+        (err: unknown) => {
+          console.error('[note] mark done failed', err)
+          const current = get().note
+          if (current?.id === note.id) set({ note: { ...current, doneAt: note.doneAt } })
+        },
+      )
+    },
+
     addLink: async (url, label) => {
       const note = get().note
       if (!note) return
@@ -338,9 +368,16 @@ useCanvasStore.subscribe((s, prev) => {
   }
   hadCard = true
   const titleChanged = card.title !== note.title && !('title' in pending)
-  if (card.color !== note.color || titleChanged) {
+  // Done from the canvas (or undone there with Ctrl+Z) shows in the panel's footer.
+  const doneChanged = (card.doneAt === null) !== (note.doneAt === null)
+  if (card.color !== note.color || titleChanged || doneChanged) {
     useNoteStore.setState({
-      note: { ...note, color: card.color, title: titleChanged ? card.title : note.title },
+      note: {
+        ...note,
+        color: card.color,
+        title: titleChanged ? card.title : note.title,
+        doneAt: doneChanged ? card.doneAt : note.doneAt,
+      },
     })
   }
 })

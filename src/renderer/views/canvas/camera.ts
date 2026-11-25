@@ -1,4 +1,4 @@
-import { useCanvasStore, viewportTarget } from '@/stores/canvasStore'
+import { shownItems, useCanvasStore, viewportTarget } from '@/stores/canvasStore'
 import type { CanvasRect } from '@shared/types'
 import { boundsOf, fitViewport, revealViewport, stepZoom, zoomAt } from './Viewport'
 
@@ -32,8 +32,8 @@ export function zoomReset(): void {
 
 /** Fits every card in view. */
 export function zoomToFit(): void {
-  const { items, size } = canvas()
-  canvas().animateViewport(fitViewport(boundsOf(items.values()), size), JUMP_MS)
+  const { size } = canvas()
+  canvas().animateViewport(fitViewport(boundsOf(shownItems().values()), size), JUMP_MS)
 }
 
 /** Brings a card into view at a readable zoom (100% or more), if it isn't already. */
