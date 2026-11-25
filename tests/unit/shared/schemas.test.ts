@@ -4,6 +4,9 @@ import {
   canvasApplyInput,
   canvasOpSchema,
   defaultSettings,
+  noteIdInput,
+  notesCreateInput,
+  notesUpdateInput,
   isAllowedExternalUrl,
   openExternalInput,
   openVaultInput,
@@ -156,10 +159,43 @@ describe('canvas op schemas', () => {
     invalid({ op: 'update', id: 'c1', patch: { x: Number.NaN } })
   })
 
+  it('accepts restore and setColor, and pasted or copied notes', () => {
+    valid({ op: 'restore', item })
+    valid({ op: 'setColor', id: 'c1', color: 'lilac' })
+    valid({ op: 'create', item, note: { id: 'n1', title: 'Hi', color: 'sky', body: 'a' } })
+    valid({ op: 'create', item, note: { id: 'n1', title: 'Hi', color: 'sky', copyOf: 'n0' } })
+    invalid({ op: 'restore', id: 'c1' })
+    invalid({ op: 'restore', item: { ...item, refId: null } })
+    invalid({ op: 'setColor', id: 'c1', color: 'teal' })
+    invalid({ op: 'setColor', id: 'c1' })
+    invalid({
+      op: 'create',
+      item,
+      note: { id: 'n1', title: '', color: 'sky', body: 'a', copyOf: 'n0' },
+    })
+    invalid({ op: 'create', item, note: { id: 'n1', title: '', color: 'sky', copyOf: 'x y' } })
+  })
+
   it('takes batches of 1 to 5,000 ops', () => {
     const del = { op: 'delete', id: 'c1' }
     expect(canvasApplyInput.safeParse([del]).success).toBe(true)
     expect(canvasApplyInput.safeParse([]).success).toBe(false)
     expect(canvasApplyInput.safeParse(Array(5001).fill(del)).success).toBe(false)
+  })
+})
+
+describe('notes input schemas', () => {
+  it('takes note ids, new notes and patches', () => {
+    expect(noteIdInput.safeParse('n1').success).toBe(true)
+    expect(noteIdInput.safeParse('../n1').success).toBe(false)
+    expect(notesCreateInput.safeParse({ id: 'n1', title: 'A', color: 'sand' }).success).toBe(true)
+    expect(
+      notesCreateInput.safeParse({ id: 'n1', title: 'A', color: 'sand', extra: 1 }).success,
+    ).toBe(false)
+    expect(notesUpdateInput.safeParse({ id: 'n1', patch: { title: 'B' } }).success).toBe(true)
+    expect(notesUpdateInput.safeParse({ id: 'n1', patch: { color: 'rose' } }).success).toBe(true)
+    expect(notesUpdateInput.safeParse({ id: 'n1', patch: {} }).success).toBe(false)
+    expect(notesUpdateInput.safeParse({ id: 'n1', patch: { doneAt: 5 } }).success).toBe(false)
+    expect(notesUpdateInput.safeParse({ id: 'n1', patch: { color: 'teal' } }).success).toBe(false)
   })
 })

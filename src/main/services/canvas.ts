@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, eq, isNull, sql } from 'drizzle-orm'
 import type { NoteColor } from '@shared/constants'
 import type {
   CanvasApplyResult,
@@ -11,6 +11,10 @@ import type {
 } from '@shared/types'
 import type { DbHandle } from '../db/client'
 import { canvasItems, drawings, notes } from '../db/schema'
+import { insertNote } from './notes'
+
+/** How much of `body_text` a card gets for its preview (it shows at most four lines). */
+export const PREVIEW_CHARS = 400
 
 export interface CanvasDeps {
   /** The open vault's database, or null before onboarding. */
@@ -41,15 +45,13 @@ export class CanvasService {
   load(): CanvasItem[] {
     const { db } = this.handle()
     const rows = db
-      .select({ item: canvasItems, title: notes.title, color: notes.color })
+      .select({ item: canvasItems, ...CARD_NOTE_FIELDS })
       .from(canvasItems)
       .leftJoin(notes, and(eq(canvasItems.kind, 'note'), eq(canvasItems.refId, notes.id)))
       .where(isNull(notes.deletedAt))
       .orderBy(canvasItems.z)
       .all()
-    return rows.map(({ item, title, color }) =>
-      toItem(item, title === null ? undefined : { title, color: color as NoteColor }),
-    )
+    return rows.map(({ item, ...note }) => toItem(item, toCardNote(note)))
   }
 
   apply(ops: readonly CanvasOp[]): CanvasApplyResult {
@@ -68,6 +70,12 @@ export class CanvasService {
           case 'delete':
             this.remove(op.id, now)
             break
+          case 'restore':
+            created.push(this.restore(op.item, now))
+            break
+          case 'setColor':
+            this.setColor(op.id, op.color, now)
+            break
         }
       }
     })()
@@ -75,20 +83,32 @@ export class CanvasService {
   }
 
   private create(item: CanvasItemInput, note: NewNote | undefined, now: number): CanvasItem {
+    const handle = this.handle()
+    if (note) insertNote(handle, note, now)
+    else if (item.refId !== null) assertRefExists(handle, item.kind, item.refId)
+    return this.insertItem(item, now)
+  }
+
+  /** Puts a deleted card back with its old id, and un-deletes its note or drawing. */
+  private restore(item: CanvasItemInput, now: number): CanvasItem {
     const { db } = this.handle()
-    if (note) {
-      db.insert(notes)
-        .values({
-          id: note.id,
-          title: note.title,
-          color: note.color,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .run()
+    if (item.refId !== null && (item.kind === 'note' || item.kind === 'drawing')) {
+      const table = item.kind === 'note' ? notes : drawings
+      const row = db
+        .update(table)
+        .set({ deletedAt: null, updatedAt: now })
+        .where(eq(table.id, item.refId))
+        .returning({ id: table.id })
+        .get()
+      if (!row) throw new Error(`Can't restore a card for a purged ${item.kind} (${item.refId})`)
     } else if (item.refId !== null) {
       assertRefExists(this.handle(), item.kind, item.refId)
     }
+    return this.insertItem(item, now)
+  }
+
+  private insertItem(item: CanvasItemInput, now: number): CanvasItem {
+    const { db } = this.handle()
     const row = db
       .insert(canvasItems)
       .values({ ...item, createdAt: now, updatedAt: now })
@@ -97,6 +117,17 @@ export class CanvasService {
     const cardNote =
       item.kind === 'note' && item.refId !== null ? this.cardNote(item.refId) : undefined
     return toItem(row, cardNote)
+  }
+
+  /** Sets a note card's note color. A card that's gone is a no-op; any other kind fails. */
+  private setColor(id: string, color: NoteColor, now: number): void {
+    const { db } = this.handle()
+    const card = db.select().from(canvasItems).where(eq(canvasItems.id, id)).get()
+    if (!card) return
+    if (card.kind !== 'note' || card.refId === null) {
+      throw new Error(`Only note cards have a color (${id} is a ${card.kind} card)`)
+    }
+    db.update(notes).set({ color, updatedAt: now }).where(eq(notes.id, card.refId)).run()
   }
 
   /** Updating a card that no longer exists is a no-op (it lost a race with a delete). */
@@ -125,13 +156,25 @@ export class CanvasService {
 
   private cardNote(noteId: string): CanvasItem['note'] {
     const { db } = this.handle()
-    const row = db
-      .select({ title: notes.title, color: notes.color })
-      .from(notes)
-      .where(eq(notes.id, noteId))
-      .get()
-    return row ? { title: row.title, color: row.color as NoteColor } : undefined
+    const row = db.select(CARD_NOTE_FIELDS).from(notes).where(eq(notes.id, noteId)).get()
+    return row ? toCardNote(row) : undefined
   }
+}
+
+/** The note columns a card shows. */
+const CARD_NOTE_FIELDS = {
+  title: notes.title,
+  color: notes.color,
+  preview: sql<string | null>`substr(${notes.bodyText}, 1, ${PREVIEW_CHARS})`,
+}
+
+function toCardNote(row: {
+  title: string | null
+  color: string | null
+  preview: string | null
+}): CanvasItem['note'] {
+  if (row.title === null) return undefined
+  return { title: row.title, color: row.color as NoteColor, preview: row.preview ?? '' }
 }
 
 /** The live row a card of each kind points at (notes and drawings mustn't be deleted). */
