@@ -3,6 +3,9 @@ import { z } from 'zod'
 import { IPC, type MainEventName, type MainEvents } from '@shared/api'
 import {
   canvasApplyInput,
+  noteIdInput,
+  notesCreateInput,
+  notesUpdateInput,
   openExternalInput,
   openVaultInput,
   settingsGetInput,
@@ -11,6 +14,7 @@ import {
   type Settings,
 } from '@shared/schemas'
 import type { CanvasService } from '../services/canvas'
+import type { NotesService } from '../services/notes'
 import type { SettingsService } from '../services/settings'
 import type { VaultService } from '../services/vault'
 import { parseInput } from './validate'
@@ -43,11 +47,12 @@ export function broadcast<E extends MainEventName>(event: E, payload: MainEvents
 export interface IpcDeps {
   vault: VaultService
   settings: SettingsService
+  notes: NotesService
   canvas: CanvasService
 }
 
 /** Registers one handler per API method (ARCHITECTURE §5). */
-export function registerIpc({ vault, settings, canvas }: IpcDeps): void {
+export function registerIpc({ vault, settings, notes, canvas }: IpcDeps): void {
   // app ----------------------------------------------------------------------------------
   handle(IPC.app.getVaultInfo, noInput, () => vault.info())
 
@@ -80,6 +85,14 @@ export function registerIpc({ vault, settings, canvas }: IpcDeps): void {
   handle(IPC.settings.set, settingsSetInput, ({ key, value }) =>
     settings.set(key as SettingKey, value as Settings[SettingKey]),
   )
+
+  // notes --------------------------------------------------------------------------------
+  handle(IPC.notes.get, noteIdInput, (id) => notes.get(id))
+  handle(IPC.notes.create, notesCreateInput, (note) => notes.create(note))
+  handle(IPC.notes.update, notesUpdateInput, ({ id, patch }) => notes.update(id, patch))
+  handle(IPC.notes.duplicate, noteIdInput, (id) => notes.duplicate(id))
+  handle(IPC.notes.remove, noteIdInput, (id) => notes.remove(id))
+  handle(IPC.notes.restore, noteIdInput, (id) => notes.restore(id))
 
   // canvas -------------------------------------------------------------------------------
   handle(IPC.canvas.load, noInput, () => canvas.load())

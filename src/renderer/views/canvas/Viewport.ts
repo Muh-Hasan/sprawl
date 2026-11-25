@@ -126,10 +126,25 @@ export function fitViewport(bounds: Rect | null, size: Size, padding = 64): View
   }
 }
 
-/** The dot grid (UI_SPEC §4.1): 20px × zoom, doubled below 50%, hidden below 25%. */
-export function dotGridSpacing(zoom: number): number | null {
-  if (zoom < 0.25) return null
-  return (zoom < 0.5 ? 40 : 20) * zoom
+/**
+ * The dot grid's spacing in screen px (UI_SPEC §4.1): 20px × zoom, doubled below 50%, and
+ * doubled again each time the zoom halves after that, so it's never hidden and the dots stay at
+ * least 10px apart however far out you zoom.
+ */
+export function dotGridSpacing(zoom: number): number {
+  let world = 20
+  while (world * zoom < 10) world *= 2
+  return world * zoom
+}
+
+/**
+ * The `background-position` (px) that puts the dots on the world grid. A
+ * `radial-gradient(circle …)` tile draws its dot in the tile's center, so the tile starts half a
+ * tile before the origin. On the world grid, when the spacing doubles every other dot stays put
+ * instead of the whole grid jumping by half a step.
+ */
+export function dotLayerPosition(origin: number, tile: number): number {
+  return origin - tile / 2
 }
 
 /** Linear interpolation between two viewports, for the 240ms "zoom to fit". */
@@ -144,4 +159,33 @@ export function lerpViewport(a: Viewport, b: Viewport, t: number): Viewport {
 /** The zoom shown in the pill, e.g. 1.254 → "125%". */
 export function zoomLabel(zoom: number): string {
   return `${Math.round(zoom * 100)}%`
+}
+
+/**
+ * The viewport that shows `rect` (world) comfortably: zoomed in to at least `minZoom` around the
+ * rect's center (so it stays where the eye is), then panned just enough to keep it `margin` px
+ * inside the screen. Returns `vp` itself when nothing needs to change.
+ */
+export function revealViewport(
+  vp: Viewport,
+  rect: Rect,
+  size: Size,
+  { minZoom = 1, margin = 48 }: { minZoom?: number; margin?: number } = {},
+): Viewport {
+  if (size.width <= 0 || size.height <= 0) return vp // not measured yet
+  let next = vp
+  if (vp.zoom < minZoom) {
+    const center = worldToScreen(vp, { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 })
+    next = zoomAt(vp, center, minZoom)
+  }
+  const fit = (start: number, length: number, screen: number): number => {
+    if (length + margin * 2 > screen) return screen / 2 - (start + length / 2)
+    if (start < margin) return margin - start
+    if (start + length > screen - margin) return screen - margin - (start + length)
+    return 0
+  }
+  const topLeft = worldToScreen(next, rect)
+  const dx = fit(topLeft.x, rect.w * next.zoom, size.width)
+  const dy = fit(topLeft.y, rect.h * next.zoom, size.height)
+  return dx === 0 && dy === 0 ? next : panBy(next, dx, dy)
 }

@@ -17,6 +17,14 @@ const api: SprawlAPI = {
     get: (key) => ipcRenderer.invoke(IPC.settings.get, key),
     set: (key, value) => ipcRenderer.invoke(IPC.settings.set, { key, value }),
   },
+  notes: {
+    get: (id) => ipcRenderer.invoke(IPC.notes.get, id),
+    create: (note) => ipcRenderer.invoke(IPC.notes.create, note),
+    update: (id, patch) => ipcRenderer.invoke(IPC.notes.update, { id, patch }),
+    duplicate: (id) => ipcRenderer.invoke(IPC.notes.duplicate, id),
+    remove: (id) => ipcRenderer.invoke(IPC.notes.remove, id),
+    restore: (id) => ipcRenderer.invoke(IPC.notes.restore, id),
+  },
   canvas: {
     load: () => ipcRenderer.invoke(IPC.canvas.load),
     apply: (ops) => ipcRenderer.invoke(IPC.canvas.apply, ops),

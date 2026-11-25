@@ -1,5 +1,5 @@
 import type { SettingKey, Settings } from './schemas'
-import type { CanvasApplyResult, CanvasItem, CanvasOp } from './types'
+import type { CanvasApplyResult, CanvasItem, CanvasOp, NewNote, Note, NotePatch } from './types'
 
 /**
  * The `window.sprawl` API shared by preload and renderer (ARCHITECTURE §5). Every method is an
@@ -29,6 +29,18 @@ export interface SettingsAPI {
   set<K extends SettingKey>(key: K, value: Settings[K]): Promise<void>
 }
 
+export interface NotesAPI {
+  get(id: string): Promise<Note>
+  /** A note with no card (the canvas creates notes through `canvas.apply` instead). */
+  create(note: NewNote): Promise<Note>
+  update(id: string, patch: NotePatch): Promise<Note>
+  /** A copy of the title, body, color and links, not placed on the canvas (PRODUCT §3.1). */
+  duplicate(id: string): Promise<Note>
+  /** Soft delete; purged for good after 30 days. */
+  remove(id: string): Promise<void>
+  restore(id: string): Promise<void>
+}
+
 export interface CanvasAPI {
   /** Every card on the canvas, with its note's card fields for note cards. */
   load(): Promise<CanvasItem[]>
@@ -47,6 +59,7 @@ export type MainEventName = keyof MainEvents
 export interface SprawlAPI {
   app: AppAPI
   settings: SettingsAPI
+  notes: NotesAPI
   canvas: CanvasAPI
   /** Subscribes to a main-process event. Returns the unsubscribe function. */
   on<E extends MainEventName>(event: E, listener: (payload: MainEvents[E]) => void): () => void
@@ -64,6 +77,14 @@ export const IPC = {
     getAll: 'settings:getAll',
     get: 'settings:get',
     set: 'settings:set',
+  },
+  notes: {
+    get: 'notes:get',
+    create: 'notes:create',
+    update: 'notes:update',
+    duplicate: 'notes:duplicate',
+    remove: 'notes:remove',
+    restore: 'notes:restore',
   },
   canvas: {
     load: 'canvas:load',

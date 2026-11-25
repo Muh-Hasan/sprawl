@@ -6,6 +6,7 @@ import { registerProtocol, routeArgv } from './deepLinks'
 import { env } from './env'
 import { registerIpc } from './ipc/register'
 import { CanvasService } from './services/canvas'
+import { NotesService, purgeDeleted } from './services/notes'
 import { SettingsService } from './services/settings'
 import { VaultService } from './services/vault'
 import { createMainWindow, focusWindow } from './window'
@@ -47,11 +48,14 @@ function start(): void {
       config,
       documentsDir: app.getPath('documents'),
       envVault: env.vault,
+      // On launch and on every vault switch (ARCHITECTURE §4).
+      onOpen: (handle) => void purgeDeleted(handle, Date.now()),
     })
     vault.restore()
     const settings = new SettingsService({ config, db: () => vault.db() })
+    const notes = new NotesService({ db: () => vault.db() })
     const canvas = new CanvasService({ db: () => vault.db() })
-    registerIpc({ vault, settings, canvas })
+    registerIpc({ vault, settings, notes, canvas })
 
     const openWindow = (): BrowserWindow => {
       const win = createMainWindow({

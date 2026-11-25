@@ -1,24 +1,15 @@
 import { create } from 'zustand'
-import type { CanvasItem, CanvasOp } from '@shared/types'
+import type { CanvasOp, CardNote } from '@shared/types'
 import { debounce } from '@/lib/debounce'
+import { invertOps, reduceOps, type Items } from '@/views/canvas/ops'
 import { SpatialGrid } from '@/views/canvas/spatial'
-import {
-  boundsOf,
-  fitViewport,
-  lerpViewport,
-  stepZoom,
-  zoomAt,
-  type Size,
-  type Viewport,
-} from '@/views/canvas/Viewport'
+import { lerpViewport, type Size, type Viewport } from '@/views/canvas/Viewport'
+import { canvasHistory } from './historyStore'
 
-export type CanvasTool = 'select' | 'hand'
+export type CanvasTool = 'select' | 'hand' | 'note'
 
 /** The viewport is saved this long after it stops moving (and on blur or close). */
 const VIEWPORT_SAVE_MS = 400
-const FIT_MS = 240
-
-type Items = ReadonlyMap<string, CanvasItem>
 
 interface CanvasState {
   ready: boolean
@@ -31,20 +22,30 @@ interface CanvasState {
   spaceHeld: boolean
   /** A pan drag is in progress. */
   panning: boolean
+  /** The `snap` setting: moves and resizes snap to the 8px grid. */
+  snap: boolean
   /** Loads the cards and the saved viewport for the open vault. */
   load(): Promise<void>
   /** Sends what's pending and forgets the loaded state (the canvas view closed). */
   unload(): void
-  /** Applies ops locally right away, then persists them in one batched `canvas.apply`. */
-  apply(ops: CanvasOp[]): void
+  /**
+   * Applies ops locally right away, then persists them in one batched `canvas.apply`. Unless
+   * `record` is false, the step goes on the undo stack; returns its history id.
+   */
+  apply(ops: CanvasOp[], options?: { record?: boolean }): number | null
+  undo(): void
+  redo(): void
+  /** Undoes one particular step (a toast's Undo), even if other steps came after it. */
+  undoStep(id: number): void
+  /** Renames a note card's note (not an undoable canvas op; the title is note content). */
+  renameNote(itemId: string, title: string): void
   /** Moves the view (not animated). Saving is debounced. */
   setViewport(vp: Viewport): void
-  /** Zooms one stop in or out around the middle of the canvas. */
-  zoomStep(dir: 1 | -1): void
-  /** Back to 100% around the middle of the canvas. */
-  zoomReset(): void
-  /** Fits every card in view, animated over 240ms. */
-  zoomToFit(): void
+  /**
+   * Glides the view to `to` over `ms` (ease-out), or jumps there with reduced motion. Any other
+   * viewport change cancels the glide. See `views/canvas/camera.ts`.
+   */
+  animateViewport(to: Viewport, ms: number): void
   setSize(size: Size): void
   setTool(tool: CanvasTool): void
   setSpaceHeld(held: boolean): void
@@ -56,44 +57,54 @@ interface CanvasState {
 /** The spatial index of the loaded cards, kept in step with `items` (not reactive state). */
 export const canvasGrid = new SpatialGrid()
 
-/** Applies ops to a copy of `items` (the optimistic local copy of what main will store). */
-export function reduceOps(items: Items, ops: readonly CanvasOp[], now = Date.now()): Items {
-  const next = new Map(items)
-  for (const op of ops) {
-    switch (op.op) {
-      case 'create': {
-        const note = op.note ? { title: op.note.title, color: op.note.color } : undefined
-        next.set(op.item.id, { ...op.item, createdAt: now, updatedAt: now, ...(note && { note }) })
-        break
-      }
-      case 'update': {
-        const item = next.get(op.id)
-        if (item) next.set(op.id, { ...item, ...op.patch, updatedAt: now })
-        break
-      }
-      case 'delete':
-        next.delete(op.id)
-        break
-    }
-  }
-  return next
-}
+/**
+ * What deleted note cards showed, by note id, so undoing a delete puts the card back as it was
+ * without waiting for main.
+ */
+const deletedNotes = new Map<string, CardNote>()
 
 /** Brings the spatial grid in line with `items` for the ids that `ops` touched. */
 function syncGrid(items: Items, ops: readonly CanvasOp[]): void {
   for (const op of ops) {
-    const id = op.op === 'create' ? op.item.id : op.id
+    const id = op.op === 'create' || op.op === 'restore' ? op.item.id : op.id
     const item = items.get(id)
     if (item) canvasGrid.set(id, item)
     else canvasGrid.delete(id)
   }
 }
 
+/** Looks a note up among the live cards (built on first use) or the deleted ones. */
+function noteLookup(items: Items): (noteId: string) => CardNote | undefined {
+  let byNote: Map<string, CardNote> | null = null
+  return (noteId) => {
+    if (!byNote) {
+      byNote = new Map()
+      for (const item of items.values())
+        if (item.note && item.refId) byNote.set(item.refId, item.note)
+    }
+    return byNote.get(noteId) ?? deletedNotes.get(noteId)
+  }
+}
+
 let pendingOps: CanvasOp[] = []
 let flushQueued = false
-let fitFrame = 0
+let cameraFrame = 0
+/** Where the running glide ends, so repeated zoom steps build on it rather than lag. */
+let cameraTarget: Viewport | null = null
+
+/** The viewport the view is at, or heading to if it's gliding. */
+export function viewportTarget(): Viewport {
+  return cameraTarget ?? useCanvasStore.getState().viewport
+}
 /** Bumped by every load and unload, so a load that finishes late is dropped. */
 let loadToken = 0
+/** Called after undo and redo (the selection drops the cards that are gone). */
+let afterHistory: ((items: Items) => void) | null = null
+
+/** Lets the selection store follow undo and redo without a circular import. */
+export function onHistoryApplied(fn: (items: Items) => void): void {
+  afterHistory = fn
+}
 
 const saveViewport = debounce((vp: Viewport) => {
   void window.sprawl.settings.set('viewport', vp)
@@ -116,8 +127,14 @@ export const useCanvasStore = create<CanvasState>()((set, get) => {
     window.sprawl.canvas.apply(ops).then(
       ({ created }) => {
         if (created.length === 0) return
+        // Only take what main adds: the card may have moved locally since this batch went out.
         const items = new Map(get().items)
-        for (const row of created) if (items.has(row.id)) items.set(row.id, row)
+        for (const row of created) {
+          const local = items.get(row.id)
+          if (local) {
+            items.set(row.id, { ...local, createdAt: row.createdAt, note: local.note ?? row.note })
+          }
+        }
         set({ items })
       },
       (err: unknown) => {
@@ -128,14 +145,33 @@ export const useCanvasStore = create<CanvasState>()((set, get) => {
     )
   }
 
-  const center = (): { x: number; y: number } => ({
-    x: get().size.width / 2,
-    y: get().size.height / 2,
-  })
+  const queueSend = (): void => {
+    if (flushQueued) return
+    flushQueued = true
+    queueMicrotask(sendOps)
+  }
 
-  const cancelFit = (): void => {
-    if (fitFrame) cancelAnimationFrame(fitFrame)
-    fitFrame = 0
+  /** Applies ops locally and queues them for main; returns their inverse. */
+  const run = (ops: readonly CanvasOp[]): CanvasOp[] => {
+    const before = get().items
+    const inverse = invertOps(before, ops)
+    for (const op of ops) {
+      if (op.op !== 'delete') continue
+      const item = before.get(op.id)
+      if (item?.note && item.refId) deletedNotes.set(item.refId, item.note)
+    }
+    const items = reduceOps(before, ops, Date.now(), noteLookup(before))
+    syncGrid(items, ops)
+    set({ items })
+    pendingOps.push(...ops)
+    queueSend()
+    return inverse
+  }
+
+  const cancelCamera = (): void => {
+    if (cameraFrame) cancelAnimationFrame(cameraFrame)
+    cameraFrame = 0
+    cameraTarget = null
   }
 
   return {
@@ -146,71 +182,96 @@ export const useCanvasStore = create<CanvasState>()((set, get) => {
     tool: 'select',
     spaceHeld: false,
     panning: false,
+    snap: true,
 
     load: async () => {
       const token = ++loadToken
-      const [rows, viewport] = await Promise.all([
+      const [rows, viewport, snap] = await Promise.all([
         window.sprawl.canvas.load(),
         window.sprawl.settings.get('viewport'),
+        window.sprawl.settings.get('snap'),
       ])
       if (token !== loadToken) return
       const items = new Map(rows.map((row) => [row.id, row]))
       canvasGrid.clear()
       for (const item of items.values()) canvasGrid.set(item.id, item)
-      set({ ready: true, items, viewport })
+      set({ ready: true, items, viewport, snap })
+      afterHistory?.(items)
     },
 
     unload: () => {
       get().flush()
-      cancelFit()
+      cancelCamera()
       loadToken++
       set({ ready: false, panning: false, spaceHeld: false })
     },
 
-    apply: (ops) => {
-      if (ops.length === 0) return
-      const items = reduceOps(get().items, ops)
-      syncGrid(items, ops)
+    apply: (ops, { record = true } = {}) => {
+      if (ops.length === 0) return null
+      const inverse = run(ops)
+      return record && inverse.length > 0 ? canvasHistory.record(inverse) : null
+    },
+
+    undo: () => {
+      const entry = canvasHistory.takeUndo()
+      if (!entry) return
+      canvasHistory.pushRedo(run(entry.ops), entry.id)
+      afterHistory?.(get().items)
+    },
+
+    redo: () => {
+      const entry = canvasHistory.takeRedo()
+      if (!entry) return
+      canvasHistory.pushUndo(run(entry.ops), entry.id)
+      afterHistory?.(get().items)
+    },
+
+    undoStep: (id) => {
+      if (canvasHistory.isLatest(id)) return get().undo()
+      const entry = canvasHistory.remove(id)
+      if (!entry) return
+      // Later steps stay undoable; undoing this one becomes a step of its own.
+      canvasHistory.record(run(entry.ops))
+      afterHistory?.(get().items)
+    },
+
+    renameNote: (itemId, title) => {
+      const item = get().items.get(itemId)
+      if (!item?.note || !item.refId || item.note.title === title) return
+      const items = new Map(get().items)
+      items.set(itemId, { ...item, note: { ...item.note, title } })
       set({ items })
-      pendingOps.push(...ops)
-      if (!flushQueued) {
-        flushQueued = true
-        queueMicrotask(sendOps)
-      }
+      // The note's create may still be queued; it has to reach main first.
+      if (flushQueued) sendOps()
+      window.sprawl.notes.update(item.refId, { title }).catch((err: unknown) => {
+        console.error('[canvas] rename failed; reloading', err)
+        void get().load()
+      })
     },
 
     setViewport: (viewport) => {
-      cancelFit()
+      cancelCamera()
       set({ viewport })
       saveViewport(viewport)
     },
 
-    zoomStep: (dir) => {
-      const { viewport, setViewport } = get()
-      setViewport(zoomAt(viewport, center(), stepZoom(viewport.zoom, dir)))
-    },
-
-    zoomReset: () => {
-      const { viewport, setViewport } = get()
-      setViewport(zoomAt(viewport, center(), 1))
-    },
-
-    zoomToFit: () => {
-      const { items, size, viewport: from, setViewport } = get()
-      const to = fitViewport(boundsOf(items.values()), size)
-      if (prefersReducedMotion()) return setViewport(to)
-      cancelFit()
+    animateViewport: (to, ms) => {
+      const { viewport: from, setViewport } = get()
+      if (prefersReducedMotion() || ms <= 0) return setViewport(to)
+      cancelCamera()
+      cameraTarget = to
       const start = performance.now()
       const tick = (t: number): void => {
-        const p = Math.min(1, (t - start) / FIT_MS)
+        const p = Math.min(1, (t - start) / ms)
         set({ viewport: lerpViewport(from, to, easeOut(p)) })
-        if (p < 1) fitFrame = requestAnimationFrame(tick)
+        if (p < 1) cameraFrame = requestAnimationFrame(tick)
         else {
-          fitFrame = 0
+          cameraFrame = 0
+          cameraTarget = null
           saveViewport(to)
         }
       }
-      fitFrame = requestAnimationFrame(tick)
+      cameraFrame = requestAnimationFrame(tick)
     },
 
     setSize: (size) => set({ size }),

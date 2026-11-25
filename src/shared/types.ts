@@ -16,10 +16,12 @@ export interface CanvasRect {
   h: number
 }
 
-/** What a note card shows of its note. later: phase-3 adds the preview and the chip counts. */
+/** What a note card shows of its note. later: phase-4 adds the chip counts and the due day. */
 export interface CardNote {
   title: string
   color: NoteColor
+  /** The start of the body as plain text (`body_text`), for the card preview. */
+  preview: string
 }
 
 /** The fields the renderer chooses for a card (the rest is set by main). */
@@ -42,11 +44,46 @@ export interface CanvasItem extends CanvasItemInput {
   note?: CardNote
 }
 
-/** The note created together with its card (a note never exists on the canvas without one). */
+/**
+ * A new note. On the canvas it's created together with its card (a note never exists on the
+ * canvas without one).
+ */
 export interface NewNote {
   id: string
   title: string
   color: NoteColor
+  /** Plain text for the body, one paragraph per line (a note made by pasting text). */
+  body?: string
+  /** Copy the body and links of this note (a canvas duplicate, PRODUCT §3.1). */
+  copyOf?: string
+}
+
+/** A note as stored (ARCHITECTURE §4). */
+export interface Note {
+  id: string
+  title: string
+  /** The BlockNote document as JSON. */
+  bodyJson: string
+  bodyText: string
+  color: NoteColor
+  dueDay: string | null
+  dueTime: string | null
+  remind: string
+  remindAt: number | null
+  remindedAt: number | null
+  doneAt: number | null
+  checkTotal: number
+  checkDone: number
+  attachCount: number
+  createdAt: number
+  updatedAt: number
+  deletedAt: number | null
+}
+
+/** The note fields `notes.update` can change so far. later: phase-4 adds the body and due. */
+export interface NotePatch {
+  title?: string
+  color?: NoteColor
 }
 
 export type CanvasItemPatch = Partial<
@@ -54,15 +91,20 @@ export type CanvasItemPatch = Partial<
 >
 
 /**
- * The unit of canvas persistence (and, from phase 3, of undo). `canvas.apply` runs a batch in
- * one transaction. later: phase-3 adds `restore` and `setColor`, phase-5 `setDone`.
+ * The unit of canvas persistence and of undo (ARCHITECTURE §5). `canvas.apply` runs a batch in
+ * one transaction. later: phase-5 adds `setDone`.
  */
 export type CanvasOp =
   | { op: 'create'; item: CanvasItemInput; note?: NewNote }
   | { op: 'update'; id: string; patch: CanvasItemPatch }
+  /** Removes the card; a note or drawing card also soft-deletes its note or drawing. */
   | { op: 'delete'; id: string }
+  /** The inverse of `delete`: puts the card back with its old id and un-deletes its ref. */
+  | { op: 'restore'; item: CanvasItemInput }
+  /** Sets the color of a note card's note. */
+  | { op: 'setColor'; id: string; color: NoteColor }
 
 export interface CanvasApplyResult {
-  /** The created rows as stored, so the renderer can replace its optimistic copies. */
+  /** The created and restored rows as stored, so the renderer can replace its optimistic copies. */
   created: CanvasItem[]
 }

@@ -182,9 +182,20 @@ export const canvasItemInputSchema = z
     }
   })
 
+const noteTitleSchema = z.string().max(10_000)
+
 export const newNoteSchema = z
-  .object({ id: idSchema, title: z.string().max(10_000), color: noteColorSchema })
+  .object({
+    id: idSchema,
+    title: noteTitleSchema,
+    color: noteColorSchema,
+    body: z.string().max(1_000_000).optional(),
+    copyOf: idSchema.optional(),
+  })
   .strict()
+  .refine((n) => n.body === undefined || n.copyOf === undefined, {
+    message: 'A note is either pasted (body) or a copy (copyOf), not both',
+  })
 
 export const canvasItemPatchSchema = z
   .object({
@@ -215,7 +226,21 @@ export const canvasOpSchema = z.discriminatedUnion('op', [
     }),
   z.object({ op: z.literal('update'), id: idSchema, patch: canvasItemPatchSchema }).strict(),
   z.object({ op: z.literal('delete'), id: idSchema }).strict(),
+  z.object({ op: z.literal('restore'), item: canvasItemInputSchema }).strict(),
+  z.object({ op: z.literal('setColor'), id: idSchema, color: noteColorSchema }).strict(),
 ])
 
 /** One `canvas.apply` batch. 5,000 ops covers a big paste or the dev seed with room to spare. */
 export const canvasApplyInput = z.array(canvasOpSchema).min(1).max(5000)
+
+// notes ------------------------------------------------------------------------------------
+
+export const notePatchSchema = z
+  .object({ title: noteTitleSchema, color: noteColorSchema })
+  .strict()
+  .partial()
+  .refine((patch) => Object.keys(patch).length > 0, { message: 'Empty patch' })
+
+export const noteIdInput = idSchema
+export const notesCreateInput = newNoteSchema
+export const notesUpdateInput = z.object({ id: idSchema, patch: notePatchSchema }).strict()

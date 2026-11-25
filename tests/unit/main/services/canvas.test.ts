@@ -158,12 +158,121 @@ describe('CanvasService.load', () => {
     ])
     const items = canvas.load()
     expect(items.map((i) => i.id)).toEqual(['low', 'mid', 'top'])
-    expect(items[2]?.note).toEqual({ title: 'Note n1', color: 'sage' })
+    expect(items[2]?.note).toEqual({ title: 'Note n1', color: 'sage', preview: '' })
     expect(items[1]?.note).toBeUndefined()
   })
 
   it('throws with no vault open', () => {
     const closed = new CanvasService({ db: () => null })
     expect(() => closed.load()).toThrow(/No vault/)
+  })
+})
+
+describe('CanvasService restore and setColor', () => {
+  const rows = () => ({
+    items: count('canvas_items'),
+    notes: count('notes'),
+    live: count('notes', 'deleted_at IS NULL'),
+  })
+
+  it('round-trips a note card through create, delete and restore with no orphan rows', () => {
+    const create = noteCard('c1', 'n1', { x: 16, y: 24 })
+    canvas.apply([create])
+    const input = create.op === 'create' ? create.item : null
+    now = 2_000
+    canvas.apply([{ op: 'delete', id: 'c1' }])
+    expect(rows()).toEqual({ items: 0, notes: 1, live: 0 })
+
+    now = 3_000
+    const { created } = canvas.apply([{ op: 'restore', item: input! }])
+    expect(created[0]).toMatchObject({ id: 'c1', x: 16, y: 24, note: { title: 'Note n1' } })
+    expect(rows()).toEqual({ items: 1, notes: 1, live: 1 })
+    expect(canvas.load().map((i) => i.id)).toEqual(['c1'])
+
+    // Undoing the create (a delete) and redoing it (a restore) never duplicates anything.
+    canvas.apply([{ op: 'delete', id: 'c1' }])
+    canvas.apply([{ op: 'restore', item: input! }])
+    canvas.apply([{ op: 'delete', id: 'c1' }])
+    expect(rows()).toEqual({ items: 0, notes: 1, live: 0 })
+  })
+
+  it('refuses to restore a card whose note was purged, rolling back the batch', () => {
+    const create = noteCard('c1', 'n1')
+    canvas.apply([create])
+    canvas.apply([{ op: 'delete', id: 'c1' }])
+    handle.sqlite.prepare("DELETE FROM notes WHERE id = 'n1'").run()
+    const item = create.op === 'create' ? create.item : null
+    expect(() => canvas.apply([linkCard('l1'), { op: 'restore', item: item! }])).toThrow(
+      /purged note/,
+    )
+    expect(count('canvas_items')).toBe(0)
+  })
+
+  it('keeps one card per note', () => {
+    canvas.apply([noteCard('c1', 'n1')])
+    const second: CanvasOp = {
+      op: 'restore',
+      item: {
+        id: 'c2',
+        kind: 'note',
+        refId: 'n1',
+        url: null,
+        title: null,
+        x: 0,
+        y: 0,
+        w: 220,
+        h: 96,
+        z: 2,
+      },
+    }
+    expect(() => canvas.apply([second])).toThrow(/UNIQUE/)
+    expect(count('canvas_items')).toBe(1)
+  })
+
+  it("sets a note card's color, and ignores a card that's gone", () => {
+    canvas.apply([noteCard('c1', 'n1'), linkCard('l1')])
+    now = 5_000
+    canvas.apply([
+      { op: 'setColor', id: 'c1', color: 'rose' },
+      { op: 'setColor', id: 'gone', color: 'sky' },
+    ])
+    expect(canvas.load().find((i) => i.id === 'c1')?.note?.color).toBe('rose')
+    expect(
+      handle.sqlite.prepare("SELECT updated_at FROM notes WHERE id = 'n1'").pluck().get(),
+    ).toBe(5_000)
+    expect(() => canvas.apply([{ op: 'setColor', id: 'l1', color: 'sky' }])).toThrow(
+      /Only note cards/,
+    )
+  })
+
+  it('creates a pasted note with a body, and shows its start as the preview', () => {
+    const op = noteCard('c1', 'n1')
+    if (op.op !== 'create') throw new Error('expected a create')
+    const { created } = canvas.apply([
+      { ...op, note: { id: 'n1', title: 'Groceries', color: 'stone', body: 'eggs\nmilk' } },
+    ])
+    expect(created[0]?.note).toEqual({ title: 'Groceries', color: 'stone', preview: 'eggs\nmilk' })
+    const json = handle.sqlite.prepare("SELECT body_json FROM notes WHERE id = 'n1'").pluck().get()
+    expect(JSON.parse(json as string)).toHaveLength(2)
+  })
+
+  it('creates a copy of a note (body and links) for a duplicated card', () => {
+    canvas.apply([noteCard('c1', 'n1')])
+    handle.sqlite
+      .prepare("UPDATE notes SET body_text = 'hello', due_day = '2026-12-01' WHERE id = 'n1'")
+      .run()
+    handle.sqlite
+      .prepare("INSERT INTO note_links VALUES ('k1', 'n1', 'https://example.com', 'Ex', 0)")
+      .run()
+    const op = noteCard('c2', 'n2')
+    if (op.op !== 'create') throw new Error('expected a create')
+    canvas.apply([{ ...op, note: { id: 'n2', title: 'Note n1', color: 'sky', copyOf: 'n1' } }])
+    expect(canvas.load().find((i) => i.id === 'c2')?.note).toEqual({
+      title: 'Note n1',
+      color: 'sky',
+      preview: 'hello',
+    })
+    expect(count('note_links', "note_id = 'n2'")).toBe(1)
+    expect(count('notes', "id = 'n2' AND due_day IS NULL")).toBe(1)
   })
 })

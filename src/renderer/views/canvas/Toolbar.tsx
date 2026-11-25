@@ -37,9 +37,15 @@ const NAV_TOOLS: readonly ToolDef[] = [
   },
 ]
 
-// later: phase-3 Note, phase-7 Link and Image, phase-8 Drawing.
+// later: phase-7 Link and Image, phase-8 Drawing.
 const CREATE_TOOLS: readonly ToolDef[] = [
-  { id: 'note', label: 'Note', icon: IconNote, shortcut: 'N' },
+  {
+    id: 'note',
+    label: 'Note',
+    icon: IconNote,
+    shortcut: shortcutLabel(CANVAS_SHORTCUTS.toolNote),
+    tool: 'note',
+  },
   { id: 'link', label: 'Link', icon: IconLink, shortcut: 'L' },
   { id: 'drawing', label: 'Drawing', icon: IconScribble, shortcut: 'D' },
   { id: 'image', label: 'Image', icon: IconPhotoPlus, shortcut: 'I' },

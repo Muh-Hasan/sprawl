@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { BrowserWindow, screen, shell } from 'electron'
 import { APP_BG, TITLE_BAR_HEIGHT, TITLE_BAR_SYMBOL, WINDOW_MIN } from '@shared/constants'
 import { isAllowedExternalUrl } from '@shared/schemas'
+import { env } from './env'
 import icon from '../../resources/icon.ico?asset'
 import type { WindowState } from './config'
 import { initialBounds, trackWindowState } from './windowState'
@@ -37,6 +38,10 @@ export function createMainWindow({ saved, onStateChange }: MainWindowOptions): B
       nodeIntegration: false,
       sandbox: true,
       spellcheck: false,
+      // E2E windows usually sit behind whatever you're doing. Throttled, they stop drawing
+      // frames, so animation frames, ResizeObserver and animations stall and the canvas tests
+      // flake. A real window is in front when it's used, so it keeps Chromium's default.
+      backgroundThrottling: !env.e2e,
     },
   })
 

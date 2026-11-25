@@ -7,10 +7,74 @@ A running log of the build, one phase per session (see `PHASES.md`). Read this f
 | 0 — Project setup | ✅ Done | 2026-11-24 |
 | 1 — Vault, database and app shell | ✅ Done | 2026-11-25 |
 | 2 — Canvas foundations | ✅ Done | 2026-11-25 |
-| 3 — Notes on the canvas | ⏭ Next | |
-| 4–6 | Not started | |
+| 3 — Notes on the canvas | ✅ Done | 2026-11-25 |
+| 4 — Note panel and editor | ⏭ Next | |
+| 5–6 | Not started | |
 | Dogfood checkpoint | Not started | |
 | 7–12 | Not started | |
+
+---
+
+## Phase 3 — Notes on the canvas ✅
+
+**Branch:** `feat/phase-3-notes` → merged into `main` (no tag).
+
+### Built
+- **Notes service and IPC** (`services/notes.ts`): `get`, `create`, `update` (title and color so far), `duplicate` (copies the title, body, color, links and refs, not the due date or done state), `remove` and `restore` (soft delete). The **30-day purge** runs on every vault open (launch and switch), removing notes and drawings with their cards, refs (both directions) and search rows; links and activity go by cascade and log entries keep their title snapshot.
+- **Canvas ops:** `restore` (puts the card back with its old id and un-deletes its note; fails if the note was purged) and `setColor`. A note card's `create` can carry a pasted `body` (one paragraph per line) or `copyOf` (a canvas duplicate). Cards now carry a `preview` (the first 400 characters of `body_text`).
+- **NoteCard:** title (2 lines), plain-text preview (4 lines, hidden when empty and below 40%), color, hover border and lift, selection outline and corner handles that stay the same size on screen at any zoom, drag lift, and a fade-in for new cards. The stored height is a floor: the card grows with its content up to 320. Room is left for the phase-4 chips.
+- **Creating notes:** double-click on empty space, the Note tool (click for a default note, or **drag to draw one at that size**), Ctrl+N (view center), pasting text (first line → title, the rest → body), and "New note here" in the menu. The title is focused, and a note that's off screen or made while zoomed out glides into view at 100%.
+- **Inline title editing:** a textarea that grows with the text; Enter or clicking away saves (one `notes.update`), Esc reverts. Until the panel exists, a double-click anywhere on a card edits its title.
+- **Selection:** click, Shift+click, marquee (touching cards, Shift adds), Ctrl+A, Esc, and a dashed box around a multi-selection.
+- **Move, resize, nudge:** drag (8px snap of the grabbed card, Alt skips; the `snap` setting is respected), corner handles (160–480 × 64–320), arrow keys (1px, Shift 8px; a held key is written once on keyup). All shown through transient rects and written in one batch at the end.
+- **Commands:** Delete/Backspace with a "Deleted · Undo" toast, Ctrl+D duplicate (new notes and cards, 24px offset, "Duplicated" toast), Ctrl+] / Ctrl+[ restack, color.
+- **Undo/redo** (Ctrl+Z / Ctrl+Shift+Z) for every canvas op, 200 steps (`historyStore.ts`); a toast's Undo works even after later steps or an undo/redo round trip.
+- **Selection toolbar** (FigJam-style, requested during the phase): colors, Duplicate, Bring to front, Send to back, Delete, floating above the selection.
+- **Context menu** (UI_SPEC §4.10) with this phase's items: Color ▸, Duplicate, Bring to front, Send to back, Delete; on empty space New note here, Paste, Zoom to fit.
+- **Smoother canvas** (requested): zoom steps and reset glide (180ms), fit and reveal glide (240ms), drags are folded to one update per frame, and the dot grid is now **endless**: the phase-2 grid (20px × zoom, doubled below 50%) keeps doubling instead of hiding below 25%. Two other grids were tried during the phase (constant density, then board-pinned with fading layers); you preferred going back to the original, just never hidden.
+- **shadcn:** `context-menu`, `sonner` (+ `lucide-react` for their stock glyphs, and `next-themes` that the stock Sonner file imports). Wrappers `Toaster.tsx` and `UndoToast.tsx`.
+- **Tests:**
+  - 141 unit tests (+39): op inversion for every op type and round trips back to the start, the 200-step cap and stable step ids, snap/resize/draw/restack math, `revealViewport`, the dot grid, the store's undo/redo/undoStep, **no `canvas.apply` during a drag (spy) and one batch at the end**, `renameNote` ordering, the notes service (CRUD, paste body, duplicate, soft delete), the canvas service (create/delete/restore round trip with no orphan rows, purged-note restore rollback, one card per note, setColor, paste and copy), and the purge (only items older than 30 days, with their rows).
+  - 39 E2E tests (+12): `canvas.spec.ts` (double-click → title → drag with snap and Alt → relaunch; Note tool click and drag, Ctrl+N, paste; title editing; resize limits; marquee + delete + undo/redo + toast Undo; Ctrl+Z through delete, resize, move and create; colors from the toolbar and menu, restack from keys and toolbar, nudge and undo; reveal at 100%) and `canvas-select.spec.ts` (marquee 3 of 4 → Ctrl+D → undo removes the duplicates; click, Shift+click, Ctrl+A, group drag, Esc; single-key tools don't fire while typing).
+
+### Exit check
+- ✅ `npm run check` is green: typecheck (3 projects), ESLint + Prettier, 141 unit tests and 39 E2E tests. The two canvas specs also passed 3 runs in a row on their own.
+- ✅ **No DB write during a drag:** `canvasStore.test.ts` drives 60 transient updates with a spy on `canvas.apply`: zero calls, then exactly one batch on commit.
+
+### "It should" (checked by automation; you exercised it with `npm run dev` during the phase)
+- ✅ Double-click anywhere to make a sticky and type a title (E2E).
+- ✅ Drag it around, resize it and delete it (E2E, including snapping and the size limits).
+- ✅ Ctrl+Z undoes it all, one step at a time (E2E: delete → resize → move → create).
+- ✅ Everything is still there after a restart (E2E relaunch).
+- ⚠️ **Still to confirm by hand with a fresh `npm run dev`:** the glide feel of zoom steps and reveal, the dot grid while zooming, and live dragging (see below).
+
+### Changes requested during the phase (the docs are updated)
+- **Note colors → "soft tints"** (DESIGN_SYSTEM §2.3). Chosen from a rendered side-by-side preview after trying bright pastels and dusty mid-tones in the app: richer than the first spec's very dark tints, still light text (≥ 10.9:1). The picker shows each color as the card color ringed in the bright hue (`pickerSwatch`), so it matches the card.
+- **FigJam-style selection toolbar** with the colors and quick actions (UI_SPEC §4.9, DESIGN_SYSTEM §8). The right-click menu stays as the full list (your call was "what do you suggest?": kept, because it's invisible until used, right-click is a desktop reflex, and Open, Mark done and Due date… land there in phases 4–5).
+- **Note tool:** click places, drag sizes.
+- **Smoothness:** gliding zoom commands and reveal (DESIGN_SYSTEM §6 now allows command glides; wheel, pinch and drags stay direct), per-frame drag updates, new notes glide into view.
+- **Dot grid** (UI_SPEC §4.1): back to the phase-2 grid, but never hidden when zoomed out.
+- **Double-click on a card** edits its title until phase 4 gives the rest of the card to the panel.
+
+### Decisions and findings (the docs are updated)
+- **Pointer capture retargets `dblclick`** to the board, so a double-click on a card looked like one on empty space and made a new note (you hit this). Double-clicks now hit-test `elementFromPoint`.
+- **Focusing scrolls overflow-hidden boxes:** an autofocused title could scroll the canvas element itself, shifting every card away from where the pointer math puts it. The title focuses with `preventScroll`, and the canvas resets any scroll.
+- **No scale-in for new cards:** a scale animation moves the hit area while it runs, and it stalls in a window that isn't painting, so a quick grab missed (the flaky E2E). New cards fade in only.
+- **The menu's closing animation keeps focus inside it,** so shortcuts right after a menu action were swallowed; the key handler now only defers to menus that are still open.
+- **Title edits aren't canvas undo steps** (PRODUCT lists create, move, resize, delete, color and done); undoing a create still removes the note.
+- **Main's created rows don't overwrite local changes:** only `createdAt` (and the note, if the local copy has none) is taken, since a card can move before the batch answers.
+- **Dot alignment:** a `radial-gradient(circle …)` tile draws its dot in its center. The two-layer grid tried mid-phase put its coarse dots in the middle of the fine squares (you spotted it as "5 dots"). The final single-layer grid is offset by half a tile (`dotLayerPosition`) so a dot sits on the world origin and doubling keeps every other dot in place.
+- **Background windows stall:** Chromium throttles a window that isn't in front, so animation frames, ResizeObserver and animations stop, and the canvas tests flaked while you used the machine. E2E windows turn `backgroundThrottling` off (real windows keep the default). The canvas size is also measured synchronously on mount, and a reveal never runs against an unmeasured (0×0) canvas; that was gliding new notes to the top-left corner.
+- **Known flake:** the "resizing from a corner" E2E has failed once or twice under heavy load (never alone, 5/5); Playwright's single retry covers it. Worth a look if it shows up again.
+- **Bundle:** the renderer is 490 kB minified (396 kB before this phase); the growth is Radix's menu/popper and Sonner, both in the stack.
+- If dragging ever looks "not live" under `npm run dev`, restart it: hot-reloading the Zustand stores many times can leave cards listening to an old store copy.
+
+### Open / carried forward
+- **Your request: writing on the canvas without a note** (free text, like FigJam's text tool). Not in the spec yet: it needs a new card kind (`text`) and a Text tool. To decide: which phase it goes in (it fits with phase 7's link and image cards) before it's built.
+- **Your request: markdown and checklists in notes** is phase 4 (BlockNote: `/` menu, `[] ` checklists, headings, and the "2/5" chip on the card).
+- **Phase 4:** Open (Enter / double-click off the title) → the panel; Due date… in the menu; the chips row (chip backgrounds should be checked against the new soft tints); ColorSwatches in the panel reuse `pickerSwatch`.
+- **Phase 5:** Mark done (menu, hover check button), `setDone`, the "Show done" toggle and the status pill.
+- `gh` still isn't installed: the PR is opened and merged in the browser.
 
 ---
 
@@ -71,9 +135,7 @@ A running log of the build, one phase per session (see `PHASES.md`). Read this f
 - `tsconfig.e2e.json` now includes `src/shared/**` so specs can import shared types.
 
 ### Open / carried forward
-- **Phase 3:**
-  - The `restore` and `setColor` ops, undo, selection, marquee, the Note tool and the real NoteCard (preview, hover, chips room).
-  - The Select tool's left-drag on empty space is free for the marquee.
+- **Phase 3:** done (see above).
 - **Phase 5:** `setDone`, the "Show done" toggle and the bottom-left status pill (UI_SPEC §4.3; it needs "done today").
 - **README header:** the `docs/readme-header` branch (`brand/readme-header.svg` as the banner) is pushed. Its PR is to be opened and merged in the browser (`gh` isn't installed).
 
@@ -145,7 +207,7 @@ A running log of the build, one phase per session (see `PHASES.md`). Read this f
   - Phase 11: the corrupt or locked DB screen (a remembered vault that fails to open currently logs and shows onboarding).
   - Phase 12: the welcome note, the version in About, and the Settings placeholders still to wire up.
 - **Phase 12 packaging:** `build/icon.ico` is now ready. Still to do: `npmRebuild: false` and unpacking `better-sqlite3/prebuilds/*.node`. The bundled fonts are OFL-licensed, and OFL expects its license text to ship with the font files, so decide then whether the installer includes it.
-- **From phase 3:** component tests need `jsdom` and `@testing-library/react`.
+- **From phase 4:** component tests need `jsdom` and `@testing-library/react` (phase 3 needed none).
 
 ---
 

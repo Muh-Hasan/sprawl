@@ -11,6 +11,8 @@ export interface VaultDeps {
   documentsDir: string
   /** `SPRAWL_VAULT`: use this vault, skip onboarding, and don't remember it. */
   envVault: string | null
+  /** Runs after a vault opens (the 30-day purge). A failure is logged, not fatal. */
+  onOpen?: (handle: DbHandle) => void
 }
 
 interface OpenVault {
@@ -69,6 +71,11 @@ export class VaultService {
     const handle = openDatabase(join(path, VAULT_DB_FILE)) // throws before anything changes
     this.close()
     this.current = { path, handle }
+    try {
+      this.deps.onOpen?.(handle)
+    } catch (err) {
+      console.error('[vault] post-open housekeeping failed', err)
+    }
     if (remember) this.deps.config.update((c) => void (c.vaultPath = path))
     return this.info()
   }

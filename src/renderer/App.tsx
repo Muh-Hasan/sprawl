@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Toaster } from '@/components/Toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useVaultStore } from '@/stores/vaultStore'
 import { ChooseVault } from '@/views/onboarding/ChooseVault'
@@ -27,6 +28,7 @@ export function App() {
           <Shell />
         )}
       </div>
+      <Toaster />
     </TooltipProvider>
   )
 }
