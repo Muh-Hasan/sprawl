@@ -60,14 +60,17 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
 
 ### 4.1 Surface
 - `--background` background with a dot grid: `radial-gradient(circle, var(--canvas-dot) 1px, transparent 1.2px)`.
-  - The grid spacing is `20px × zoom`. Below 50% zoom it doubles to 40px, and below 25% the dots are hidden.
+  - The grid spacing is `20px × zoom`. Below 50% zoom it doubles to 40px, and it keeps doubling each time the zoom halves after that (80px below 25%, and so on), so the dots are **never hidden** and stay at least 10px apart however far out you zoom.
+  - The dots sit on the world grid (a dot on the origin), so when the spacing doubles every other dot stays in place.
   - `background-position` follows the pan.
 - The cursor is `default`. It's `grab`/`grabbing` in Hand mode or while space is held, and `crosshair` for the Note and Link tools.
+- The canvas element itself never scrolls (focus and find-in-page could scroll even an overflow-hidden box); any scroll is reset at once.
 
 ### 4.2 Floating toolbar
 - Positioned top center, 12px from the top. `--card` background with a 1px border, radius 10, `--shadow-popover`, and 4px padding.
 - Six 32×32 ghost icon buttons (18px icons): Select, Hand │ Note, Link, Drawing, Image. There's a 1px × 16px divider after Hand.
 - The **active tool** gets a `--muted` background and a `--foreground` icon.
+- **Note tool:** a click places a default-size note there; a click-and-drag draws the note at the dragged size (snapped, within the note size limits), shown as a dashed card-shaped outline while dragging. Either way the title is focused and the tool goes back to Select.
 - Each tooltip shows the label and its single-key shortcut.
 
 ### 4.3 Bottom-left status pill
@@ -89,6 +92,8 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
 └──────────────────────────────┘
 ```
 - **Box:** note `bg`, 1px note `border`, radius 10, padding 12px 14px, `--shadow-card`.
+- **Height:** the stored `h` is a floor. The card grows with its content up to the 320 max, and a resize sets the floor (so it can be made taller than its content, not shorter).
+- **New card:** fades in (DESIGN_SYSTEM §6). If it's off screen or the view is below 100%, the view glides to it (240ms), zooming in to 100% around it.
 - **Title:** `text-card-title` (13/18, 600) in note `text`, max 2 lines with an ellipsis. An empty title shows "Untitled" in note `text` at 60% opacity (subtle text is too low-contrast on note colors; DESIGN_SYSTEM §2.3).
 - **Preview:** `text-xs` at note `text` with 70% opacity, an 8px gap after the title, max 4 lines with a fade-out ellipsis. It's hidden if the body is empty.
 - **Chips row:** 10px top margin, 6px gap, wraps.
@@ -100,7 +105,7 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
 - **Hover:** border +8% white and `--shadow-lift`. A **checkmark button** fades in at the top-right (20×20, ghost, `IconCheck` 14px) for a one-click Mark done.
 - **Dragging:** scale 1.02, `--shadow-lift`, 95% opacity.
 - **Below 40% zoom:** the card shows only the title at 13px, with the chips and preview hidden.
-- **Editing the title on the card:** double-clicking the title text (not the card) edits it inline. Double-clicking elsewhere opens the panel.
+- **Editing the title on the card:** double-clicking the title text (not the card) edits it inline: a textarea that grows with the text, with the old title selected. Enter or clicking away saves (one `notes.update`), Esc puts the old title back. Double-clicking elsewhere opens the panel; until the panel exists (phase 4) it edits the title too.
 
 ### 4.6 Drawing card
 - Default 280×200. `--card` background with a 1px `--border` and radius 10, plus 6px padding.
@@ -120,12 +125,14 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
 - Clicking selects it, and **Ctrl+click** or the hover `IconExternalLink` button opens the URL in the browser.
 
 ### 4.9 Selection and marquee
-- Selection follows DESIGN_SYSTEM §8.
-- **Marquee:** a 1px `--muted-foreground` dashed outline with an `rgb(250 250 250 / .04)` fill.
+- Selection follows DESIGN_SYSTEM §8. A click selects, Shift+click toggles, a click on empty space clears; resize handles show on a single selected card.
+- **Marquee:** a 1px `--muted-foreground` dashed outline with a `--marquee-fill` (`rgb(250 250 250 / .04)`) fill. It selects every card it touches (Shift+drag adds to the selection).
+- **Selection toolbar:** over selected notes, FigJam-style (DESIGN_SYSTEM §8): the six color swatches, then Duplicate, Bring to front, Send to back and Delete. testids `selection-toolbar`, `selection-color-<color>`, `selection-duplicate`, `selection-front`, `selection-back`, `selection-delete`.
 
 ### 4.10 Context menu
 Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatches inline in the submenu, 16px circles) · Due date… · ─ · Duplicate (Ctrl+D) · Bring to front (Ctrl+]) · Send to back (Ctrl+[) · ─ · Delete (Del, destructive text).
-- Note-only items (Mark done, Color, Due date…) are hidden for other card kinds. With a multi-selection, the menu applies to every selected item.
+- Note-only items (Mark done, Color, Due date…) are hidden for other card kinds. With a multi-selection, the menu applies to every selected item. Right-clicking an unselected card selects just that card first.
+- Items appear in the phase that makes them work: phase 3 has Color, Duplicate, Bring to front, Send to back and Delete; Open and Due date… come in phase 4, Mark done in phase 5, New drawing here in phase 8. The selection toolbar repeats the quick actions; the menu stays as the full list.
 - On empty canvas: New note here · New drawing here · Paste · ─ · Zoom to fit (Shift+1).
 
 ---

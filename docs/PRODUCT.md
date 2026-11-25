@@ -64,7 +64,8 @@ An infinite, pannable and zoomable board with a dotted background.
 
 **Creating things**
 - Double-click an empty area to create a note there and focus its title.
-- The Note tool creates a note on click, and the tool then reverts to Select.
+- The Note tool creates a note on click (or, with a click-and-drag, a note of the dragged size), and the tool then reverts to Select.
+- A new note gets its title focused. If it's off screen or the view is zoomed out, the view glides to it at 100%.
 - Pasting text on the canvas creates a note with that text. Pasting a URL creates a link card. Pasting an image creates an image card.
 - Dropping files from the OS: images become image cards, and other files become a note with a file block.
 - The Drawing tool creates an empty drawing card and opens the drawing editor.
@@ -78,6 +79,7 @@ An infinite, pannable and zoomable board with a dotted background.
 - Ctrl+D duplicates. Duplicating a note card creates a **new note** (a copy of the title, body, color and links, but not the due date or done state) with its own card, offset by 24px. A note has **at most one card** on the canvas.
 - Ctrl+] brings the selection to the front, and Ctrl+[ sends it to the back.
 - Arrow keys nudge by 1px, and Shift+arrow nudges by 8px.
+- Selected notes get a floating toolbar above them (FigJam-style): the six colors, Duplicate, Bring to front, Send to back and Delete (UI_SPEC §4.9).
 - Right-click opens a context menu: Open, Mark done, Color ▸, Due date…, Duplicate, Bring to front, Send to back, Delete (full layout in UI_SPEC §4.10).
 - **Undo/redo** (Ctrl+Z and Ctrl+Shift+Z) covers every canvas operation: create, move, resize, delete, color and done.
 
