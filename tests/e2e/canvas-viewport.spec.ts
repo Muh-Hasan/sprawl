@@ -139,7 +139,7 @@ test.describe('canvas viewport', () => {
     await canvas.ready()
     const cards = window.getByTestId('note-card')
     await expect(cards).toHaveCount(1)
-    await expect(cards.first()).toHaveAttribute('data-id', 'near')
+    await expect(cards.first()).toHaveAttribute('data-card-id', 'near')
     await expect(cards.first()).toContainText('Card near')
     await expect(cards.first()).not.toHaveAttribute('data-simplified')
 

@@ -1,0 +1,191 @@
+import { useState, type ReactNode } from 'react'
+import { NOTE_COLORS } from '@shared/constants'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
+import { NOTE_COLOR_CLASSES } from '@/lib/noteColors'
+import { CANVAS_SHORTCUTS, shortcutLabel } from '@/lib/shortcuts'
+import { cn } from '@/lib/utils'
+import { useCanvasStore } from '@/stores/canvasStore'
+import { useSelectionStore } from '@/stores/selectionStore'
+import {
+  createNoteAt,
+  createNoteFromText,
+  deleteSelection,
+  duplicateSelection,
+  restackSelection,
+  setSelectionColor,
+} from './actions'
+import { zoomToFit } from './camera'
+import { screenToWorld, type Point } from './Viewport'
+
+type Target = { kind: 'cards'; notes: boolean } | { kind: 'canvas'; at: Point }
+
+/**
+ * The right-click menu (UI_SPEC §4.10). On a card it acts on the whole selection (right-clicking
+ * an unselected card selects just that one); on empty space it offers to create and paste.
+ * later: phase-4 adds Open and Due date…, phase-5 Mark done, phase-8 New drawing here.
+ */
+export function CanvasContextMenu({ children }: { children: ReactNode }) {
+  const [target, setTarget] = useState<Target | null>(null)
+
+  const onContextMenu = (e: React.MouseEvent<HTMLElement>): void => {
+    const el = e.target instanceof Element ? e.target : null
+    // The toolbar and zoom pill aren't the board; keep the menu (and the native one) away.
+    if (el?.closest('[data-canvas-chrome]') || el?.closest('textarea, input')) {
+      e.preventDefault()
+      return
+    }
+    const card = el?.closest<HTMLElement>('[data-card-id]')
+    const sel = useSelectionStore.getState()
+    const { items, viewport } = useCanvasStore.getState()
+    const id = card?.dataset.cardId
+    if (id && items.has(id)) {
+      if (!sel.selected.has(id)) sel.select([id])
+      const ids = [...useSelectionStore.getState().selected]
+      setTarget({ kind: 'cards', notes: ids.every((i) => items.get(i)?.kind === 'note') })
+      return
+    }
+    const r = e.currentTarget.getBoundingClientRect()
+    sel.clear()
+    setTarget({
+      kind: 'canvas',
+      at: screenToWorld(viewport, { x: e.clientX - r.left, y: e.clientY - r.top }),
+    })
+  }
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild onContextMenu={onContextMenu}>
+        {children}
+      </ContextMenuTrigger>
+      <ContextMenuContent
+        data-testid="canvas-menu"
+        className="min-w-52"
+        // Focus stays where the command put it (say, a new note's title), not back on the board.
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
+        {target?.kind === 'cards' && <CardItems notes={target.notes} />}
+        {target?.kind === 'canvas' && <CanvasItems at={target.at} />}
+      </ContextMenuContent>
+    </ContextMenu>
+  )
+}
+
+function Item({
+  testId,
+  shortcut,
+  destructive,
+  onSelect,
+  children,
+}: {
+  testId: string
+  shortcut?: string
+  destructive?: boolean
+  onSelect: () => void
+  children: ReactNode
+}) {
+  return (
+    <ContextMenuItem
+      data-testid={testId}
+      variant={destructive ? 'destructive' : 'default'}
+      onSelect={onSelect}
+    >
+      {children}
+      {shortcut && <ContextMenuShortcut>{shortcut}</ContextMenuShortcut>}
+    </ContextMenuItem>
+  )
+}
+
+function CardItems({ notes }: { notes: boolean }) {
+  return (
+    <>
+      {notes && (
+        <>
+          <ContextMenuSub>
+            <ContextMenuSubTrigger data-testid="menu-color">Color</ContextMenuSubTrigger>
+            <ContextMenuSubContent className="flex gap-1 p-1.5">
+              {NOTE_COLORS.map((color) => (
+                <ContextMenuItem
+                  key={color}
+                  data-testid={`menu-color-${color}`}
+                  aria-label={color}
+                  className="size-7 justify-center p-0"
+                  onSelect={() => setSelectionColor(color)}
+                >
+                  <span
+                    className={cn('size-4 rounded-full', NOTE_COLOR_CLASSES[color].pickerSwatch)}
+                  />
+                </ContextMenuItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+          <ContextMenuSeparator />
+        </>
+      )}
+      <Item
+        testId="menu-duplicate"
+        shortcut={shortcutLabel(CANVAS_SHORTCUTS.duplicate)}
+        onSelect={duplicateSelection}
+      >
+        Duplicate
+      </Item>
+      <Item
+        testId="menu-front"
+        shortcut={shortcutLabel(CANVAS_SHORTCUTS.bringToFront)}
+        onSelect={() => restackSelection('front')}
+      >
+        Bring to front
+      </Item>
+      <Item
+        testId="menu-back"
+        shortcut={shortcutLabel(CANVAS_SHORTCUTS.sendToBack)}
+        onSelect={() => restackSelection('back')}
+      >
+        Send to back
+      </Item>
+      <ContextMenuSeparator />
+      <Item
+        testId="menu-delete"
+        shortcut={shortcutLabel(CANVAS_SHORTCUTS.delete)}
+        destructive
+        onSelect={deleteSelection}
+      >
+        Delete
+      </Item>
+    </>
+  )
+}
+
+function CanvasItems({ at }: { at: Point }) {
+  const paste = async (): Promise<void> => {
+    const text = await navigator.clipboard.readText()
+    if (text.trim()) createNoteFromText(text, at)
+  }
+  return (
+    <>
+      <Item testId="menu-new-note" onSelect={() => createNoteAt(at, { edit: true })}>
+        New note here
+      </Item>
+      <Item testId="menu-paste" shortcut="Ctrl+V" onSelect={() => void paste()}>
+        Paste
+      </Item>
+      <ContextMenuSeparator />
+      <Item
+        testId="menu-fit"
+        shortcut={shortcutLabel(CANVAS_SHORTCUTS.zoomFit)}
+        onSelect={zoomToFit}
+      >
+        Zoom to fit
+      </Item>
+    </>
+  )
+}

@@ -2,11 +2,15 @@ import { memo, useEffect, useRef } from 'react'
 import { TopBar } from '@/components/TopBar'
 import { cn } from '@/lib/utils'
 import { useCanvasStore } from '@/stores/canvasStore'
+import { CanvasContextMenu } from './ContextMenu'
 import { ItemLayer } from './ItemLayer'
+import { Marquee } from './Marquee'
+import { SelectionToolbar } from './SelectionToolbar'
 import { Toolbar } from './Toolbar'
 import { useCanvasKeys } from './useCanvasKeys'
+import { useSelectGestures } from './useSelectGestures'
 import { useViewportGestures } from './useViewportGestures'
-import { dotGridSpacing, type Viewport } from './Viewport'
+import { dotGridSpacing, dotLayerPosition, type Viewport } from './Viewport'
 import { ZoomControls } from './ZoomControls'
 
 /** How long after the last pan or zoom the world layer stays promoted (see `useViewportDom`). */
@@ -30,14 +34,13 @@ function useViewportDom(
 
     const write = (vp: Viewport, moving: boolean): void => {
       world.style.transform = `translate(${vp.x}px, ${vp.y}px) scale(${vp.zoom})`
+      // Selection outlines and handles divide by the zoom to stay the same size on screen.
+      world.style.setProperty('--inv-zoom', String(1 / vp.zoom))
       const spacing = dotGridSpacing(vp.zoom)
-      root.style.backgroundImage = spacing
-        ? 'radial-gradient(circle, var(--canvas-dot) 1px, transparent 1.2px)'
-        : 'none'
-      if (spacing) {
-        root.style.backgroundSize = `${spacing}px ${spacing}px`
-        root.style.backgroundPosition = `${vp.x}px ${vp.y}px`
-      }
+      root.style.backgroundImage =
+        'radial-gradient(circle, var(--canvas-dot) 1px, transparent 1.2px)'
+      root.style.backgroundSize = `${spacing}px ${spacing}px`
+      root.style.backgroundPosition = `${dotLayerPosition(vp.x, spacing)}px ${dotLayerPosition(vp.y, spacing)}px`
       root.dataset.x = String(vp.x)
       root.dataset.y = String(vp.y)
       root.dataset.zoom = String(vp.zoom)
@@ -60,11 +63,35 @@ function useViewportDom(
   }, [rootRef, worldRef])
 }
 
-/** Keeps the store's canvas size in step with the element (for culling and zooming at center). */
+/**
+ * The canvas element never scrolls: the viewport is the world layer's transform. But focus and
+ * find-in-page scroll even overflow-hidden boxes, which would shift every card away from where
+ * the pointer math puts them, so any scroll is put straight back.
+ */
+function usePinnedScroll(ref: React.RefObject<HTMLDivElement | null>): void {
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const pin = (): void => {
+      if (el.scrollLeft !== 0) el.scrollLeft = 0
+      if (el.scrollTop !== 0) el.scrollTop = 0
+    }
+    el.addEventListener('scroll', pin)
+    return () => el.removeEventListener('scroll', pin)
+  }, [ref])
+}
+
+/**
+ * Keeps the store's canvas size in step with the element (for culling and zooming at center).
+ * It's measured once right away too: ResizeObserver only reports when a frame is drawn, which a
+ * window in the background may not do for a while.
+ */
 function useCanvasSize(ref: React.RefObject<HTMLDivElement | null>): void {
   useEffect(() => {
     const el = ref.current
     if (!el) return
+    const { width, height } = el.getBoundingClientRect()
+    useCanvasStore.getState().setSize({ width, height })
     const observer = new ResizeObserver(([entry]) => {
       if (!entry) return
       const { width, height } = entry.contentRect
@@ -96,37 +123,50 @@ export function Canvas() {
   const worldRef = useRef<HTMLDivElement>(null)
   const ready = useCanvasStore((s) => s.ready)
   const grab = useCanvasStore((s) => s.tool === 'hand' || s.spaceHeld)
+  const crosshair = useCanvasStore((s) => s.tool === 'note')
   const panning = useCanvasStore((s) => s.panning)
 
   useCanvasLifecycle()
   useCanvasSize(rootRef)
+  usePinnedScroll(rootRef)
   useViewportDom(rootRef, worldRef)
   useViewportGestures(rootRef)
+  useSelectGestures(rootRef)
   useCanvasKeys()
 
   return (
-    <div
-      ref={rootRef}
-      data-testid="canvas"
-      data-ready={ready || undefined}
-      className={cn(
-        'relative h-full overflow-hidden bg-background select-none',
-        panning ? 'cursor-grabbing' : grab ? 'cursor-grab' : 'cursor-default',
-      )}
-    >
+    <CanvasContextMenu>
       <div
-        ref={worldRef}
-        data-testid="canvas-world"
-        className="absolute top-0 left-0 origin-top-left"
+        ref={rootRef}
+        data-testid="canvas"
+        data-ready={ready || undefined}
+        className={cn(
+          'relative h-full overflow-hidden bg-background select-none',
+          panning
+            ? 'cursor-grabbing'
+            : grab
+              ? 'cursor-grab'
+              : crosshair
+                ? 'cursor-crosshair'
+                : 'cursor-default',
+        )}
       >
-        {ready && <MemoItemLayer />}
+        <div
+          ref={worldRef}
+          data-testid="canvas-world"
+          className="absolute top-0 left-0 origin-top-left"
+        >
+          {ready && <MemoItemLayer />}
+        </div>
+        {/* The top bar is transparent on the canvas. later: phase-5 adds "Show done". */}
+        <div data-canvas-chrome className="absolute inset-x-0 top-0">
+          <TopBar transparent />
+        </div>
+        <Marquee />
+        <SelectionToolbar />
+        <Toolbar />
+        <ZoomControls />
       </div>
-      {/* The top bar is transparent on the canvas. later: phase-5 adds "Show done". */}
-      <div data-canvas-chrome className="absolute inset-x-0 top-0">
-        <TopBar transparent />
-      </div>
-      <Toolbar />
-      <ZoomControls />
-    </div>
+    </CanvasContextMenu>
   )
 }

@@ -68,30 +68,43 @@
   --due-later-bg: #1f1f23;
 
   /* notes */
-  --note-stone-bg: #1a1a1d;
-  --note-stone-border: #2c2c31;
-  --note-stone-text: #e4e4e7;
+  --note-stone-bg: #202024;
+  --note-stone-border: #323238;
+  --note-stone-text: #f4f4f5;
   --note-stone-swatch: #71717a;
-  --note-sand-bg: #262116;
-  --note-sand-border: #3a321e;
-  --note-sand-text: #f1dfa8;
+  --note-sand-bg: #382e15;
+  --note-sand-border: #4e4020;
+  --note-sand-text: #fbe7ae;
   --note-sand-swatch: #e9c46a;
-  --note-sage-bg: #162219;
-  --note-sage-border: #223527;
-  --note-sage-text: #bfe3cb;
+  --note-sage-bg: #173022;
+  --note-sage-border: #224430;
+  --note-sage-text: #c8f0d6;
   --note-sage-swatch: #6fcf97;
-  --note-sky-bg: #151e29;
-  --note-sky-border: #21314a;
-  --note-sky-text: #bcd7f5;
+  --note-sky-bg: #162940;
+  --note-sky-border: #223b5a;
+  --note-sky-text: #cfe3fb;
   --note-sky-swatch: #6aa8f0;
-  --note-lilac-bg: #1e1a29;
-  --note-lilac-border: #302845;
-  --note-lilac-text: #d8ccf6;
+  --note-lilac-bg: #282141;
+  --note-lilac-border: #3a305c;
+  --note-lilac-text: #e3dafb;
   --note-lilac-swatch: #a991f0;
-  --note-rose-bg: #28181c;
-  --note-rose-border: #42252d;
-  --note-rose-text: #f3c6d0;
+  --note-rose-bg: #3b1b24;
+  --note-rose-border: #552733;
+  --note-rose-text: #fad3dc;
   --note-rose-swatch: #ec7a95;
+  /* card hover: the note border one step up, +12% white (DESIGN_SYSTEM §8) */
+  --note-stone-border-hover: color-mix(in srgb, var(--note-stone-border), white 12%);
+  --note-sand-border-hover: color-mix(in srgb, var(--note-sand-border), white 12%);
+  --note-sage-border-hover: color-mix(in srgb, var(--note-sage-border), white 12%);
+  --note-sky-border-hover: color-mix(in srgb, var(--note-sky-border), white 12%);
+  --note-lilac-border-hover: color-mix(in srgb, var(--note-lilac-border), white 12%);
+  --note-rose-border-hover: color-mix(in srgb, var(--note-rose-border), white 12%);
+
+  /* selected text inside a note card: a little stronger than the app-wide one on tinted cards */
+  --note-text-selection: rgb(255 255 255 / 0.24);
+
+  /* canvas marquee (UI_SPEC §4.9) */
+  --marquee-fill: rgb(250 250 250 / 0.04);
 
   /* elevation & motion */
   --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.4);
@@ -129,6 +142,8 @@
   --color-selection: var(--selection);
   --color-canvas-dot: var(--canvas-dot);
   --color-inset: var(--inset);
+  --color-marquee-fill: var(--marquee-fill);
+  --color-note-text-selection: var(--note-text-selection);
   --color-due-overdue: var(--due-overdue);
   --color-due-overdue-bg: var(--due-overdue-bg);
   --color-due-soon: var(--due-soon);
@@ -140,26 +155,32 @@
   --color-note-stone-border: var(--note-stone-border);
   --color-note-stone-text: var(--note-stone-text);
   --color-note-stone-swatch: var(--note-stone-swatch);
+  --color-note-stone-border-hover: var(--note-stone-border-hover);
   --color-note-sand: var(--note-sand-bg);
   --color-note-sand-border: var(--note-sand-border);
   --color-note-sand-text: var(--note-sand-text);
   --color-note-sand-swatch: var(--note-sand-swatch);
+  --color-note-sand-border-hover: var(--note-sand-border-hover);
   --color-note-sage: var(--note-sage-bg);
   --color-note-sage-border: var(--note-sage-border);
   --color-note-sage-text: var(--note-sage-text);
   --color-note-sage-swatch: var(--note-sage-swatch);
+  --color-note-sage-border-hover: var(--note-sage-border-hover);
   --color-note-sky: var(--note-sky-bg);
   --color-note-sky-border: var(--note-sky-border);
   --color-note-sky-text: var(--note-sky-text);
   --color-note-sky-swatch: var(--note-sky-swatch);
+  --color-note-sky-border-hover: var(--note-sky-border-hover);
   --color-note-lilac: var(--note-lilac-bg);
   --color-note-lilac-border: var(--note-lilac-border);
   --color-note-lilac-text: var(--note-lilac-text);
   --color-note-lilac-swatch: var(--note-lilac-swatch);
+  --color-note-lilac-border-hover: var(--note-lilac-border-hover);
   --color-note-rose: var(--note-rose-bg);
   --color-note-rose-border: var(--note-rose-border);
   --color-note-rose-text: var(--note-rose-text);
   --color-note-rose-swatch: var(--note-rose-swatch);
+  --color-note-rose-border-hover: var(--note-rose-border-hover);
 
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: calc(var(--radius) - 2px);

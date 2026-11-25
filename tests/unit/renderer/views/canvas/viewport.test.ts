@@ -3,10 +3,12 @@ import {
   boundsOf,
   clampZoom,
   dotGridSpacing,
+  dotLayerPosition,
   fitViewport,
   MAX_ZOOM,
   MIN_ZOOM,
   panBy,
+  revealViewport,
   screenToWorld,
   stepZoom,
   visibleWorldRect,
@@ -145,13 +147,22 @@ describe('zoom to fit', () => {
 })
 
 describe('dot grid', () => {
-  it('is 20px × zoom, doubled below 50%, hidden below 25%', () => {
+  it('is 20px × zoom, doubled below 50%', () => {
     expect(dotGridSpacing(1)).toBe(20)
     expect(dotGridSpacing(2)).toBe(40)
+    expect(dotGridSpacing(4)).toBe(80)
     expect(dotGridSpacing(0.5)).toBe(10)
     expect(dotGridSpacing(0.4)).toBe(16)
     expect(dotGridSpacing(0.25)).toBe(10)
-    expect(dotGridSpacing(0.24)).toBeNull()
+  })
+
+  it('is never hidden: further out it keeps doubling, at least 10px apart', () => {
+    expect(dotGridSpacing(0.24)).toBeCloseTo(19.2)
+    expect(dotGridSpacing(0.1)).toBeCloseTo(16)
+    for (let zoom = 0.1; zoom < 0.5; zoom += 0.007) {
+      expect(dotGridSpacing(zoom)).toBeGreaterThanOrEqual(10)
+      expect(dotGridSpacing(zoom)).toBeLessThan(20)
+    }
   })
 })
 
@@ -159,4 +170,54 @@ it('labels the zoom as a whole percentage', () => {
   expect(zoomLabel(1)).toBe('100%')
   expect(zoomLabel(1.2545)).toBe('125%')
   expect(zoomLabel(0.1)).toBe('10%')
+})
+
+describe('revealViewport', () => {
+  const size = { width: 1000, height: 800 }
+  const card = { x: 100, y: 100, w: 220, h: 64 }
+
+  it('leaves a readable, visible card alone, and never moves before the canvas is measured', () => {
+    const vp = { x: 0, y: 0, zoom: 1 }
+    expect(revealViewport(vp, card, size)).toBe(vp)
+    const zoomedOut = { x: 0, y: 0, zoom: 0.5 }
+    expect(revealViewport(zoomedOut, card, { width: 0, height: 0 })).toBe(zoomedOut)
+  })
+
+  it('zooms in to 100% around the card when zoomed out, keeping it where the eye is', () => {
+    const vp = { x: 300, y: 200, zoom: 0.5 }
+    const next = revealViewport(vp, card, size)
+    expect(next.zoom).toBe(1)
+    const before = worldToScreen(vp, { x: 210, y: 132 })
+    const after = worldToScreen(next, { x: 210, y: 132 })
+    expect(after.x).toBeCloseTo(before.x)
+    expect(after.y).toBeCloseTo(before.y)
+  })
+
+  it('pans just enough to bring an off-screen card 48px inside the edge', () => {
+    expect(
+      revealViewport({ x: 0, y: 0, zoom: 1 }, { x: 900, y: -50, w: 220, h: 64 }, size),
+    ).toEqual({
+      x: 1000 - 48 - 1120,
+      y: 98,
+      zoom: 1,
+    })
+  })
+})
+
+describe('dot position', () => {
+  it('puts a dot on the world origin, so doubling the spacing keeps every other dot in place', () => {
+    for (const [origin, s] of [
+      [0, 20],
+      [37.5, 20],
+      [-113, 16.4],
+    ] as const) {
+      const dotsAt = (tile: number) =>
+        Array.from({ length: 40 }, (_, i) => dotLayerPosition(origin, tile) + tile / 2 + i * tile)
+      expect(dotsAt(s)[0]).toBeCloseTo(origin)
+      // The first 20 doubled dots fall within the 40 fine ones.
+      for (const d of dotsAt(s * 2).slice(0, 20)) {
+        expect(dotsAt(s).some((f) => Math.abs(f - d) < 1e-6)).toBe(true)
+      }
+    }
+  })
 })

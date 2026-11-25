@@ -3,6 +3,7 @@ import { HintTooltip } from '@/components/HintTooltip'
 import { IconButton } from '@/components/IconButton'
 import { CANVAS_SHORTCUTS, shortcutLabel } from '@/lib/shortcuts'
 import { useCanvasStore } from '@/stores/canvasStore'
+import { zoomReset, zoomStep } from './camera'
 import { zoomLabel } from './Viewport'
 
 const STEP_BUTTON = "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3.5"
@@ -10,8 +11,7 @@ const STEP_BUTTON = "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3.5"
 /** The bottom-right zoom pill (UI_SPEC §4.4): −, the percentage (click to reset) and +. */
 export function ZoomControls() {
   const label = useCanvasStore((s) => zoomLabel(s.viewport.zoom))
-  const zoomStep = useCanvasStore((s) => s.zoomStep)
-  const zoomReset = useCanvasStore((s) => s.zoomReset)
+
   return (
     <div
       data-testid="zoom-controls"

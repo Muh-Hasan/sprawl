@@ -1,50 +1,137 @@
 import { useEffect } from 'react'
-import { CANVAS_SHORTCUTS, isTypingTarget, matchesShortcut } from '@/lib/shortcuts'
+import { CANVAS_SHORTCUTS, isTypingTarget, matchesShortcut, type Shortcut } from '@/lib/shortcuts'
 import { useCanvasStore } from '@/stores/canvasStore'
+import { useSelectionStore } from '@/stores/selectionStore'
+import {
+  createNoteAt,
+  createNoteFromText,
+  deleteSelection,
+  duplicateSelection,
+  endNudge,
+  nudgeSelection,
+  restackSelection,
+  selectAll,
+  viewCenter,
+} from './actions'
+import { zoomReset, zoomStep, zoomToFit } from './camera'
 import { seedCards, SEED_SHORTCUT } from './devSeed'
 
+const ARROWS: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+}
+
+/** Shift+arrow nudges by a grid step. */
+const NUDGE_BIG = 8
+
 /**
- * Canvas keyboard input while the canvas is showing (PRODUCT §4): the tools, zoom, and space
- * for temporary Hand mode. Nothing fires while text is being typed.
+ * Not for the canvas: typing, or keys meant for an open menu or dialog. A menu that's closing
+ * (playing its exit animation) can still hold focus; it no longer wants keys.
+ */
+function ignored(target: EventTarget | null): boolean {
+  if (isTypingTarget(target)) return true
+  if (!(target instanceof Element)) return false
+  return target.closest('[role="menu"][data-state="open"], [role="dialog"]') !== null
+}
+
+/**
+ * Canvas keyboard input while the canvas is showing (PRODUCT §4): tools, zoom, space for
+ * temporary Hand mode, the selection commands, undo and redo, and pasting text as a note.
+ * Nothing fires while text is being typed.
  */
 export function useCanvasKeys(): void {
   useEffect(() => {
-    const store = useCanvasStore
+    const canvas = useCanvasStore
+    const sel = useSelectionStore
+
+    const commands: [Shortcut, () => void][] = [
+      [CANVAS_SHORTCUTS.zoomIn, () => zoomStep(1)],
+      [CANVAS_SHORTCUTS.zoomOut, () => zoomStep(-1)],
+      [CANVAS_SHORTCUTS.zoomReset, zoomReset],
+      [CANVAS_SHORTCUTS.zoomFit, zoomToFit],
+      [CANVAS_SHORTCUTS.toolSelect, () => canvas.getState().setTool('select')],
+      [CANVAS_SHORTCUTS.toolHand, () => canvas.getState().setTool('hand')],
+      [CANVAS_SHORTCUTS.toolNote, () => canvas.getState().setTool('note')],
+      [CANVAS_SHORTCUTS.newNote, () => createNoteAt(viewCenter(), { edit: true })],
+      [CANVAS_SHORTCUTS.undo, () => canvas.getState().undo()],
+      [CANVAS_SHORTCUTS.redo, () => canvas.getState().redo()],
+      [CANVAS_SHORTCUTS.selectAll, selectAll],
+      [CANVAS_SHORTCUTS.duplicate, duplicateSelection],
+      [CANVAS_SHORTCUTS.bringToFront, () => restackSelection('front')],
+      [CANVAS_SHORTCUTS.sendToBack, () => restackSelection('back')],
+      [CANVAS_SHORTCUTS.delete, deleteSelection],
+      // later: phase-4 Enter opens the selected note.
+    ]
+
     const onKeyDown = (e: KeyboardEvent): void => {
-      if (isTypingTarget(e.target)) return
-      const s = store.getState()
+      if (ignored(e.target)) return
+      const s = canvas.getState()
       if (e.code === 'Space' && !e.ctrlKey && !e.altKey && !e.metaKey) {
         // Also keeps a focused toolbar button from being pressed.
         e.preventDefault()
         if (!e.repeat) s.setSpaceHeld(true)
         return
       }
-      const run = (fn: () => void): void => {
+      const arrow = ARROWS[e.code]
+      if (arrow && !e.ctrlKey && !e.altKey && !e.metaKey) {
         e.preventDefault()
-        fn()
+        const step = e.shiftKey ? NUDGE_BIG : 1
+        nudgeSelection(arrow[0] * step, arrow[1] * step)
+        return
       }
-      if (matchesShortcut(e, CANVAS_SHORTCUTS.zoomIn)) return run(() => s.zoomStep(1))
-      if (matchesShortcut(e, CANVAS_SHORTCUTS.zoomOut)) return run(() => s.zoomStep(-1))
-      if (matchesShortcut(e, CANVAS_SHORTCUTS.zoomReset)) return run(s.zoomReset)
-      if (matchesShortcut(e, CANVAS_SHORTCUTS.zoomFit)) return run(s.zoomToFit)
-      if (matchesShortcut(e, CANVAS_SHORTCUTS.toolSelect)) return run(() => s.setTool('select'))
-      if (matchesShortcut(e, CANVAS_SHORTCUTS.toolHand)) return run(() => s.setTool('hand'))
-      if (import.meta.env.DEV && matchesShortcut(e, SEED_SHORTCUT)) return run(() => seedCards())
+      if (matchesShortcut(e, CANVAS_SHORTCUTS.clear)) {
+        const { gesture, cancelGesture, clear } = sel.getState()
+        if (gesture === 'move' || gesture === 'resize') cancelGesture()
+        else if (s.tool === 'note') s.setTool('select')
+        else clear()
+        return
+      }
+      for (const [shortcut, fn] of commands) {
+        if (!matchesShortcut(e, shortcut)) continue
+        e.preventDefault()
+        // A held key repeats; repeating a whole command (say, Ctrl+D) is never wanted.
+        if (!e.repeat || shortcut === CANVAS_SHORTCUTS.undo || shortcut === CANVAS_SHORTCUTS.redo)
+          fn()
+        return
+      }
+      if (import.meta.env.DEV && matchesShortcut(e, SEED_SHORTCUT)) {
+        e.preventDefault()
+        seedCards()
+      }
     }
+
     const onKeyUp = (e: KeyboardEvent): void => {
-      if (e.code === 'Space') store.getState().setSpaceHeld(false)
+      if (e.code === 'Space') canvas.getState().setSpaceHeld(false)
+      if (ARROWS[e.code]) endNudge()
     }
+
     // A key released while the window is in the background never sends keyup.
-    const onBlur = (): void => store.getState().setSpaceHeld(false)
+    const onBlur = (): void => {
+      canvas.getState().setSpaceHeld(false)
+      endNudge()
+    }
+
+    const onPaste = (e: ClipboardEvent): void => {
+      if (ignored(e.target) || ignored(document.activeElement)) return
+      const text = e.clipboardData?.getData('text/plain')
+      if (!text?.trim()) return
+      e.preventDefault()
+      createNoteFromText(text)
+    }
 
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
     window.addEventListener('blur', onBlur)
+    window.addEventListener('paste', onPaste)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
       window.removeEventListener('blur', onBlur)
-      store.getState().setSpaceHeld(false)
+      window.removeEventListener('paste', onPaste)
+      canvas.getState().setSpaceHeld(false)
+      endNudge()
     }
   }, [])
 }

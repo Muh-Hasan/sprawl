@@ -45,7 +45,13 @@ export function shortcutLabel(s: Shortcut): string {
   return [s.ctrl && 'Ctrl', s.shift && 'Shift', s.alt && 'Alt', name].filter(Boolean).join('+')
 }
 
-const CODE_LABELS: Record<string, string> = { Equal: '=', Minus: '-' }
+const CODE_LABELS: Record<string, string> = {
+  Equal: '=',
+  Minus: '-',
+  BracketLeft: '[',
+  BracketRight: ']',
+  Delete: 'Del',
+}
 
 const key = (code: string): Shortcut => ({ codes: [code] })
 
@@ -53,6 +59,16 @@ const key = (code: string): Shortcut => ({ codes: [code] })
 export const CANVAS_SHORTCUTS = {
   toolSelect: key('KeyV'),
   toolHand: key('KeyH'),
+  toolNote: key('KeyN'),
+  newNote: { codes: ['KeyN'], ctrl: true },
+  undo: { codes: ['KeyZ'], ctrl: true },
+  redo: { codes: ['KeyZ'], ctrl: true, shift: true },
+  selectAll: { codes: ['KeyA'], ctrl: true },
+  duplicate: { codes: ['KeyD'], ctrl: true },
+  bringToFront: { codes: ['BracketRight'], ctrl: true },
+  sendToBack: { codes: ['BracketLeft'], ctrl: true },
+  delete: { codes: ['Delete', 'Backspace'] },
+  clear: key('Escape'),
   zoomIn: { codes: ['Equal', 'NumpadAdd'], ctrl: true },
   zoomOut: { codes: ['Minus', 'NumpadSubtract'], ctrl: true },
   zoomReset: { codes: ['Digit0', 'Numpad0'], ctrl: true },

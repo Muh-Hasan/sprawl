@@ -1,0 +1,184 @@
+import { nanoid } from 'nanoid'
+import { toast } from 'sonner'
+import type { NoteColor } from '@shared/constants'
+import type { CanvasOp, CanvasRect } from '@shared/types'
+import { useCanvasStore } from '@/stores/canvasStore'
+import { useSelectionStore } from '@/stores/selectionStore'
+import { showUndoToast } from '@/components/UndoToast'
+import { DUPLICATE_OFFSET, inputOf, NOTE_SIZE, restackOps, snapTo, topZ } from './ops'
+import { revealRect } from './camera'
+import { markFresh } from './fresh'
+import { screenToWorld, type Point } from './Viewport'
+
+/**
+ * Canvas commands (PRODUCT §3.1), shared by the keyboard, the pointer, the toolbar and the
+ * context menu. Each one is a single recorded `canvas.apply` batch, so one Ctrl+Z undoes it.
+ */
+
+const canvas = () => useCanvasStore.getState()
+const selection = () => useSelectionStore.getState()
+
+/** The world point in the middle of the view. */
+export function viewCenter(): Point {
+  const { viewport, size } = canvas()
+  return screenToWorld(viewport, { x: size.width / 2, y: size.height / 2 })
+}
+
+interface NewNoteOptions {
+  title?: string
+  body?: string
+  /** Put the cursor in the new card's title. */
+  edit?: boolean
+}
+
+/**
+ * Creates a note with its card, centered on `at` (world), and selects it. The card pops in and
+ * the view glides to it if it's off screen or too small to read (FigJam-style).
+ */
+export function createNoteAt(at: Point, options: NewNoteOptions = {}) {
+  const place = (v: number) => (canvas().snap ? snapTo(v) : Math.round(v))
+  const rect = {
+    x: place(at.x - NOTE_SIZE.w / 2),
+    y: place(at.y - NOTE_SIZE.h / 2),
+    w: NOTE_SIZE.w,
+    h: NOTE_SIZE.h,
+  }
+  return createNoteIn(rect, options)
+}
+
+/** Creates a note whose card fills `rect` (world), as drawn with the Note tool. */
+export function createNoteIn(
+  rect: CanvasRect,
+  { title = '', body, edit = false }: NewNoteOptions = {},
+) {
+  const { items, apply } = canvas()
+  const id = nanoid()
+  markFresh(id)
+  const noteId = nanoid()
+  apply([
+    {
+      op: 'create',
+      item: {
+        id,
+        kind: 'note',
+        refId: noteId,
+        url: null,
+        title: null,
+        ...rect,
+        z: topZ(items.values()),
+      },
+      note: { id: noteId, title, color: 'stone', ...(body ? { body } : {}) },
+    },
+  ])
+  selection().select([id])
+  selection().setEditing(edit ? id : null)
+  revealRect(rect)
+  return id
+}
+
+/**
+ * Pasted text becomes a note: the first line is the title, the rest the body.
+ * later: phase-7 turns a pasted URL into a link card instead.
+ */
+export function createNoteFromText(text: string, at: Point = viewCenter()) {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n')
+  const first = lines.findIndex((l) => l.trim() !== '')
+  if (first === -1) return null
+  const title = lines[first]!.trim().slice(0, 10_000)
+  const body = lines
+    .slice(first + 1)
+    .join('\n')
+    .replace(/^\s*\n/, '')
+    .trimEnd()
+  return createNoteAt(at, { title, body: body || undefined })
+}
+
+/** Deletes the selected cards (and their notes), with a "Deleted · Undo" toast. */
+export function deleteSelection() {
+  const ids = [...selection().selected]
+  if (ids.length === 0) return
+  const step = canvas().apply(ids.map((id): CanvasOp => ({ op: 'delete', id })))
+  selection().clear()
+  if (step !== null) showUndoToast('Deleted', () => canvas().undoStep(step))
+}
+
+/** Copies each selected note card as a new note with its own card, 24px down and right. */
+export function duplicateSelection() {
+  const { items, apply } = canvas()
+  const sources = [...selection().selected]
+    .map((id) => items.get(id))
+    .filter((item) => item?.kind === 'note' && item.note && item.refId)
+    .sort((a, b) => a!.z - b!.z)
+  if (sources.length === 0) return
+  let z = topZ(items.values())
+  const ops: CanvasOp[] = []
+  const ids: string[] = []
+  for (const source of sources) {
+    const { note, refId } = source!
+    const id = nanoid()
+    const noteId = nanoid()
+    ids.push(id)
+    markFresh(id)
+    ops.push({
+      op: 'create',
+      item: {
+        ...inputOf(source!),
+        id,
+        refId: noteId,
+        x: source!.x + DUPLICATE_OFFSET,
+        y: source!.y + DUPLICATE_OFFSET,
+        z: z++,
+      },
+      note: { id: noteId, title: note!.title, color: note!.color, copyOf: refId! },
+    })
+  }
+  apply(ops)
+  selection().select(ids)
+  toast('Duplicated')
+}
+
+export function restackSelection(to: 'front' | 'back') {
+  const { items, apply } = canvas()
+  apply(restackOps(items, selection().selected, to))
+}
+
+export function setSelectionColor(color: NoteColor) {
+  const { items, apply } = canvas()
+  const ops = [...selection().selected]
+    .filter((id) => {
+      const note = items.get(id)?.note
+      return note !== undefined && note.color !== color
+    })
+    .map((id): CanvasOp => ({ op: 'setColor', id, color }))
+  apply(ops)
+}
+
+export function selectAll() {
+  selection().select(canvas().items.keys())
+}
+
+/**
+ * Nudges the selection with the arrow keys. Held keys repeat, so the moves collect in the
+ * transient rects and are written once, when the key comes up (`endNudge`).
+ */
+export function nudgeSelection(dx: number, dy: number) {
+  const { selected, gesture, transient, beginGesture, setTransient } = selection()
+  if (selected.size === 0 || (gesture && gesture !== 'nudge')) return
+  const { items } = canvas()
+  const base: ReadonlyMap<string, CanvasRect> =
+    transient ??
+    new Map(
+      [...selected].flatMap((id) => {
+        const item = items.get(id)
+        return item ? [[id, { x: item.x, y: item.y, w: item.w, h: item.h }] as const] : []
+      }),
+    )
+  const next = new Map<string, CanvasRect>()
+  for (const [id, r] of base) next.set(id, { ...r, x: r.x + dx, y: r.y + dy })
+  if (!gesture) beginGesture('nudge', next)
+  else setTransient(next)
+}
+
+export function endNudge() {
+  if (selection().gesture === 'nudge') selection().commitGesture()
+}

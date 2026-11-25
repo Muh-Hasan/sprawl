@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { VaultInfo } from '@shared/api'
+import { canvasHistory } from './historyStore'
 
 interface VaultState {
   /** Null until the first `getVaultInfo` answers. */
@@ -15,5 +16,10 @@ export const useVaultStore = create<VaultState>()((set) => ({
   info: null,
   load: async () => set({ info: await window.sprawl.app.getVaultInfo() }),
   open: async (path) => set({ info: await window.sprawl.app.openVault(path) }),
-  subscribe: () => window.sprawl.on('vault:changed', (info) => set({ info })),
+  subscribe: () =>
+    window.sprawl.on('vault:changed', (info) => {
+      // Undo steps belong to the vault they were made in.
+      canvasHistory.clear()
+      set({ info })
+    }),
 }))
