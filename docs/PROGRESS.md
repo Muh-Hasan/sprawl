@@ -9,10 +9,72 @@ A running log of the build, one phase per session (see `PHASES.md`). Read this f
 | 2 — Canvas foundations | ✅ Done | 2026-11-25 |
 | 3 — Notes on the canvas | ✅ Done | 2026-11-25 |
 | 4 — Note panel and editor | ✅ Done | 2026-11-25 |
-| 5 — Done and the daily log | ⏭ Next | |
-| 6 | Not started | |
+| 5 — Done and the daily log | ✅ Done | 2026-11-25 |
+| 6 — Daily driver: list view, quick capture and reminders | ⏭ Next | |
 | Dogfood checkpoint | Not started | |
 | 7–12 | Not started | |
+
+---
+
+## Phase 5 — Done and the daily log ✅
+
+**Branch:** `feat/phase-5-daily-log` → PR into `main` (no tag).
+
+### Built
+- **Mark done** (`services/log.ts setNoteDone`), one transaction: `done_at` plus a `done` log entry with the title snapshot. Undo deletes that entry (matched on `at = done_at`) and clears `done_at`.
+  - Two ways in: the undoable `setDone` canvas op, and `notes.setDone` for notes without a card (phase 6's list).
+  - A reminder that came due while the note was done is marked fired on undo, so it doesn't go off late; one still ahead stays armed. Done itself cancels the reminder through `done_at`, which the reminder index already skips.
+- **Daily log service and IPC:** `log.day`, `addManual`, `update` (text, or an `HH:mm` time on the entry's own day), `remove` (manual entries only), `daysWithEntries`, `carriedOver`. All inputs are zod-validated. Done entries show the note's live title and color, and fall back to the snapshot once the note is deleted or purged.
+- **Injectable clock** (`services/clock.ts`), used by every service and the purge. In E2E mode `setNow` fixes it and tells the renderer (`clock:changed`), so "today" agrees on both sides.
+- **On the canvas:**
+  - Mark done from the card's hover check, the menu (Mark done / Mark not done) and Ctrl+Enter.
+  - The card fades to 0 and shrinks to 0.96 over 180ms, then hides, with "Marked done · Undo"; Ctrl+Z undoes it too.
+  - Done cards stay in the store but leave the spatial grid, so culling, the marquee, select all and zoom to fit skip them.
+  - "Show done" in the top bar (and the now-live Settings switch, the same setting) shows them at 50% with the title struck through.
+  - The bottom-left status pill reads "Wed 25 Nov · 1 done today" and opens today's log.
+- **In the panel:** Mark done in the footer (with `Ctrl ↵`), then "Done · 09:42 · Undo". Ctrl+Enter toggles it from anywhere in the panel, except in a checklist item, where BlockNote uses it to tick the item.
+- **Log view** (UI_SPEC §6):
+  - Header: the date, "Today" or "Go to today", ← → (Ctrl+[ / Ctrl+]; never past today), and the month popover with dots on days with entries.
+  - The week strip with its dots, and the "2 done · 1 logged" summary.
+  - Entries: done ones with the color tag, opening the note; manual ones with inline markdown (bold, italic, code, links), edit and delete on hover (Delete has Undo), and a click on the time to change it.
+  - New rows get the one-time highlight. Also: carried over with Open, the composer, and the empty state.
+- **Bundle:** the Log view and its month calendar are lazy-loaded. The renderer's main chunk is 461 kB (574 kB after phase 4; the calendar now loads only with the panel or the log).
+- **Tests:**
+  - 278 unit tests (+52). `log.test.ts`: day keys across midnight, three timezones and both London DST changes; done just before and after midnight; done in another timezone; the done/undo transaction (no orphan rows, done twice, re-done, undone on a later day, deleted notes, both reminder cases); live title vs snapshot through delete and purge; the `setDone` op (round trip, gone card, rollback on a link card, delete and restore of a done card); manual entries; days with entries; carried-over selection, today and on a past day.
+  - Also: `setDone` reduce and invert, the schemas, the week strip and day stepping, inline markdown, the canvas store (fade then hide, grid, selection, undo, Show done, log refresh), and the log `Entry` component.
+  - 57 E2E tests (+5):
+    - `done-and-log.spec.ts`: hover check → card hides → status pill → today's log has the entry with the time and color → Ctrl+Z removes it with no rows left; the menu, toast Undo, Ctrl+Enter, the panel footer and its Undo, Ctrl+Enter in the panel, Show done and un-doing from there; manual entries (add, markdown, edit time and text, delete and Undo, days, relaunch).
+    - `log-days.spec.ts` (fixed clock): done at 23:59:50 lands on the 24th and at 00:00:05 on the 25th; a manual entry at 09:15 on the 26th; ←, →, Ctrl+[ and Ctrl+]; the week strip's days, today, selection and dots, also further back; the month picker; carried over and its Open.
+    - `pages/LogPage.ts`, plus `setNow(app, page, ms)` in the fixtures.
+
+### Exit check
+- ✅ `npm run check` is green: typecheck (3 projects), ESLint + Prettier, 278 unit tests and 57 E2E tests (no retries used).
+- ✅ **The done → log → undo round trip leaves no orphan rows:**
+  - unit: `notes.setDone` and the `setDone` op, each through done → undo, leave no `log_entries` for the note and no `done_at`, while other notes' entries stay;
+  - E2E: after Ctrl+Z, `log.day(today)` is empty and the note's `doneAt` is null.
+
+### "It should" (checked by automation and screenshots)
+- ✅ Tick a note done; it fades off the canvas (screenshots at 80ms and after) and shows in today's log with the time (E2E checks the stored `at` against the row).
+- ✅ Type "Called the bank" into the log, go back to yesterday and see what was done then (E2E in both specs).
+- ⚠️ **To try by hand with `npm run dev`:** the feel of the fade, the hover check next to the open button on small cards, and the log's month popover.
+
+### Decisions and findings (the docs are updated)
+- **Test hooks aren't IPC channels:** the E2E clock is a main-process global that Playwright calls through `app.evaluate`, so nothing test-only can be reached from a renderer (ARCHITECTURE §10.3 said `test:setNow` IPC).
+- **Mark done toggles** on the canvas and in the panel: with "Show done" on, Mark done on done notes reads "Mark not done". Without it, done notes had no way back on the canvas apart from undo.
+- **Carried over** = notes edited the day before that weren't done **by the end of the day shown**. Today that's what's still open; on a past day, what was still open then.
+- **The log stops at today** (→ is disabled, future days can't be picked). **The week strip** shows the last 7 days while the selected day is among them, then the 7 days ending on it.
+- **Manual entries:** the time is edited as `HH:mm` on the entry's own day, so an entry never changes day. A new entry on another day takes the current time of day. Deleting one has Undo (it's re-added with the same text and time).
+- **Done isn't an edit:** marking done doesn't touch `updated_at` or `note_activity`.
+- **The card title keeps 36px clear** for the open and done buttons (14px before).
+- **The FTS update** in the done transaction waits for phase 10, where the search index starts being maintained.
+- **Hidden done cards leave the spatial grid,** so the visible-ids hook now also recomputes when a card finishes fading out or "Show done" flips. It wasn't recomputing at first, and the E2E caught it.
+- Added the `--ease-in` token and the `row-highlight` animation to `globals.css` (and the drop-in copy in DESIGN_SYSTEM).
+
+### Open / carried forward
+- **Phase 6:** the reminder scheduler (it must skip done notes, which the index already does); Mark done from the list's checkbox goes through `notes.setDone`; "Show done"'s Settings switch is live, the rest of Settings still isn't.
+- **Phase 10:** index manual log entries, and update the FTS on done.
+- **Small polish for later:** a toast shown just before switching to the log can briefly cover the composer (toasts sit bottom-center).
+- `gh` still isn't installed: the PR is opened and merged in the browser.
 
 ---
 

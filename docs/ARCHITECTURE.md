@@ -234,6 +234,8 @@ CREATE VIRTUAL TABLE search_index USING fts5(
 - `note_activity`: upsert `(note_id, today)` on every save.
 
 **Mark done** is one transaction: set `done_at = now`, insert a `log_entries` row with `kind='done'` and the note title in `text`, update the FTS, and cancel any pending reminder. **Undo done** deletes that log entry, clears `done_at`, and re-arms the reminder if it's still in the future.
+- As built (phase 5, `services/log.ts setNoteDone`): the reminder is cancelled by `done_at` itself (the `notes_remind` index and the scheduler skip done notes). Undo deletes the note's `done` entry whose `at` equals `done_at`. A reminder that came due while the note was done gets `reminded_at = now` on undo, so it doesn't fire late. Marking a done note done (or an open one not done) changes nothing; a deleted note can't be marked. `updated_at` and `note_activity` aren't touched: done isn't an edit. The FTS part arrives with the search index in phase 10.
+- A done entry shows the note's live title and color while the note exists and isn't deleted; after that, the `text` snapshot (and `note_id` goes null when the note is purged).
 
 `remind_at` is derived on every save that touches `due_day`, `due_time` or `remind`, by converting the local wall-clock date and time to UTC in the current timezone:
 - `at` gives the due time; `15m` and `1h` subtract from it. All three need `due_time`. If `due_time` is cleared while one of them is set, `remind` resets to `none`.
@@ -295,14 +297,17 @@ interface SprawlAPI {
 - `canvas.load()` returns each note card with a `note` field holding what the card shows of its note (`CardNote`: title, color, `preview` (the first 400 characters of `body_text`), `checkTotal`, `checkDone`, `attachCount`, `linkCount`, `dueDay` and `dueTime`). The cards of deleted notes are skipped.
 - A `create`'s `NewNote` can carry `body` (plain text from a paste: one paragraph block per line, `db/derive.ts textToBody`) or `copyOf` (a canvas duplicate: main copies the source's body, derived counts, links and refs, not the due date or done state). `notes.duplicate` uses the same copy.
 - `restore` refuses a card whose note or drawing was purged (the batch rolls back). `setColor` on a card that's gone is a no-op; on a non-note card it fails.
-- Types live in `shared/types.ts` and the zod schemas in `shared/schemas.ts` (`canvasApplyInput`: 1–5,000 ops per batch). Phase 2 has `create`, `update` and `delete`, phase 3 `restore` and `setColor`, and `setDone` comes in phase 5.
+- Types live in `shared/types.ts` and the zod schemas in `shared/schemas.ts` (`canvasApplyInput`: 1–5,000 ops per batch). Phase 2 has `create`, `update` and `delete`, phase 3 `restore` and `setColor`, and phase 5 `setDone`.
+- `setDone { id, done }` marks a note card's note done or not done through `services/log.ts setNoteDone` (the same transaction `notes.setDone` uses for notes without a card). A card that's gone is a no-op; another kind fails. Its inverse is `setDone` with the old state, so redo after undo writes a fresh log entry at the new time. `CardNote` carries `doneAt`, and `canvas.load()` returns done cards too: the renderer hides them unless "Show done" is on.
 - **Notes API so far (phase 4):** `get` (the note with its `links` in order), `create`, `update`, `duplicate`, `remove`, `restore` and `links.{add, update, remove, reorder}`. The 30-day purge runs on every vault open (launch and switch), through `VaultService`'s `onOpen` hook.
   - `NotePatch` is `{ title?, color?, bodyJson?, dueDay?, dueTime?, remind? }`. A deleted note can't be updated. One transaction writes the patch and what's derived from it: a body gives `body_text` and the counts (`db/derive.ts deriveBody`); due fields are normalized (`shared/due.ts normalizeDue`: no day means no time and no reminder, and a time-based reminder without a time becomes `none`) and give `remind_at` (`deriveRemindAt`), and a change to them clears `reminded_at`. Every save, link changes included, upserts `note_activity` for today.
   - `bodyJson` must be a JSON array (at most 5 MB). `links.add` appends; `links.reorder(noteId, ids)` must list exactly the note's links. Link URLs are http, https or mailto only.
   - `shared/due.ts` holds the due logic both sides use: day keys, `remind_at`, due states and the chip and panel labels.
+- **Daily log API (phase 5):** `log.day(day)` gives `{ day, entries }` in time order, each `LogEntry` with `note: { title, color } | null` for done entries. `addManual(day, text, at?)`: `at` defaults to now on today, or the current time of day on another day, and must fall on `day`. `update(id, { text?, time? })` takes the time as `HH:mm` on the entry's own day, so an entry never changes day. Only manual entries can be updated or removed. `daysWithEntries('YYYY-MM')`. `carriedOver(day)`: notes with `note_activity` on the day before, not deleted, and not done by the end of `day` (today that means still open; on a past day, still open then). Manual text is trimmed, 1–10,000 characters. `notes.setDone(id, done)` returns the note.
+- **Injectable clock** (`services/clock.ts`): every service reads `now()` from one `Clock`, and so does the purge. In E2E mode, `setNow` fixes it and broadcasts `clock:changed { now }`, and the renderer's `clockNow()` (`stores/clockStore.ts`) uses that instead of `Date.now()`, so "today" agrees on both sides. The renderer marks `<html data-fixed-now>` so a test can wait for it.
 - **Close handshake:** the window's first `close` is held (`main/closeGuard.ts`). Main sends `app:before-close`; the renderer runs every registered flush (`lib/flushes.ts`: the note autosave, the canvas batch, the viewport and the panel width) and answers `app.readyToClose()`. IPC from one window is handled in order, so the writes land before the window closes. A renderer that doesn't answer gets 2s. (The `beforeunload` flushes alone also passed the autosave test; the handshake makes the order explicit rather than relying on Chromium's timing.)
 
-Main also sends these events to the renderer: `vault:changed` (after a vault switch), `nav:open-note` (from a notification click, tray or deep link), `nav:open-list-due` (from the morning summary click), and `data:changed` (after a capture or a reminder state change, so open views refresh).
+Main also sends these events to the renderer: `vault:changed` (after a vault switch), `nav:open-note` (from a notification click, tray or deep link), `nav:open-list-due` (from the morning summary click), `data:changed` (after a capture or a reminder state change, so open views refresh), and `clock:changed` (E2E only, when a test fixes the clock).
 
 `!date` parsing for quick capture lives in `shared/parseCapture.ts` (pure function, unit-tested): `!today`, `!tomorrow`, weekday names (the next one, 1–7 days ahead, never today), `!12dec` and `!dec12` (this year, or next year if already past), with an optional `HH:mm` after it.
 
@@ -314,9 +319,9 @@ Main also sends these events to the renderer: `vault:changed` (after a vault swi
 src/
   main/            index.ts, env.ts, config.ts (config.json), window.ts, windowState.ts, closeGuard.ts, deepLinks.ts, protocol.ts
     db/            client.ts, schema.ts, migrations/, derive.ts
-    services/      notes.ts, canvas.ts, drawings.ts, files.ts, log.ts, search.ts, vault.ts, export.ts,
+    services/      notes.ts, canvas.ts, drawings.ts, files.ts, log.ts (+ setNoteDone), search.ts, vault.ts, export.ts,
                    reminders.ts, notify.ts, tray.ts, capture.ts (window + global shortcut), clock.ts (injectable now())
-    ipc/           register.ts (one handler per API method), validate.ts (zod parsing, IpcInputError)
+    ipc/           register.ts (one handler per API method), validate.ts (zod parsing, IpcInputError), testHooks.ts (E2E only)
   preload/         index.ts
   shared/          api.ts, types.ts, constants.ts, schemas.ts (zod + the settings schema), deepLink.ts, parseCapture.ts, due.ts,
                    blocknoteSchema.ts (blocks + ref inline; used by the editor and the export)
@@ -324,20 +329,22 @@ src/
     main.tsx, App.tsx (onboarding or shell), Shell.tsx (rail + views, Ctrl+1–4), capture.html + capture.tsx (quick-capture window entry)
     styles/        globals.css (Tailwind v4 + shadcn theme vars, dark only + Sprawl tokens)
     stores/        canvasStore.ts, selectionStore.ts (selection, title and body editing, gestures), uiStore.ts (view, open note, panel mode), vaultStore.ts,
-                   noteStore.ts (the open note and its autosave), clockStore.ts (a shared 30s clock), historyStore.ts
+                   noteStore.ts (the open note and its autosave), clockStore.ts (a shared 30s clock, clockNow()), historyStore.ts,
+                   logStore.ts (the log's day and a revision bumped when notes are marked done)
     views/
       canvas/      Canvas.tsx, Viewport.ts (pan/zoom math), spatial.ts (culling grid), ItemLayer.tsx,
                    ops.ts (op reduce/invert, snap, resize), actions.ts (canvas commands), camera.ts (gliding zoom),
                    measure.ts (rendered card heights), fresh.ts, useViewportGestures.ts, useSelectGestures.ts,
                    useSimplified.ts, devSeed.ts (dev only),
                    items/{NoteCard,CardTitle,CardBody,CardChips,ResizeHandles,DrawingCard,ImageCard,LinkCard}.tsx,
-                   Toolbar.tsx, SelectionToolbar.tsx, SelectionBox.tsx, Marquee.tsx, ContextMenu.tsx, ZoomControls.tsx,
+                   Toolbar.tsx, SelectionToolbar.tsx, SelectionBox.tsx, Marquee.tsx, ContextMenu.tsx, ZoomControls.tsx, StatusPill.tsx,
                    useCanvasKeys.ts
       list/        ListView.tsx, ListFilters.tsx, NoteRow.tsx, DueGroups.tsx
       capture/     CaptureBox.tsx
       note/        NotePanel.tsx, PanelHeader.tsx, NoteTitle.tsx, Editor.tsx (BlockNote setup, lazy) + editor.css,
                    MetaSection.tsx, MetaRow.tsx, LinksSection.tsx, PanelFooter.tsx, RefInline.tsx
-      log/         LogView.tsx, WeekStrip.tsx, MonthPicker.tsx, Entry.tsx, Composer.tsx
+      log/         LogView.tsx, LogHeader.tsx, WeekStrip.tsx, MonthPicker.tsx, Entry.tsx, Composer.tsx, CarriedOver.tsx,
+                   days.ts (week strip and day stepping), useLogData.ts
       drawings/    DrawingsGrid.tsx, DrawingEditor.tsx (lazy Excalidraw)
       search/      CommandPalette.tsx
       settings/    SettingsView.tsx
@@ -348,8 +355,8 @@ src/
                    Rail.tsx, TopBar.tsx, IconButton.tsx, HintTooltip.tsx, ShortcutKbd.tsx, EmptyState.tsx, Chip.tsx, DuePicker.tsx (Popover + Calendar + time + remind select),
                    Toaster.tsx (Sonner, dark, bottom center), UndoToast.tsx (showUndoToast),
                    ShortcutRecorder.tsx,
-                   ColorSwatches.tsx, ConfirmDialog.tsx (AlertDialog)
-    lib/           utils.ts (shadcn cn()), debounce.ts, dates.ts, shortcuts.ts, noteColors.ts, flushes.ts,
+                   ColorSwatches.tsx, ConfirmDialog.tsx (AlertDialog), InlineMarkdown.tsx (manual log entries)
+    lib/           utils.ts (shadcn cn()), debounce.ts, dates.ts, shortcuts.ts, noteColors.ts, flushes.ts, inlineMarkdown.ts,
                    time.ts (HH:mm parsing and nudging), urls.ts (normalizeUrl, domains), reorder.ts
 ```
 
@@ -360,6 +367,7 @@ src/
 - **Text stays crisp:** apply zoom with scale. Below 40% zoom, cards render as simplified blocks (title only) to stay fast.
 - **Undo history** (`stores/historyStore.ts`): in-memory stacks of inverse `CanvasOp[]` batches (max 200 each). Every recorded `canvas.apply` inverts its batch against the state just before it (`views/canvas/ops.ts invertOps`: create/restore ↔ delete, update ↔ the old values of the patched fields, setColor ↔ the old color). Undo applies the inverse and pushes *its* inverse onto redo, so undoing a note card's create soft-deletes the note and redo restores it (never re-creates it). A step keeps its id through undo and redo, so a toast's Undo (`undoStep`) still finds it; undoing a step that isn't the latest becomes a step of its own. The renderer keeps what deleted note cards showed, so a restore draws the card at once. History is cleared on a vault switch. Note body edits use BlockNote's own undo, not this. Title edits on the card aren't canvas ops either (one `notes.update` when editing ends).
 - **Selection and gestures** (`stores/selectionStore.ts`, `useSelectGestures.ts`): the selection, the card being title-edited, the marquee, and the **transient rects** of a running move, resize or nudge. Cards draw their transient rect; nothing is written until `commitGesture` turns the changed rects into one recorded `update` batch (no DB write during a drag; unit-tested with a spy on `canvas.apply`). Pointer moves are folded to one per frame; a press becomes a drag after 3px. Arrow-key nudges collect until the key comes up. The board holds pointer capture during a press, so Chromium aims `dblclick` at the board: double-clicks hit-test `elementFromPoint` instead of trusting the target.
+- **Done cards** stay in `items` (so undo and "Show done" bring them back) but leave the spatial grid, so culling, the marquee, select all and zoom to fit skip them (`isShown`, `shownItems()`). A card marked done with "Show done" off is in `leaving` for 180ms (the fade), then hides; the selection drops it. "Show done" is the `showDone` setting, toggled from the top bar or Settings.
 - **Card heights** (`measure.ts`): a note card's stored `h` is a floor; one shared ResizeObserver records each rendered card's real height, used for marquee hits, resizes and the selection box.
 - **Pointer events:** use pointer capture. Space held means temporary Hand mode. Wheel with ctrlKey (pinch) zooms, and wheel without it pans. The wheel listener is non-passive so it can `preventDefault()`.
 - **Shortcuts** (`lib/shortcuts.ts`) match on `KeyboardEvent.code` plus modifiers, not `key`. So Shift+1 is `Digit1` with Shift (its `key` is `!`), and Ctrl+= also accepts `NumpadAdd`.
@@ -452,8 +460,8 @@ vitest.config.ts
   - `SPRAWL_USER_DATA`: calls `app.setPath('userData', …)`. Tests never touch your real `config.json`. And because Electron's single-instance lock is keyed on the userData folder, tests can run while your own copy of Sprawl is open.
   - `SPRAWL_VAULT`: use this vault and skip onboarding. `vault.spec.ts` leaves it unset, so it sees the real first-run flow inside its own temp userData.
   - `SPRAWL_E2E`: turns on E2E mode (below).
-- **E2E mode** (`SPRAWL_E2E=1`) registers test-only IPC channels:
-  - `test:setNow(ms)` fixes the injectable clock, so day, log and reminder tests are deterministic.
+- **E2E mode** (`SPRAWL_E2E=1`) registers test-only hooks. They live on a main-process global (`globalThis.__sprawlTest`, `ipc/testHooks.ts`) that Playwright calls through `app.evaluate`, not on IPC channels, so nothing test-only is reachable from a renderer:
+  - `setNow(ms)` fixes the injectable clock, so day, log and reminder tests are deterministic. The fixture's `setNow(app, page, ms)` also waits for the renderer to follow (`clock:changed`).
   - `test:notifications()` returns the notifications that *would* have been shown. In E2E mode `notify.ts` records instead of calling the real `Notification`, so tests don't spam the desktop and stay reliable.
   - `test:triggerCapture()` opens the capture window as if the global shortcut was pressed. Real global shortcuts aren't pressed in tests.
   - The tray and start-at-login are disabled in E2E mode, and `keepInTray` is forced off, so closing the window quits the app (otherwise `autosave.spec.ts` and `relaunch.spec.ts` would hang).

@@ -47,7 +47,7 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
 
 | View | Left (16px padding) | Right |
 |---|---|---|
-| Canvas | none | "Show done" toggle (ghost, `IconEye` / `IconEyeOff`, 28px) |
+| Canvas | none | "Show done" toggle (ghost, `IconEye` when on / `IconEyeOff` when off, 28px, pressed state when on; testid `show-done-toggle`) |
 | List | none (the view has its own header row, §5b) | none |
 | Log | "Daily log" (`text-sm`, 500) | none |
 | Drawings | "Drawings" | "New drawing" button (secondary, sm) |
@@ -75,7 +75,7 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
 
 ### 4.3 Bottom-left status pill
 - 12px from the edges, height 28, `--card` background with a border, radius 8, 0 10px padding, `text-xs`, muted.
-- Content: `Tue 24 Nov · 3 done today`. Clicking it opens today's log.
+- Content: `Tue 24 Nov · 3 done today` (done entries in today's log, refetched whenever a note is marked done or undone). Clicking it opens today's log. testid `status-pill`.
 
 ### 4.4 Bottom-right zoom control
 - Same pill style: `−` (24px icon button), the percentage in mono `text-xs` (44px wide, clicking resets it), and `+`.
@@ -102,7 +102,8 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
   - **Links chip:** `IconLink` plus the count.
   - **Attachments chip:** `IconPaperclip` plus the count.
   - **Due chip:** `IconCalendarDue` plus a label ("Today", "Tomorrow", "Fri" or "12 Dec"), styled by state: overdue is `--due-overdue` text on `--due-overdue-bg`, soon is `--due-soon` on `--due-soon-bg`, and later is `--due-later` on `--due-later-bg`.
-- **Hover:** border +8% white and `--shadow-lift`. An **open button** fades in at the top-right (20×20, ghost, `IconArrowsDiagonal` 14px, 70% then 100% on its own hover; tooltip "Open · Enter") and opens the panel; the title keeps 14px clear for it. Phase 5 adds a **checkmark button** next to it (20×20, ghost, `IconCheck` 14px) for a one-click Mark done.
+- **Hover:** border +8% white and `--shadow-lift`. An **open button** fades in at the top-right (20×20, ghost, `IconArrowsDiagonal` 14px, 70% then 100% on its own hover; tooltip "Open · Enter") and opens the panel; a **checkmark button** sits left of it (20×20, ghost, `IconCheck` 14px, 4px gap; tooltip "Mark done · Ctrl+Enter") for a one-click Mark done. The title keeps 36px clear for the two. testids `note-card-open`, `note-card-done`.
+- **Done:** the card fades to 0 and shrinks to 0.96 over 180ms (ease-in), then hides. With "Show done" on, a done card stays at 50% opacity with its title struck through, and its checkmark button (shown at 70%, "Mark not done") undoes it.
 - **Dragging:** scale 1.02, `--shadow-lift`, 95% opacity.
 - **Below 40% zoom:** the card shows only the title at 13px, with the chips and preview hidden.
 - **Editing the title on the card:** double-clicking the title text (not the card) edits it inline: a textarea that grows with the text, with the old title selected. Enter saves (one `notes.update`) and moves on to writing the body; clicking away saves; Esc puts the old title back.
@@ -134,6 +135,7 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
 Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatches inline in the submenu, 16px circles) · Due date… · ─ · Duplicate (Ctrl+D) · Bring to front (Ctrl+]) · Send to back (Ctrl+[) · ─ · Delete (Del, destructive text).
 - Note-only items (Mark done, Color, Due date…) are hidden for other card kinds. With a multi-selection, the menu applies to every selected item. Right-clicking an unselected card selects just that card first.
 - Items appear in the phase that makes them work: phase 3 has Color, Duplicate, Bring to front, Send to back and Delete; Open and Due date… come in phase 4, Mark done in phase 5, New drawing here in phase 8. The selection toolbar repeats the quick actions; the menu stays as the full list.
+- **Mark done** applies to every selected note and reads **Mark not done** when they're all done (only possible with "Show done" on). Ctrl+Enter on the canvas does the same. Marking done shows "Marked done · Undo".
 - On empty canvas: New note here · New drawing here · Paste · ─ · Zoom to fit (Shift+1).
 
 ---
@@ -163,6 +165,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
    - **Left:** "Saved" or "Saving…" in `text-xs` subtle.
    - **Right:** a **Mark done** button (default/white, sm, `IconCheck` icon) with `kbd Ctrl ↵` next to it.
    - When done, the footer reads "Done · 18:30" with an **Undo** ghost button instead.
+   - Ctrl+Enter anywhere in the panel toggles it, except in a checklist item, where BlockNote uses it to tick the item. On the canvas, marking done from the panel is a canvas step (Ctrl+Z undoes it); the panel stays open on the done note. testids `note-panel-mark-done`, `note-panel-done`, `note-panel-undo-done`.
 
 ### 5.1 Editor styling (BlockNote via `@blocknote/shadcn`)
 - `@blocknote/shadcn` brings its own shadcn components (on Base UI), styled by the same theme variables, so menus and popovers match (ARCHITECTURE §6, Editor notes). Set `theme="dark"` and override BlockNote's CSS variables to the tokens: editor background transparent, text `--foreground`, menus `--popover`, hover `--muted`, borders `--border`.
@@ -223,8 +226,9 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 - `--surface` page with a centered column, max width 680px, padding 32px 24px.
 - **Header:**
   - The date in `text-lg` ("Tuesday, 24 November"). Next to it, a `text-xs` muted "Today" tag, or a "Go to today" ghost button when viewing another day.
-  - On the right: ← and → icon buttons and a `IconCalendar` button that opens a month popover.
-- **Week strip:** 16px below the header. Seven equal cells, 52px tall, radius 8.
+  - On the right: ← and → icon buttons and a `IconCalendar` button that opens a month popover. → is disabled on today: the log never goes past today.
+  - **Month popover:** the Calendar (weeks start on Monday) with a 4px dot under days with entries; days after today are disabled. Picking a day closes it.
+- **Week strip:** 16px below the header. Seven equal cells, 52px tall, radius 8. It shows the last 7 days ending today while the selected day is among them; further back, the 7 days ending on the selected day.
   - Each cell shows the weekday (`text-2xs` subtle) above the day number (`text-sm` 500).
   - Days with entries get a 4px `--muted-foreground` dot underneath.
   - The selected day has a `--muted` background and white number, and today has a 1px `--border-strong` ring.
@@ -232,12 +236,15 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 - **Entries list:** 8px below the summary. Each row is at least 40px tall, laid out as a grid of 56px (time) and 1fr, with 12px padding and a 1px bottom border.
   - **Time:** Geist Mono (`font-mono`) `text-xs` subtle. Clicking it on a manual entry edits it.
   - **Done entry:** a `IconCircleCheck` 14px white icon, the note title in `text-sm`, and the note's color tag (a chip with the swatch dot and the color name in `text-2xs`). Clicking opens the note panel.
-  - **Manual entry:** text in `text-sm` with inline markdown (bold, italic, code, links). Hovering reveals edit and delete icon buttons on the right.
+  - **Manual entry:** text in `text-sm` with inline markdown (bold, italic, code, links; links open in the browser). Hovering reveals edit and delete icon buttons on the right. Edit turns the text into an input (Enter or leaving it saves, Esc cancels); the time field reads typed times like the due time (9, 930, 9:30). Delete shows "Deleted · Undo".
+  - A done entry whose note is deleted shows the title as it was when done, with no color tag, and doesn't open.
 - **Carried over:** a 24px top margin, the label "Carried over from yesterday" in `text-2xs` uppercase-free muted, then compact rows with the color dot, title and an "Open" ghost button.
-- **Composer:** pinned to the bottom of the column, 12px from the bottom of the view.
+- **Composer:** pinned to the bottom of the column, 12px from the bottom of the view. On another day, Enter adds the entry at the current time of day on that day.
   - An input 40px tall with radius 10, `--card` background, 1px border and the placeholder "What did you just do?"
   - Inside the input on the right: a `kbd ↵` hint.
-  - On submit, the new row slides in at the right time position and gets the highlight from DESIGN_SYSTEM §6.
+  - On submit, the new row slides in at the right time position and gets the highlight from DESIGN_SYSTEM §6. Any entry new since the day last loaded (say, a note marked done on the canvas) gets the same one-time highlight.
+- **Keys:** Ctrl+[ and Ctrl+] step back and forward a day while the log is showing.
+- testids: `log-page`, `log-date` (with `data-day`), `log-today-tag`, `log-go-today`, `log-prev`, `log-next`, `log-calendar`, `log-month-picker`, `log-strip-day` (with `data-day`, `data-selected`, `data-today`, `data-has-entries`), `log-summary`, `log-entry` (with `data-kind`), `log-entry-time`, `log-entry-text`, `log-entry-color`, `log-entry-open`, `log-entry-edit`, `log-entry-delete`, `log-carried-row`, `log-carried-open`, `log-composer`, `log-empty`.
 - **Empty day:** the `IconNotebook` icon with "Nothing logged yet. Mark a note done or write what you just did."
 
 ---
