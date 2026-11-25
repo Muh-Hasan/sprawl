@@ -6,6 +6,7 @@ import type { NewNote, Note, NoteLink, NoteLinkPatch, NotePatch } from '@shared/
 import type { DbHandle } from '../db/client'
 import { deriveBody, textToBody } from '../db/derive'
 import { noteLinks, notes } from '../db/schema'
+import { setNoteDone } from './log'
 
 /** Soft-deleted notes and drawings are purged for good this long after deletion. */
 export const PURGE_AFTER_MS = 30 * 24 * 60 * 60 * 1000
@@ -184,6 +185,16 @@ export class NotesService {
   duplicate(id: string): Note {
     const source = this.get(id)
     return this.create({ id: nanoid(), title: source.title, color: source.color, copyOf: id })
+  }
+
+  /**
+   * Marks a note done (adding its log entry) or not done (removing it), in one transaction
+   * (ARCHITECTURE §4). On the canvas this goes through the undoable `setDone` op instead.
+   */
+  setDone(id: string, done: boolean): Note {
+    const handle = this.handle()
+    handle.sqlite.transaction(() => setNoteDone(handle, id, done, this.now()))()
+    return this.get(id)
   }
 
   remove(id: string): void {

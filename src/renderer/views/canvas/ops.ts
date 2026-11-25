@@ -45,6 +45,7 @@ export function newCardNote(note: NewNote, source?: CardNote): CardNote {
     linkCount: source?.linkCount ?? 0,
     dueDay: null,
     dueTime: null,
+    doneAt: null,
   }
 }
 
@@ -70,6 +71,12 @@ function applyOp(items: Map<string, CanvasItem>, op: CanvasOp, now: number, note
     case 'setColor': {
       const item = items.get(op.id)
       if (item?.note) items.set(op.id, { ...item, note: { ...item.note, color: op.color } })
+      break
+    }
+    case 'setDone': {
+      const item = items.get(op.id)
+      if (!item?.note || (item.note.doneAt !== null) === op.done) break
+      items.set(op.id, { ...item, note: { ...item.note, doneAt: op.done ? now : null } })
       break
     }
     case 'delete':
@@ -110,6 +117,11 @@ function invertOp(items: Items, op: CanvasOp): CanvasOp | null {
     case 'setColor': {
       const color = items.get(op.id)?.note?.color
       return color ? { op: 'setColor', id: op.id, color } : null
+    }
+    case 'setDone': {
+      const note = items.get(op.id)?.note
+      if (!note || (note.doneAt !== null) === op.done) return null
+      return { op: 'setDone', id: op.id, done: !op.done }
     }
   }
 }

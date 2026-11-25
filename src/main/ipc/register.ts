@@ -6,8 +6,13 @@ import {
   linksAddInput,
   linksReorderInput,
   linksUpdateInput,
+  logAddManualInput,
+  logDayInput,
+  logMonthInput,
+  logUpdateInput,
   noteIdInput,
   notesCreateInput,
+  notesSetDoneInput,
   notesUpdateInput,
   openExternalInput,
   openVaultInput,
@@ -17,6 +22,7 @@ import {
   type Settings,
 } from '@shared/schemas'
 import type { CanvasService } from '../services/canvas'
+import type { LogService } from '../services/log'
 import type { NotesService } from '../services/notes'
 import type { SettingsService } from '../services/settings'
 import type { VaultService } from '../services/vault'
@@ -52,12 +58,20 @@ export interface IpcDeps {
   settings: SettingsService
   notes: NotesService
   canvas: CanvasService
+  log: LogService
   /** The renderer of `sender`'s window has saved everything (the close handshake). */
   onReadyToClose: (sender: Electron.WebContents) => void
 }
 
 /** Registers one handler per API method (ARCHITECTURE §5). */
-export function registerIpc({ vault, settings, notes, canvas, onReadyToClose }: IpcDeps): void {
+export function registerIpc({
+  vault,
+  settings,
+  notes,
+  canvas,
+  log,
+  onReadyToClose,
+}: IpcDeps): void {
   // app ----------------------------------------------------------------------------------
   handle(IPC.app.getVaultInfo, noInput, () => vault.info())
 
@@ -98,6 +112,7 @@ export function registerIpc({ vault, settings, notes, canvas, onReadyToClose }: 
   handle(IPC.notes.create, notesCreateInput, (note) => notes.create(note))
   handle(IPC.notes.update, notesUpdateInput, ({ id, patch }) => notes.update(id, patch))
   handle(IPC.notes.duplicate, noteIdInput, (id) => notes.duplicate(id))
+  handle(IPC.notes.setDone, notesSetDoneInput, ({ id, done }) => notes.setDone(id, done))
   handle(IPC.notes.remove, noteIdInput, (id) => notes.remove(id))
   handle(IPC.notes.restore, noteIdInput, (id) => notes.restore(id))
   handle(IPC.notes.links.add, linksAddInput, ({ noteId, url, label }) =>
@@ -112,4 +127,16 @@ export function registerIpc({ vault, settings, notes, canvas, onReadyToClose }: 
   // canvas -------------------------------------------------------------------------------
   handle(IPC.canvas.load, noInput, () => canvas.load())
   handle(IPC.canvas.apply, canvasApplyInput, (ops) => canvas.apply(ops))
+
+  // daily log ----------------------------------------------------------------------------
+  handle(IPC.log.day, logDayInput, (day) => log.day(day))
+  handle(IPC.log.addManual, logAddManualInput, ({ day, text, at }) =>
+    log.addManual(day, text.trim(), at),
+  )
+  handle(IPC.log.update, logUpdateInput, ({ id, patch }) =>
+    log.update(id, patch.text === undefined ? patch : { ...patch, text: patch.text.trim() }),
+  )
+  handle(IPC.log.remove, noteIdInput, (id) => log.remove(id))
+  handle(IPC.log.daysWithEntries, logMonthInput, (month) => log.daysWithEntries(month))
+  handle(IPC.log.carriedOver, logDayInput, (day) => log.carriedOver(day))
 }

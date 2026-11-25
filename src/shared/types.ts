@@ -28,6 +28,8 @@ export interface CardNote {
   linkCount: number
   dueDay: string | null
   dueTime: string | null
+  /** When the note was marked done, or null. Done cards hide unless "Show done" is on. */
+  doneAt: number | null
 }
 
 /** The fields the renderer chooses for a card (the rest is set by main). */
@@ -124,7 +126,7 @@ export type CanvasItemPatch = Partial<
 
 /**
  * The unit of canvas persistence and of undo (ARCHITECTURE §5). `canvas.apply` runs a batch in
- * one transaction. later: phase-5 adds `setDone`.
+ * one transaction.
  */
 export type CanvasOp =
   | { op: 'create'; item: CanvasItemInput; note?: NewNote }
@@ -135,8 +137,55 @@ export type CanvasOp =
   | { op: 'restore'; item: CanvasItemInput }
   /** Sets the color of a note card's note. */
   | { op: 'setColor'; id: string; color: NoteColor }
+  /** Marks a note card's note done (with its log entry) or not done (removing it). */
+  | { op: 'setDone'; id: string; done: boolean }
 
 export interface CanvasApplyResult {
   /** The created and restored rows as stored, so the renderer can replace its optimistic copies. */
   created: CanvasItem[]
+}
+
+// daily log ----------------------------------------------------------------------------------
+
+export type LogEntryKind = 'done' | 'manual'
+
+/** What a log entry shows of its note while the note exists (and isn't deleted). */
+export interface LogEntryNote {
+  title: string
+  color: NoteColor
+}
+
+/** One line of a day's log (ARCHITECTURE §4). */
+export interface LogEntry {
+  id: string
+  /** `YYYY-MM-DD`, local. */
+  day: string
+  /** The time shown (ms UTC). */
+  at: number
+  kind: LogEntryKind
+  /** Manual: the entry. Done: the note title when it was marked done. */
+  text: string
+  noteId: string | null
+  /** Done entries: the note's live title and color, or null once it's deleted or purged. */
+  note: LogEntryNote | null
+  createdAt: number
+}
+
+/** A day's log, in time order. */
+export interface LogDay {
+  day: string
+  entries: LogEntry[]
+}
+
+/** A manual entry's editable fields. The time is a local `HH:mm` on the entry's own day. */
+export interface LogEntryPatch {
+  text?: string
+  time?: string
+}
+
+/** A note as lists show it (carried over, later backlinks). */
+export interface NoteSummary {
+  id: string
+  title: string
+  color: NoteColor
 }

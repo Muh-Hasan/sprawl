@@ -8,8 +8,13 @@ import {
   linksAddInput,
   linksReorderInput,
   linksUpdateInput,
+  logAddManualInput,
+  logDayInput,
+  logMonthInput,
+  logUpdateInput,
   noteIdInput,
   notesCreateInput,
+  notesSetDoneInput,
   notesUpdateInput,
   isAllowedExternalUrl,
   openExternalInput,
@@ -255,5 +260,41 @@ describe('note link schemas', () => {
   it('reorders with distinct ids', () => {
     expect(linksReorderInput.safeParse({ noteId: 'n1', ids: ['a', 'b'] }).success).toBe(true)
     expect(linksReorderInput.safeParse({ noteId: 'n1', ids: ['a', 'a'] }).success).toBe(false)
+  })
+})
+
+describe('done and daily log schemas', () => {
+  it('takes a setDone op and notes.setDone input', () => {
+    expect(canvasOpSchema.safeParse({ op: 'setDone', id: 'c1', done: true }).success).toBe(true)
+    expect(canvasOpSchema.safeParse({ op: 'setDone', id: 'c1', done: 'yes' }).success).toBe(false)
+    expect(canvasOpSchema.safeParse({ op: 'setDone', id: 'c1' }).success).toBe(false)
+    expect(notesSetDoneInput.safeParse({ id: 'n1', done: false }).success).toBe(true)
+    expect(notesSetDoneInput.safeParse({ id: 'n1', done: false, at: 1 }).success).toBe(false)
+  })
+
+  it('takes real days and months only', () => {
+    expect(logDayInput.safeParse('2026-11-25').success).toBe(true)
+    expect(logDayInput.safeParse('2026-02-30').success).toBe(false)
+    expect(logMonthInput.safeParse('2026-11').success).toBe(true)
+    expect(logMonthInput.safeParse('2026-13').success).toBe(false)
+    expect(logMonthInput.safeParse('2026-1').success).toBe(false)
+  })
+
+  it('takes a manual entry with text, and an optional time', () => {
+    const ok = { day: '2026-11-25', text: 'Called the bank' }
+    expect(logAddManualInput.safeParse(ok).success).toBe(true)
+    expect(logAddManualInput.safeParse({ ...ok, at: 1_764_000_000_000 }).success).toBe(true)
+    expect(logAddManualInput.safeParse({ ...ok, text: '   ' }).success).toBe(false)
+    expect(logAddManualInput.safeParse({ ...ok, at: -1 }).success).toBe(false)
+    expect(logAddManualInput.safeParse({ ...ok, at: 1.5 }).success).toBe(false)
+    expect(logAddManualInput.safeParse({ ...ok, kind: 'done' }).success).toBe(false)
+  })
+
+  it('takes an entry patch of text or an HH:mm time', () => {
+    expect(logUpdateInput.safeParse({ id: 'e1', patch: { text: 'x' } }).success).toBe(true)
+    expect(logUpdateInput.safeParse({ id: 'e1', patch: { time: '18:30' } }).success).toBe(true)
+    expect(logUpdateInput.safeParse({ id: 'e1', patch: { time: '24:00' } }).success).toBe(false)
+    expect(logUpdateInput.safeParse({ id: 'e1', patch: {} }).success).toBe(false)
+    expect(logUpdateInput.safeParse({ id: 'e1', patch: { at: 5 } }).success).toBe(false)
   })
 })

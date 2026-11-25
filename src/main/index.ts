@@ -5,8 +5,11 @@ import { guardClose, readyToClose } from './closeGuard'
 import { ConfigStore } from './config'
 import { registerProtocol, routeArgv } from './deepLinks'
 import { env } from './env'
-import { registerIpc } from './ipc/register'
+import { broadcast, registerIpc } from './ipc/register'
+import { registerTestHooks } from './ipc/testHooks'
 import { CanvasService } from './services/canvas'
+import { Clock } from './services/clock'
+import { LogService } from './services/log'
 import { NotesService, purgeDeleted } from './services/notes'
 import { SettingsService } from './services/settings'
 import { VaultService } from './services/vault'
@@ -44,19 +47,30 @@ function start(): void {
   })
 
   void app.whenReady().then(() => {
+    const clock = new Clock()
+    const now = (): number => clock.now()
     const config = new ConfigStore(join(app.getPath('userData'), 'config.json'))
     const vault = new VaultService({
       config,
       documentsDir: app.getPath('documents'),
       envVault: env.vault,
       // On launch and on every vault switch (ARCHITECTURE §4).
-      onOpen: (handle) => void purgeDeleted(handle, Date.now()),
+      onOpen: (handle) => void purgeDeleted(handle, now()),
     })
     vault.restore()
     const settings = new SettingsService({ config, db: () => vault.db() })
-    const notes = new NotesService({ db: () => vault.db() })
-    const canvas = new CanvasService({ db: () => vault.db() })
-    registerIpc({ vault, settings, notes, canvas, onReadyToClose: readyToClose })
+    const notes = new NotesService({ db: () => vault.db(), now })
+    const canvas = new CanvasService({ db: () => vault.db(), now })
+    const log = new LogService({ db: () => vault.db(), now })
+    registerIpc({ vault, settings, notes, canvas, log, onReadyToClose: readyToClose })
+    if (env.e2e) {
+      registerTestHooks({
+        setNow: (ms) => {
+          clock.set(ms)
+          broadcast('clock:changed', { now: ms })
+        },
+      })
+    }
 
     const openWindow = (): BrowserWindow => {
       const win = createMainWindow({
