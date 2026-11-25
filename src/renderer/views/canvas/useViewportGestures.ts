@@ -12,6 +12,14 @@ import { panBy, wheelDeltaPx, wheelZoomFactor, zoomAt, type Viewport } from './V
  * Input events can arrive faster than the screen refreshes, so they're folded into one
  * viewport update per animation frame.
  */
+/** True if the wheel is over a card editor that can still scroll that way. */
+function scrollsItself(target: EventTarget | null, deltaY: number): boolean {
+  if (!(target instanceof Element)) return false
+  const box = target.closest<HTMLElement>('[data-card-editor]')
+  if (!box || box.scrollHeight <= box.clientHeight) return false
+  return deltaY < 0 ? box.scrollTop > 0 : box.scrollTop + box.clientHeight < box.scrollHeight
+}
+
 export function useViewportGestures(ref: RefObject<HTMLElement | null>): void {
   useEffect(() => {
     const el = ref.current
@@ -38,6 +46,8 @@ export function useViewportGestures(ref: RefObject<HTMLElement | null>): void {
 
     // Non-passive, so ctrl+wheel (pinch) can't zoom the page instead (ARCHITECTURE §2).
     const onWheel = (e: WheelEvent): void => {
+      // A card being written in scrolls its own text (pinch still zooms).
+      if (!e.ctrlKey && scrollsItself(e.target, e.deltaY)) return
       e.preventDefault()
       const page = el.clientHeight
       let dx = wheelDeltaPx(e.deltaX, e.deltaMode, page)

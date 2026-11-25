@@ -39,6 +39,13 @@ interface CanvasState {
   undoStep(id: number): void
   /** Renames a note card's note (not an undoable canvas op; the title is note content). */
   renameNote(itemId: string, title: string): void
+  /**
+   * Shows a note's new card fields on its card (after a panel edit or save). Local only: the
+   * note itself was saved through `notes.update`.
+   */
+  syncNote(noteId: string, fields: Partial<CardNote>): void
+  /** The card of a note, if it's on the canvas. */
+  cardOf(noteId: string): string | null
   /** Moves the view (not animated). Saving is debounced. */
   setViewport(vp: Viewport): void
   /**
@@ -247,6 +254,24 @@ export const useCanvasStore = create<CanvasState>()((set, get) => {
         console.error('[canvas] rename failed; reloading', err)
         void get().load()
       })
+    },
+
+    syncNote: (noteId, fields) => {
+      const id = get().cardOf(noteId)
+      const item = id === null ? undefined : get().items.get(id)
+      if (!item?.note) return
+      const note = { ...item.note, ...fields }
+      const keys = Object.keys(fields) as (keyof CardNote)[]
+      if (keys.every((k) => note[k] === item.note?.[k])) return
+      const items = new Map(get().items)
+      items.set(item.id, { ...item, note })
+      set({ items })
+    },
+
+    cardOf: (noteId) => {
+      for (const item of get().items.values())
+        if (item.kind === 'note' && item.refId === noteId) return item.id
+      return null
     },
 
     setViewport: (viewport) => {

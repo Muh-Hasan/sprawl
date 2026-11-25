@@ -113,7 +113,7 @@ Rules for every phase:
 **Goal:** notes become real documents.
 
 **Build**
-- The NotePanel (UI_SPEC §5): open with a double-click or Enter, resizable from 320 to 720px, full-page mode, and Esc stepping back (full page → panel → closed).
+- The NotePanel (UI_SPEC §5): open with Enter (a double-click writes in the card, added during the phase), resizable from 320 to 720px, full-page mode, and Esc stepping back (full page → panel → closed).
 - BlockNote via `@blocknote/shadcn`, lazy-loaded, with only the blocks in PRODUCT §3.2 (schema in `shared/blocknoteSchema.ts`), styled as in UI_SPEC §5.1.
 - Autosave (500ms debounce, flushed on blur, close and quit), and the "Saved / Saving…" indicator.
 - Derived fields on save (`body_text`, checklist counts, `attach_count`) and the card preview and checklist chip using them.
@@ -125,7 +125,7 @@ Rules for every phase:
 - Unit: derive.ts (text extraction, checklist and attachment counts), due-state calculation (overdue, soon, later at the day boundaries, with and without a time), `remind_at` derivation for every option (including across a DST change and the time-cleared reset), and link reordering.
 - E2E: `note-panel.spec.ts` (ARCHITECTURE §10.3) plus `autosave.spec.ts` (type, close the app within 1s, relaunch, and the text is there).
 
-**It should:** open a note in the side panel when you double-click it, and give you a Notion-style editor (type `/` for blocks, make checklists). The card updates live with "2/5", a link count and a due chip. You can pick colors, and nothing is ever lost.
+**It should:** let you write right in a card when you double-click it, and open the note in the side panel with Enter, with a Notion-style editor in both (type `/` for blocks, make checklists). The card updates live with "2/5", a link count and a due chip. You can pick colors, and nothing is ever lost.
 
 **Exit check:** quitting at any moment loses at most 1s of typing, and all tests pass.
 

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CanvasApplyResult, CanvasOp } from '../../../../src/shared/types'
+import { cardNote } from '../../helpers/cardNote'
 
 const apply = vi.fn<(ops: CanvasOp[]) => Promise<CanvasApplyResult>>()
 const set = vi.fn<(key: string, value: unknown) => Promise<void>>()
@@ -93,7 +94,7 @@ describe('canvas store', () => {
           z: 1,
           createdAt: 42,
           updatedAt: 42,
-          note: { title: 'a', color: 'stone', preview: '' },
+          note: cardNote({ title: 'a', color: 'stone', preview: '' }),
         },
       ],
     })

@@ -3,6 +3,9 @@ import { z } from 'zod'
 import { IPC, type MainEventName, type MainEvents } from '@shared/api'
 import {
   canvasApplyInput,
+  linksAddInput,
+  linksReorderInput,
+  linksUpdateInput,
   noteIdInput,
   notesCreateInput,
   notesUpdateInput,
@@ -49,10 +52,12 @@ export interface IpcDeps {
   settings: SettingsService
   notes: NotesService
   canvas: CanvasService
+  /** The renderer of `sender`'s window has saved everything (the close handshake). */
+  onReadyToClose: (sender: Electron.WebContents) => void
 }
 
 /** Registers one handler per API method (ARCHITECTURE §5). */
-export function registerIpc({ vault, settings, notes, canvas }: IpcDeps): void {
+export function registerIpc({ vault, settings, notes, canvas, onReadyToClose }: IpcDeps): void {
   // app ----------------------------------------------------------------------------------
   handle(IPC.app.getVaultInfo, noInput, () => vault.info())
 
@@ -79,6 +84,8 @@ export function registerIpc({ vault, settings, notes, canvas }: IpcDeps): void {
     await shell.openExternal(url)
   })
 
+  handle(IPC.app.readyToClose, noInput, (_input, event) => onReadyToClose(event.sender))
+
   // settings -----------------------------------------------------------------------------
   handle(IPC.settings.getAll, noInput, () => settings.getAll())
   handle(IPC.settings.get, settingsGetInput, (key) => settings.get(key))
@@ -93,6 +100,14 @@ export function registerIpc({ vault, settings, notes, canvas }: IpcDeps): void {
   handle(IPC.notes.duplicate, noteIdInput, (id) => notes.duplicate(id))
   handle(IPC.notes.remove, noteIdInput, (id) => notes.remove(id))
   handle(IPC.notes.restore, noteIdInput, (id) => notes.restore(id))
+  handle(IPC.notes.links.add, linksAddInput, ({ noteId, url, label }) =>
+    notes.addLink(noteId, url, label),
+  )
+  handle(IPC.notes.links.update, linksUpdateInput, ({ id, patch }) => notes.updateLink(id, patch))
+  handle(IPC.notes.links.remove, noteIdInput, (id) => notes.removeLink(id))
+  handle(IPC.notes.links.reorder, linksReorderInput, ({ noteId, ids }) =>
+    notes.reorderLinks(noteId, ids),
+  )
 
   // canvas -------------------------------------------------------------------------------
   handle(IPC.canvas.load, noInput, () => canvas.load())

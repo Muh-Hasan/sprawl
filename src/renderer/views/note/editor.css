@@ -1,0 +1,206 @@
+/*
+ * BlockNote, themed to Sprawl (UI_SPEC §5.1). Every color comes from the theme variables in
+ * globals.css; this file only maps BlockNote's own variables and block styles onto them.
+ * Loaded with the lazy editor chunk.
+ */
+
+.sprawl-editor.bn-container,
+.sprawl-editor.bn-container[data-color-scheme='dark'],
+.bn-container[data-color-scheme='dark'] {
+  --bn-font-family: var(--font-sans);
+  --bn-border-radius: var(--radius);
+  --bn-colors-editor-text: var(--foreground);
+  --bn-colors-editor-background: transparent;
+  --bn-colors-menu-text: var(--popover-foreground);
+  --bn-colors-menu-background: var(--popover);
+  --bn-colors-tooltip-text: var(--popover-foreground);
+  --bn-colors-tooltip-background: var(--popover);
+  --bn-colors-hovered-text: var(--foreground);
+  --bn-colors-hovered-background: var(--muted);
+  --bn-colors-selected-text: var(--foreground);
+  --bn-colors-selected-background: var(--muted);
+  --bn-colors-disabled-text: var(--subtle-foreground);
+  --bn-colors-disabled-background: var(--muted);
+  --bn-colors-shadow: rgb(0 0 0 / 0.5);
+  --bn-colors-border: var(--border);
+  --bn-colors-side-menu: var(--subtle-foreground);
+}
+
+.sprawl-editor .bn-editor {
+  padding-inline: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-editor);
+  line-height: var(--text-editor--line-height);
+  color: var(--foreground);
+  background: transparent;
+}
+
+/* 4px between blocks. */
+.sprawl-editor .bn-block-outer:not(:first-child) {
+  margin-top: 4px;
+}
+.sprawl-editor .bn-block-content {
+  padding-block: 0;
+}
+
+/* One heading level: 16px at 600, smaller than the 24px title (the note's main heading). */
+.sprawl-editor [data-content-type='heading'] {
+  --level: 16px;
+  font-weight: 600;
+}
+.sprawl-editor .bn-block-outer:not(:first-child) > .bn-block > [data-content-type='heading'] {
+  margin-top: 16px;
+}
+.sprawl-editor [data-content-type='heading'] {
+  margin-bottom: 4px;
+}
+
+/* Checklist: a 16px box, radius 4, 1.5px border; checked is white with a black check. */
+.sprawl-editor .bn-block-content[data-content-type='checkListItem'] > div > input {
+  appearance: none;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 5px 8px 0 2px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 4px;
+  background: transparent;
+  display: grid;
+  place-content: center;
+}
+.sprawl-editor .bn-block-content[data-content-type='checkListItem'] > div:has(> input) {
+  height: auto;
+}
+.sprawl-editor .bn-block-content[data-content-type='checkListItem'] > div > input:checked {
+  background: var(--foreground);
+  border-color: var(--foreground);
+}
+.sprawl-editor .bn-block-content[data-content-type='checkListItem'] > div > input:checked::after {
+  content: '';
+  width: 8px;
+  height: 4px;
+  margin-top: -2px;
+  border-left: 1.5px solid var(--background);
+  border-bottom: 1.5px solid var(--background);
+  transform: rotate(-45deg);
+}
+.sprawl-editor
+  .bn-block-content[data-content-type='checkListItem'][data-checked='true']
+  .bn-inline-content {
+  color: var(--muted-foreground);
+}
+
+/* Code block: Geist Mono 13px on the inset background, 1px border, radius 8, 12px padding. */
+.sprawl-editor .bn-block-content[data-content-type='codeBlock'] {
+  background: var(--inset);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.sprawl-editor .bn-block-content[data-content-type='codeBlock'] > pre {
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+/* Quote: a 2px border-strong bar, 12px in, muted text. */
+.sprawl-editor [data-content-type='quote'] blockquote {
+  color: var(--muted-foreground);
+  border-left: 2px solid var(--border-strong);
+  padding-left: 12px;
+}
+
+/* Divider. */
+.sprawl-editor [data-content-type='divider'] hr {
+  border-color: var(--border);
+}
+
+/* Image block: radius 8 with a 1px border; caption text-xs subtle. */
+.sprawl-editor [data-content-type='image'] img {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.sprawl-editor .bn-file-caption {
+  font-size: var(--text-xs);
+  color: var(--subtle-foreground);
+}
+
+/* The empty-block placeholder in subtle. */
+.sprawl-editor .bn-inline-content:has(> .ProseMirror-trailingBreak:only-child)::before {
+  color: var(--subtle-foreground);
+  font-style: normal;
+}
+
+/* The side menu (drag handle, +) in subtle. */
+.sprawl-editor .bn-side-menu {
+  color: var(--subtle-foreground);
+}
+
+/*
+ * Writing in a canvas card (UI_SPEC §4.5): exactly the card preview's look (text-xs, the note's
+ * text color at 70%), so typing in the card looks like the card. Blocks made in the panel stay
+ * quiet: a heading is bold body text, lists and checklists are compact.
+ */
+.sprawl-editor-card.bn-container {
+  --bn-colors-editor-text: currentColor;
+}
+.sprawl-editor-card .bn-editor {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  color: currentColor;
+  opacity: 0.7;
+}
+.sprawl-editor-card .bn-block-outer:not(:first-child) {
+  margin-top: 0;
+}
+.sprawl-editor-card [data-content-type='heading'] {
+  --level: var(--text-xs);
+}
+.sprawl-editor-card .bn-block-outer:not(:first-child) > .bn-block > [data-content-type='heading'] {
+  margin-top: 4px;
+}
+.sprawl-editor-card [data-content-type='heading'] {
+  margin-bottom: 0;
+}
+.sprawl-editor-card .bn-block-content[data-content-type='checkListItem'] > div > input {
+  width: 11px;
+  height: 11px;
+  margin: 2px 6px 0 0;
+  border-color: currentColor;
+  border-radius: 3px;
+  opacity: 0.8;
+}
+.sprawl-editor-card .bn-block-content[data-content-type='checkListItem'] > div > input:checked {
+  background: currentColor;
+  border-color: currentColor;
+}
+.sprawl-editor-card
+  .bn-block-content[data-content-type='checkListItem']
+  > div
+  > input:checked::after {
+  width: 6px;
+  height: 3px;
+  margin-top: -1px;
+}
+.sprawl-editor-card
+  .bn-block-content[data-content-type='checkListItem'][data-checked='true']
+  .bn-inline-content {
+  color: currentColor;
+  opacity: 0.6;
+}
+.sprawl-editor-card .bn-block-content[data-content-type='codeBlock'] > pre {
+  padding: 6px 8px;
+  font-size: 11px;
+  line-height: 16px;
+}
+.sprawl-editor-card [data-content-type='quote'] blockquote {
+  color: currentColor;
+  opacity: 0.8;
+  border-left-color: currentColor;
+  padding-left: 8px;
+}
+.sprawl-editor-card .bn-inline-content:has(> .ProseMirror-trailingBreak:only-child)::before {
+  color: currentColor;
+  opacity: 0.5;
+}

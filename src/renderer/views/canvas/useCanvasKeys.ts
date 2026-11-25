@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { CANVAS_SHORTCUTS, isTypingTarget, matchesShortcut, type Shortcut } from '@/lib/shortcuts'
 import { useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
+import { useUiStore } from '@/stores/uiStore'
 import {
   createNoteAt,
   createNoteFromText,
@@ -9,6 +10,7 @@ import {
   duplicateSelection,
   endNudge,
   nudgeSelection,
+  openSelectedNote,
   restackSelection,
   selectAll,
   viewCenter,
@@ -27,13 +29,16 @@ const ARROWS: Record<string, [number, number]> = {
 const NUDGE_BIG = 8
 
 /**
- * Not for the canvas: typing, or keys meant for an open menu or dialog. A menu that's closing
- * (playing its exit animation) can still hold focus; it no longer wants keys.
+ * Not for the canvas: typing, keys meant for an open menu or dialog, or anything in the note
+ * panel (Delete on a focused panel button mustn't delete the selected card). A menu that's
+ * closing (playing its exit animation) can still hold focus; it no longer wants keys.
  */
 function ignored(target: EventTarget | null): boolean {
   if (isTypingTarget(target)) return true
   if (!(target instanceof Element)) return false
-  return target.closest('[role="menu"][data-state="open"], [role="dialog"]') !== null
+  return (
+    target.closest('[role="menu"][data-state="open"], [role="dialog"], [data-note-panel]') !== null
+  )
 }
 
 /**
@@ -62,11 +67,11 @@ export function useCanvasKeys(): void {
       [CANVAS_SHORTCUTS.bringToFront, () => restackSelection('front')],
       [CANVAS_SHORTCUTS.sendToBack, () => restackSelection('back')],
       [CANVAS_SHORTCUTS.delete, deleteSelection],
-      // later: phase-4 Enter opens the selected note.
+      [CANVAS_SHORTCUTS.open, () => openSelectedNote()],
     ]
 
     const onKeyDown = (e: KeyboardEvent): void => {
-      if (ignored(e.target)) return
+      if (e.defaultPrevented || ignored(e.target)) return
       const s = canvas.getState()
       if (e.code === 'Space' && !e.ctrlKey && !e.altKey && !e.metaKey) {
         // Also keeps a focused toolbar button from being pressed.
@@ -82,6 +87,8 @@ export function useCanvasKeys(): void {
         return
       }
       if (matchesShortcut(e, CANVAS_SHORTCUTS.clear)) {
+        // With the panel open, Esc belongs to it (it steps the panel back).
+        if (useUiStore.getState().openNoteId !== null) return
         const { gesture, cancelGesture, clear } = sel.getState()
         if (gesture === 'move' || gesture === 'resize') cancelGesture()
         else if (s.tool === 'note') s.setTool('select')

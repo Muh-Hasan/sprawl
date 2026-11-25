@@ -11,6 +11,7 @@ const api: SprawlAPI = {
     pickVaultFolder: () => ipcRenderer.invoke(IPC.app.pickVaultFolder),
     openVault: (path) => ipcRenderer.invoke(IPC.app.openVault, path),
     openExternal: (url) => ipcRenderer.invoke(IPC.app.openExternal, url),
+    readyToClose: () => ipcRenderer.invoke(IPC.app.readyToClose),
   },
   settings: {
     getAll: () => ipcRenderer.invoke(IPC.settings.getAll),
@@ -24,6 +25,12 @@ const api: SprawlAPI = {
     duplicate: (id) => ipcRenderer.invoke(IPC.notes.duplicate, id),
     remove: (id) => ipcRenderer.invoke(IPC.notes.remove, id),
     restore: (id) => ipcRenderer.invoke(IPC.notes.restore, id),
+    links: {
+      add: (noteId, url, label) => ipcRenderer.invoke(IPC.notes.links.add, { noteId, url, label }),
+      update: (id, patch) => ipcRenderer.invoke(IPC.notes.links.update, { id, patch }),
+      remove: (id) => ipcRenderer.invoke(IPC.notes.links.remove, id),
+      reorder: (noteId, ids) => ipcRenderer.invoke(IPC.notes.links.reorder, { noteId, ids }),
+    },
   },
   canvas: {
     load: () => ipcRenderer.invoke(IPC.canvas.load),

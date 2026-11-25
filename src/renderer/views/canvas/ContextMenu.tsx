@@ -21,18 +21,19 @@ import {
   createNoteFromText,
   deleteSelection,
   duplicateSelection,
+  openSelectedNote,
   restackSelection,
   setSelectionColor,
 } from './actions'
 import { zoomToFit } from './camera'
 import { screenToWorld, type Point } from './Viewport'
 
-type Target = { kind: 'cards'; notes: boolean } | { kind: 'canvas'; at: Point }
+type Target = { kind: 'cards'; notes: boolean; single: boolean } | { kind: 'canvas'; at: Point }
 
 /**
  * The right-click menu (UI_SPEC §4.10). On a card it acts on the whole selection (right-clicking
  * an unselected card selects just that one); on empty space it offers to create and paste.
- * later: phase-4 adds Open and Due date…, phase-5 Mark done, phase-8 New drawing here.
+ * Open and Due date… act on a single note. later: phase-5 adds Mark done, phase-8 New drawing here.
  */
 export function CanvasContextMenu({ children }: { children: ReactNode }) {
   const [target, setTarget] = useState<Target | null>(null)
@@ -51,7 +52,8 @@ export function CanvasContextMenu({ children }: { children: ReactNode }) {
     if (id && items.has(id)) {
       if (!sel.selected.has(id)) sel.select([id])
       const ids = [...useSelectionStore.getState().selected]
-      setTarget({ kind: 'cards', notes: ids.every((i) => items.get(i)?.kind === 'note') })
+      const notes = ids.every((i) => items.get(i)?.kind === 'note')
+      setTarget({ kind: 'cards', notes, single: notes && ids.length === 1 })
       return
     }
     const r = e.currentTarget.getBoundingClientRect()
@@ -73,7 +75,7 @@ export function CanvasContextMenu({ children }: { children: ReactNode }) {
         // Focus stays where the command put it (say, a new note's title), not back on the board.
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
-        {target?.kind === 'cards' && <CardItems notes={target.notes} />}
+        {target?.kind === 'cards' && <CardItems notes={target.notes} single={target.single} />}
         {target?.kind === 'canvas' && <CanvasItems at={target.at} />}
       </ContextMenuContent>
     </ContextMenu>
@@ -105,9 +107,14 @@ function Item({
   )
 }
 
-function CardItems({ notes }: { notes: boolean }) {
+function CardItems({ notes, single }: { notes: boolean; single: boolean }) {
   return (
     <>
+      {single && (
+        <Item testId="menu-open" shortcut="Enter" onSelect={() => openSelectedNote()}>
+          Open
+        </Item>
+      )}
       {notes && (
         <>
           <ContextMenuSub>
@@ -128,6 +135,11 @@ function CardItems({ notes }: { notes: boolean }) {
               ))}
             </ContextMenuSubContent>
           </ContextMenuSub>
+          {single && (
+            <Item testId="menu-due" onSelect={() => openSelectedNote({ due: true })}>
+              Due date…
+            </Item>
+          )}
           <ContextMenuSeparator />
         </>
       )}

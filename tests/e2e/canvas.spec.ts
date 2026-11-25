@@ -130,7 +130,7 @@ test.describe('notes on the canvas', () => {
 
   test('double-clicking a title edits it on the card', async ({ window }) => {
     await canvas.seed([{ key: 'a', x: 300, y: 200, title: 'Old name' }])
-    await canvas.card('Old name').getByTestId('note-card-title').dblclick()
+    await canvas.titleText(canvas.card('Old name')).dblclick()
     await expect(canvas.titleInput).toBeFocused()
     await window.keyboard.type('New name')
     await canvas.root.click({ position: { x: 40, y: 400 } }) // clicking away saves

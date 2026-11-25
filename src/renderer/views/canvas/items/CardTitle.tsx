@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
+import { editCardBody } from '../actions'
 
 interface CardTitleProps {
   itemId: string
@@ -11,8 +12,8 @@ interface CardTitleProps {
 
 /**
  * A note card's title (UI_SPEC §4.5): two lines at most, "Untitled" when empty. While editing
- * it's a textarea that grows with the text. Enter or clicking away saves, Esc puts the old
- * title back; the title is written once, at the end.
+ * it's a textarea that grows with the text. Enter saves and moves on to writing the body in the
+ * card, clicking away saves, Esc puts the old title back; the title is written once, at the end.
  */
 export function CardTitle({ itemId, title, editing }: CardTitleProps) {
   if (!editing) {
@@ -20,9 +21,10 @@ export function CardTitle({ itemId, title, editing }: CardTitleProps) {
       <p
         data-card-title
         data-testid="note-card-title"
-        className={cn('line-clamp-2 text-card-title break-words', !title && 'opacity-60')}
+        className={cn('line-clamp-2 pr-3.5 text-card-title break-words', !title && 'opacity-60')}
       >
-        {title || 'Untitled'}
+        {/* The text itself: a double-click on it edits the title, elsewhere opens the panel. */}
+        <span data-card-title-text>{title || 'Untitled'}</span>
       </p>
     )
   }
@@ -32,12 +34,14 @@ export function CardTitle({ itemId, title, editing }: CardTitleProps) {
 function TitleInput({ itemId, title }: { itemId: string; title: string }) {
   // Enter, Esc and blur can all fire for one edit (blur follows the unmount); finish once.
   const done = useRef(false)
-  const finish = (value: string | null): void => {
+  const finish = (value: string | null, thenBody = false): void => {
     if (done.current) return
     done.current = true
     if (value !== null) useCanvasStore.getState().renameNote(itemId, value)
     const sel = useSelectionStore.getState()
     if (sel.editing === itemId) sel.setEditing(null)
+    // Enter goes on to the body, so a sticky is title, Enter, write.
+    if (thenBody) editCardBody(itemId)
   }
   const clean = (value: string): string => value.replace(/\s*\n\s*/g, ' ').trim()
 
@@ -61,7 +65,7 @@ function TitleInput({ itemId, title }: { itemId: string; title: string }) {
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
           e.preventDefault()
-          finish(clean(e.currentTarget.value))
+          finish(clean(e.currentTarget.value), true)
         } else if (e.key === 'Escape') {
           e.preventDefault()
           finish(null)

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { openDatabase, type DbHandle } from '../../../../src/main/db/client'
 import { CanvasService } from '../../../../src/main/services/canvas'
 import type { CanvasItemInput, CanvasOp } from '../../../../src/shared/types'
+import { cardNote } from '../../helpers/cardNote'
 
 let handle: DbHandle
 let now = 1_000
@@ -158,7 +159,7 @@ describe('CanvasService.load', () => {
     ])
     const items = canvas.load()
     expect(items.map((i) => i.id)).toEqual(['low', 'mid', 'top'])
-    expect(items[2]?.note).toEqual({ title: 'Note n1', color: 'sage', preview: '' })
+    expect(items[2]?.note).toEqual(cardNote({ title: 'Note n1', color: 'sage' }))
     expect(items[1]?.note).toBeUndefined()
   })
 
@@ -251,7 +252,7 @@ describe('CanvasService restore and setColor', () => {
     const { created } = canvas.apply([
       { ...op, note: { id: 'n1', title: 'Groceries', color: 'stone', body: 'eggs\nmilk' } },
     ])
-    expect(created[0]?.note).toEqual({ title: 'Groceries', color: 'stone', preview: 'eggs\nmilk' })
+    expect(created[0]?.note).toEqual(cardNote({ title: 'Groceries', preview: 'eggs\nmilk' }))
     const json = handle.sqlite.prepare("SELECT body_json FROM notes WHERE id = 'n1'").pluck().get()
     expect(JSON.parse(json as string)).toHaveLength(2)
   })
@@ -267,11 +268,10 @@ describe('CanvasService restore and setColor', () => {
     const op = noteCard('c2', 'n2')
     if (op.op !== 'create') throw new Error('expected a create')
     canvas.apply([{ ...op, note: { id: 'n2', title: 'Note n1', color: 'sky', copyOf: 'n1' } }])
-    expect(canvas.load().find((i) => i.id === 'c2')?.note).toEqual({
-      title: 'Note n1',
-      color: 'sky',
-      preview: 'hello',
-    })
+    // The copy's card shows the copied link, but not the due date (PRODUCT §3.1).
+    expect(canvas.load().find((i) => i.id === 'c2')?.note).toEqual(
+      cardNote({ title: 'Note n1', color: 'sky', preview: 'hello', linkCount: 1 }),
+    )
     expect(count('note_links', "note_id = 'n2'")).toBe(1)
     expect(count('notes', "id = 'n2' AND due_day IS NULL")).toBe(1)
   })

@@ -73,7 +73,7 @@ test.describe('canvas selection', () => {
   })
 
   test("single-key tools don't fire while typing a title", async ({ window }) => {
-    await canvas.card('Card a').getByTestId('note-card-title').dblclick()
+    await canvas.titleText(canvas.card('Card a')).dblclick()
     await expect(canvas.titleInput).toBeFocused()
     await window.keyboard.type('nhv')
     await expect(window.getByTestId('tool-select')).toHaveAttribute('aria-pressed', 'true')

@@ -86,21 +86,22 @@ An infinite, pannable and zoomable board with a dotted background.
 **Note card (sticky)**
 - It shows the title, the first ~3 lines of body text as plain text, and chips for link count, attachment count, due date, and checklist progress such as "3/5".
 - Its color comes from the note's color.
-- Double-click or Enter opens the note panel.
+- **Writing in the card:** double-clicking the card's body puts the cursor in the card for quick plain text that looks just like the card's preview. Markdown stays text there (`# ` doesn't make a heading), with one exception: `[] ` makes a checklist item. No `/` menu or toolbar; pasted text stays text. Formatting (headings, lists, quotes, code) is done in the panel, and what the panel made keeps a quiet card-sized look while you type in the card. Double-clicking the title text edits the title; Enter after the title moves on to the body, so a new sticky is title, Enter, write. Esc or clicking away ends it.
+- **Opening the panel:** Enter with the card selected, the hover open button (top-right), or Open in the menu. The panel stays open while you write in the card, and follows the typing live (and the card follows the panel). Writing in another card moves the panel to that note.
 - A done note is hidden from the canvas by default. The "Show done" toggle in the canvas top bar (also in Settings; it's the same setting) shows done notes again, faded and struck through.
 - Due chip states: none (most notes), later (more than 2 days away), soon (2 days or less), and overdue.
 
 ### 3.2 Note panel
-Opening a note (double-click or Enter on its card, or clicking it in the list, log or search) shows a right-side panel (default 420px, resizable from 320 to 720px). A single click on a card only selects it. Ctrl+Shift+Enter expands the panel to a full-width page. Esc steps back one level: from full page to the side panel, then from the side panel to closed.
+Opening a note (Enter on its selected card or Open in its menu, or clicking it in the list, log or search) shows a right-side panel (default 420px, resizable from 320 to 720px). A single click on a card only selects it. Ctrl+Shift+Enter expands the panel to a full-width page. Esc steps back one level: from full page to the side panel, then from the side panel to closed.
 
 - **Title** is a large single-line input.
-- **Body** is a BlockNote editor. Supported blocks: paragraph, heading 1–3, bullet list, numbered list, checklist, quote, code block, divider, image, file, and callout (optional, if cheap).
+- **Body** is a BlockNote editor. Supported blocks: paragraph, a heading (one level, smaller than the title, which is the note's main heading), bullet list, numbered list, checklist, quote, code block, divider, image, file, and callout (optional, if cheap).
   - The `/` menu inserts any block, markdown shortcuts work (`# `, `- `, `[] `, `> `, ``` ``` ```), and blocks can be dragged by their handle.
   - Pasting or dropping an image saves it to attachments and inserts an image block.
   - Typing `[[` opens a picker of notes and drawings and inserts an internal link. Clicking the link opens that item.
 - **Meta row** below the body:
   - **Links:** a list of URLs, each with a favicon placeholder, the domain and an editable label. "Add link" accepts a pasted URL. Clicking a link opens it in the system browser.
-  - **Due:** "Add due date" opens a small date picker with quick picks (Today, Tomorrow, Next week) and a clear button.
+  - **Due:** "Add due date" opens a small date picker with quick picks (Today, Tomorrow, Next week, meaning next Monday) and a clear button.
     - **Time (optional):** "Add time" sets a time of day. Without a time, the note is due "sometime that day".
     - **Remind me:** None (default), At due time, 15 min before, 1 hour before, Morning of (09:00), 1 day before (09:00). The first three need a time. One reminder per note. If the time is removed while one of those three is set, the reminder resets to None.
   - **Color:** six swatches.

@@ -3,7 +3,7 @@ import type { CanvasRect } from '@shared/types'
 import { isTypingTarget } from '@/lib/shortcuts'
 import { canvasGrid, useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
-import { createNoteAt, createNoteIn } from './actions'
+import { createNoteAt, createNoteIn, editCardBody } from './actions'
 import { renderedRect } from './measure'
 import {
   intersects,
@@ -73,7 +73,12 @@ export function useSelectGestures(ref: RefObject<HTMLElement | null>): void {
 
     /** Not for us: the floating chrome, panning, or typing in a title. */
     const ignored = (target: EventTarget | null): boolean => {
-      if (target instanceof Element && target.closest('[data-canvas-chrome]')) return true
+      // Floating controls, a card's own buttons, and a card being written in aren't the board.
+      if (
+        target instanceof Element &&
+        target.closest('[data-canvas-chrome], [data-card-action], [data-card-editor]')
+      )
+        return true
       const { tool, spaceHeld } = canvas.getState()
       return tool === 'hand' || spaceHeld || isTypingTarget(target)
     }
@@ -258,15 +263,17 @@ export function useSelectGestures(ref: RefObject<HTMLElement | null>): void {
       // itself; what was double-clicked is whatever is under the pointer.
       const target = document.elementFromPoint(e.clientX, e.clientY)
       if (e.button !== 0 || ignored(target)) return
+      // A card's own buttons (Open) take their clicks; a double-click on one isn't for the card.
+      if (target?.closest('[data-card-action]')) return
       const hit = cardAt(target)
       if (!hit) {
         createNoteAt(world(e), { edit: true })
         return
       }
-      // later: phase-4 opens the note panel on a double-click off the title (UI_SPEC §4.5).
-      // Until then the whole card edits its title, so a double-click is never a dead end.
+      // The title text edits the title; anywhere else on a note card, the body (UI_SPEC §4.5).
       sel.getState().select([hit.id])
-      sel.getState().setEditing(hit.id)
+      if (target?.closest('[data-card-title-text]')) sel.getState().setEditing(hit.id)
+      else editCardBody(hit.id)
     }
 
     el.addEventListener('pointerdown', onPointerDown)

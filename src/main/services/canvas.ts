@@ -1,5 +1,5 @@
 import { and, eq, isNull, sql } from 'drizzle-orm'
-import type { NoteColor } from '@shared/constants'
+import { PREVIEW_CHARS, type NoteColor } from '@shared/constants'
 import type {
   CanvasApplyResult,
   CanvasItem,
@@ -12,9 +12,6 @@ import type {
 import type { DbHandle } from '../db/client'
 import { canvasItems, drawings, notes } from '../db/schema'
 import { insertNote } from './notes'
-
-/** How much of `body_text` a card gets for its preview (it shows at most four lines). */
-export const PREVIEW_CHARS = 400
 
 export interface CanvasDeps {
   /** The open vault's database, or null before onboarding. */
@@ -161,20 +158,47 @@ export class CanvasService {
   }
 }
 
-/** The note columns a card shows. */
+/** The note columns a card shows (UI_SPEC §4.5). */
 const CARD_NOTE_FIELDS = {
   title: notes.title,
   color: notes.color,
   preview: sql<string | null>`substr(${notes.bodyText}, 1, ${PREVIEW_CHARS})`,
+  checkTotal: notes.checkTotal,
+  checkDone: notes.checkDone,
+  attachCount: notes.attachCount,
+  linkCount: sql<
+    number | null
+  >`(SELECT count(*) FROM note_links WHERE note_links.note_id = ${notes.id})`,
+  dueDay: notes.dueDay,
+  dueTime: notes.dueTime,
 }
 
-function toCardNote(row: {
+interface CardNoteRow {
   title: string | null
   color: string | null
   preview: string | null
-}): CanvasItem['note'] {
+  checkTotal: number | null
+  checkDone: number | null
+  attachCount: number | null
+  linkCount: number | null
+  dueDay: string | null
+  dueTime: string | null
+}
+
+/** A left join gives nulls for a card that isn't a note's. */
+function toCardNote(row: CardNoteRow): CanvasItem['note'] {
   if (row.title === null) return undefined
-  return { title: row.title, color: row.color as NoteColor, preview: row.preview ?? '' }
+  return {
+    title: row.title,
+    color: row.color as NoteColor,
+    preview: row.preview ?? '',
+    checkTotal: row.checkTotal ?? 0,
+    checkDone: row.checkDone ?? 0,
+    attachCount: row.attachCount ?? 0,
+    linkCount: row.linkCount ?? 0,
+    dueDay: row.dueDay,
+    dueTime: row.dueTime,
+  }
 }
 
 /** The live row a card of each kind points at (notes and drawings mustn't be deleted). */

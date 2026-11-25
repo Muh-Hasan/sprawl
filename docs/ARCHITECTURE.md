@@ -292,11 +292,15 @@ interface SprawlAPI {
 - `setColor` and `setDone`: note fields that appear in canvas undo (PRODUCT §3.1).
 - `CanvasApplyResult` returns the created rows, so the renderer can replace its optimistic copies.
 - The renderer picks the ids (nanoid) of new cards and notes, so its optimistic copy and the stored row share one id. An `update` or `delete` of a card that's already gone is a no-op, and any other failure rolls back the whole batch.
-- `canvas.load()` returns each note card with a `note` field holding what the card shows of its note (`{ title, color, preview }` so far; `preview` is the first 400 characters of `body_text`). The cards of deleted notes are skipped.
+- `canvas.load()` returns each note card with a `note` field holding what the card shows of its note (`CardNote`: title, color, `preview` (the first 400 characters of `body_text`), `checkTotal`, `checkDone`, `attachCount`, `linkCount`, `dueDay` and `dueTime`). The cards of deleted notes are skipped.
 - A `create`'s `NewNote` can carry `body` (plain text from a paste: one paragraph block per line, `db/derive.ts textToBody`) or `copyOf` (a canvas duplicate: main copies the source's body, derived counts, links and refs, not the due date or done state). `notes.duplicate` uses the same copy.
 - `restore` refuses a card whose note or drawing was purged (the batch rolls back). `setColor` on a card that's gone is a no-op; on a non-note card it fails.
 - Types live in `shared/types.ts` and the zod schemas in `shared/schemas.ts` (`canvasApplyInput`: 1–5,000 ops per batch). Phase 2 has `create`, `update` and `delete`, phase 3 `restore` and `setColor`, and `setDone` comes in phase 5.
-- **Notes API so far (phase 3):** `get`, `create`, `update` (`NotePatch` is `{ title?, color? }` until phase 4 adds the body and due fields; a deleted note can't be updated), `duplicate`, `remove` and `restore`. The 30-day purge runs on every vault open (launch and switch), through `VaultService`'s `onOpen` hook.
+- **Notes API so far (phase 4):** `get` (the note with its `links` in order), `create`, `update`, `duplicate`, `remove`, `restore` and `links.{add, update, remove, reorder}`. The 30-day purge runs on every vault open (launch and switch), through `VaultService`'s `onOpen` hook.
+  - `NotePatch` is `{ title?, color?, bodyJson?, dueDay?, dueTime?, remind? }`. A deleted note can't be updated. One transaction writes the patch and what's derived from it: a body gives `body_text` and the counts (`db/derive.ts deriveBody`); due fields are normalized (`shared/due.ts normalizeDue`: no day means no time and no reminder, and a time-based reminder without a time becomes `none`) and give `remind_at` (`deriveRemindAt`), and a change to them clears `reminded_at`. Every save, link changes included, upserts `note_activity` for today.
+  - `bodyJson` must be a JSON array (at most 5 MB). `links.add` appends; `links.reorder(noteId, ids)` must list exactly the note's links. Link URLs are http, https or mailto only.
+  - `shared/due.ts` holds the due logic both sides use: day keys, `remind_at`, due states and the chip and panel labels.
+- **Close handshake:** the window's first `close` is held (`main/closeGuard.ts`). Main sends `app:before-close`; the renderer runs every registered flush (`lib/flushes.ts`: the note autosave, the canvas batch, the viewport and the panel width) and answers `app.readyToClose()`. IPC from one window is handled in order, so the writes land before the window closes. A renderer that doesn't answer gets 2s. (The `beforeunload` flushes alone also passed the autosave test; the handshake makes the order explicit rather than relying on Chromium's timing.)
 
 Main also sends these events to the renderer: `vault:changed` (after a vault switch), `nav:open-note` (from a notification click, tray or deep link), `nav:open-list-due` (from the morning summary click), and `data:changed` (after a capture or a reminder state change, so open views refresh).
 
@@ -308,29 +312,31 @@ Main also sends these events to the renderer: `vault:changed` (after a vault swi
 
 ```
 src/
-  main/            index.ts, env.ts, config.ts (config.json), window.ts, windowState.ts, deepLinks.ts, protocol.ts
+  main/            index.ts, env.ts, config.ts (config.json), window.ts, windowState.ts, closeGuard.ts, deepLinks.ts, protocol.ts
     db/            client.ts, schema.ts, migrations/, derive.ts
     services/      notes.ts, canvas.ts, drawings.ts, files.ts, log.ts, search.ts, vault.ts, export.ts,
                    reminders.ts, notify.ts, tray.ts, capture.ts (window + global shortcut), clock.ts (injectable now())
     ipc/           register.ts (one handler per API method), validate.ts (zod parsing, IpcInputError)
   preload/         index.ts
-  shared/          api.ts, types.ts, constants.ts, schemas.ts (zod + the settings schema), deepLink.ts, parseCapture.ts,
+  shared/          api.ts, types.ts, constants.ts, schemas.ts (zod + the settings schema), deepLink.ts, parseCapture.ts, due.ts,
                    blocknoteSchema.ts (blocks + ref inline; used by the editor and the export)
   renderer/
     main.tsx, App.tsx (onboarding or shell), Shell.tsx (rail + views, Ctrl+1–4), capture.html + capture.tsx (quick-capture window entry)
     styles/        globals.css (Tailwind v4 + shadcn theme vars, dark only + Sprawl tokens)
-    stores/        canvasStore.ts, selectionStore.ts, uiStore.ts, vaultStore.ts, notesCache.ts, historyStore.ts
+    stores/        canvasStore.ts, selectionStore.ts (selection, title and body editing, gestures), uiStore.ts (view, open note, panel mode), vaultStore.ts,
+                   noteStore.ts (the open note and its autosave), clockStore.ts (a shared 30s clock), historyStore.ts
     views/
       canvas/      Canvas.tsx, Viewport.ts (pan/zoom math), spatial.ts (culling grid), ItemLayer.tsx,
                    ops.ts (op reduce/invert, snap, resize), actions.ts (canvas commands), camera.ts (gliding zoom),
                    measure.ts (rendered card heights), fresh.ts, useViewportGestures.ts, useSelectGestures.ts,
                    useSimplified.ts, devSeed.ts (dev only),
-                   items/{NoteCard,CardTitle,ResizeHandles,DrawingCard,ImageCard,LinkCard}.tsx,
+                   items/{NoteCard,CardTitle,CardBody,CardChips,ResizeHandles,DrawingCard,ImageCard,LinkCard}.tsx,
                    Toolbar.tsx, SelectionToolbar.tsx, SelectionBox.tsx, Marquee.tsx, ContextMenu.tsx, ZoomControls.tsx,
                    useCanvasKeys.ts
       list/        ListView.tsx, ListFilters.tsx, NoteRow.tsx, DueGroups.tsx
       capture/     CaptureBox.tsx
-      note/        NotePanel.tsx, Editor.tsx (BlockNote setup), RefInline.tsx, MetaRow.tsx
+      note/        NotePanel.tsx, PanelHeader.tsx, NoteTitle.tsx, Editor.tsx (BlockNote setup, lazy) + editor.css,
+                   MetaSection.tsx, MetaRow.tsx, LinksSection.tsx, PanelFooter.tsx, RefInline.tsx
       log/         LogView.tsx, WeekStrip.tsx, MonthPicker.tsx, Entry.tsx, Composer.tsx
       drawings/    DrawingsGrid.tsx, DrawingEditor.tsx (lazy Excalidraw)
       search/      CommandPalette.tsx
@@ -343,7 +349,8 @@ src/
                    Toaster.tsx (Sonner, dark, bottom center), UndoToast.tsx (showUndoToast),
                    ShortcutRecorder.tsx,
                    ColorSwatches.tsx, ConfirmDialog.tsx (AlertDialog)
-    lib/           utils.ts (shadcn cn()), debounce.ts, dates.ts, shortcuts.ts, noteColors.ts
+    lib/           utils.ts (shadcn cn()), debounce.ts, dates.ts, shortcuts.ts, noteColors.ts, flushes.ts,
+                   time.ts (HH:mm parsing and nudging), urls.ts (normalizeUrl, domains), reorder.ts
 ```
 
 ### Canvas implementation notes
@@ -370,6 +377,14 @@ src/
 - Custom schema: the default blocks minus anything not listed in PRODUCT §3.2, plus the inline content `ref` (renders as a pill, click → open) and an image block whose upload handler calls `files.importFromBuffer` and returns `sprawl-file://attachment/<id>`.
 - `[[` triggers a suggestion menu built with BlockNote's `SuggestionMenuController` using `search.query`.
 - Debounce saves by 500ms and flush on blur, on panel close and on `beforeunload`.
+- **As built (phase 4, BlockNote 0.57):**
+  - `@blocknote/shadcn` 0.57 renders its menus with its own copies of the shadcn components, built on Base UI (not Radix), so the app's Radix components can't be passed in. They use the same token classes (`bg-popover`, `text-muted-foreground`…), and `globals.css` has an `@source` for `@blocknote/shadcn/dist` so Tailwind generates them from our theme. `views/note/editor.css` maps BlockNote's `--bn-*` variables and block styles onto the tokens.
+  - The schema has the text styles only (no text or background color). The slash menu is an allow-list of PRODUCT §3.2's blocks (image and file join in phase 7), the side menu is the drag handle alone (its menu: Delete), and the formatting toolbar drops text alignment, which isn't part of the note model.
+  - The panel (and with it the date picker, select, menus and BlockNote) is lazy-loaded the first time a note opens. The renderer's main chunk is 574 kB (490 kB after phase 3; the rest is `react-resizable-panels`, date-fns and the chips).
+  - The editor's `onChange` only records a serializer: `JSON.stringify(editor.document)` runs when the save does. A body equal to the last one main confirmed isn't sent.
+  - When no menu is open, BlockNote's own Escape handling blurs the editor (and marks the key handled); the panel treats that as its Esc and steps back.
+  - **Writing in a card** (`views/canvas/items/CardBody.tsx`, requested during phase 4) uses the same lazy `Editor` with `variant="card"`: `disableExtensions` turns off BlockNote's block shortcuts (`heading-`, `bullet-list-item-`, `numbered-list-item-`, `quote-block-`, `divider-block-shortcuts`, `code-block-keyboard-shortcuts`) but keeps `check-list-item-shortcuts`; the paste handler takes plain text as text; no slash menu, toolbar or side menu. One card at a time (`selectionStore.bodyEditing`). It ends when focus leaves the card's editor (checked after blur, ignoring a window that lost focus to another app). The canvas gestures skip presses inside it (and on a card's own buttons, `[data-card-action]`), and the wheel scrolls it while it can scroll.
+  - **One note, two editors:** the note store holds a note by reference count (`acquire` / `release`), so the panel and a card can hold the same note; the last release saves and drops it. Every body edit records its editor as the live source and bumps `bodyRev`; the other editor copies the live document in once per frame (`replaceBlocks`, not reported back as an edit). A newly mounted editor starts from the live editor's document, or the latest body (`currentBody`); an editor that goes away hands its document to the store (`detachBody`), so nothing reads from a destroyed editor.
 
 ### Excalidraw notes
 - Lazy import with `React.lazy`, so it doesn't load until a drawing opens.
@@ -458,6 +473,8 @@ vitest.config.ts
 | `canvas-viewport.spec.ts` | Pan, zoom, viewport restored after relaunch |
 | `canvas.spec.ts` | Double-click creates a note; drag moves it; the position persists after relaunch; marquee select plus delete; undo restores |
 | `note-panel.spec.ts` | Open, edit title and body, add a checklist and see "1/2" on the card, add a link, set a due date with time and reminder, see the chip, change the color |
+| `autosave.spec.ts` | Type, close the window within the debounce, relaunch: the title and body are there |
+| `card-writing.spec.ts` | Double-click a card body: markdown stays text except `[] `, Esc: preview and chips, relaunch; title → Enter → body; no menus and plain paste; a panel heading stays card-sized |
 | `done-and-log.spec.ts` | Mark done → the card hides → today's log shows the entry → undo removes it; a manual entry; navigating days |
 | `list.spec.ts` | Open, Due, Done and All filters; due grouping with a fixed clock; the color filter; the checkbox marks done (and logs); "Show on canvas" flies to the card; list-only notes and "Place on canvas" |
 | `capture.spec.ts` | Trigger capture → type "Call Ali !tomorrow 15:00" → Enter → a note exists with the right title, due and time, placed on the canvas; Log mode adds a log entry; Esc with text clears and doesn't save |
