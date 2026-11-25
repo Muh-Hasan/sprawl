@@ -30,6 +30,14 @@ export class CanvasPage {
     })
   }
 
+  /**
+   * A card's title text. Double-clicking it edits the title inline; a double-click anywhere
+   * else on the card opens the note panel (UI_SPEC §4.5).
+   */
+  titleText(card: Locator): Locator {
+    return card.getByTestId('note-card-title').locator('[data-card-title-text]')
+  }
+
   /** The cards as main has stored them. */
   async stored(): Promise<CanvasItem[]> {
     return this.page.evaluate(() => self.sprawl.canvas.load())

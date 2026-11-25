@@ -55,6 +55,12 @@ const CODE_LABELS: Record<string, string> = {
 
 const key = (code: string): Shortcut => ({ codes: [code] })
 
+/** Note panel shortcuts (PRODUCT §4). */
+export const PANEL_SHORTCUTS = {
+  fullPage: { codes: ['Enter', 'NumpadEnter'], ctrl: true, shift: true },
+  close: key('Escape'),
+} as const satisfies Record<string, Shortcut>
+
 /** Canvas shortcuts (PRODUCT §4). Single-key tools only fire when nothing is being typed. */
 export const CANVAS_SHORTCUTS = {
   toolSelect: key('KeyV'),
@@ -68,6 +74,7 @@ export const CANVAS_SHORTCUTS = {
   bringToFront: { codes: ['BracketRight'], ctrl: true },
   sendToBack: { codes: ['BracketLeft'], ctrl: true },
   delete: { codes: ['Delete', 'Backspace'] },
+  open: { codes: ['Enter', 'NumpadEnter'] },
   clear: key('Escape'),
   zoomIn: { codes: ['Equal', 'NumpadAdd'], ctrl: true },
   zoomOut: { codes: ['Minus', 'NumpadSubtract'], ctrl: true },

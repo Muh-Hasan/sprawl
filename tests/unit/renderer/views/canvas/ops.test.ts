@@ -12,6 +12,7 @@ import {
   snapTo,
   type Items,
 } from '../../../../../src/renderer/views/canvas/ops'
+import { cardNote } from '../../../helpers/cardNote'
 
 const card = (id: string, over: Partial<CanvasItem> = {}): CanvasItem => ({
   id,
@@ -26,7 +27,7 @@ const card = (id: string, over: Partial<CanvasItem> = {}): CanvasItem => ({
   z: 1,
   createdAt: 1,
   updatedAt: 1,
-  note: { title: id, color: 'stone', preview: '' },
+  note: cardNote({ title: id, color: 'stone', preview: '' }),
   ...over,
 })
 
@@ -58,7 +59,10 @@ describe('reduceOps', () => {
     }
     const one = reduceOps(empty, [create], 5)
     expect(empty.size).toBe(0)
-    expect(one.get('a')).toMatchObject({ createdAt: 5, note: { title: 'a', preview: '' } })
+    expect(one.get('a')).toMatchObject({
+      createdAt: 5,
+      note: cardNote({ title: 'a', preview: '' }),
+    })
     const two = reduceOps(one, [
       { op: 'update', id: 'a', patch: { x: 50 } },
       { op: 'update', id: 'gone', patch: { x: 1 } },
@@ -68,7 +72,7 @@ describe('reduceOps', () => {
   })
 
   it('previews a pasted body, and a copy shows its source preview', () => {
-    const src = card('a', { note: { title: 'a', color: 'sky', preview: 'hello' } })
+    const src = card('a', { note: cardNote({ title: 'a', color: 'sky', preview: 'hello' }) })
     const items = reduceOps(
       itemsOf(src),
       [
@@ -93,7 +97,7 @@ describe('reduceOps', () => {
 
 describe('invertOps', () => {
   const a = card('a', { x: 10, y: 20, z: 3 })
-  const b = card('b', { x: 400, note: { title: 'b', color: 'sage', preview: 'p' } })
+  const b = card('b', { x: 400, note: cardNote({ title: 'b', color: 'sage', preview: 'p' }) })
 
   it('inverts a create into a delete', () => {
     const create: CanvasOp = {

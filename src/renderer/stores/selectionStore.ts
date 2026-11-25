@@ -11,6 +11,8 @@ interface SelectionState {
   selected: ReadonlySet<string>
   /** The card whose title is being edited inline. */
   editing: string | null
+  /** The note card whose body is being edited in the card (one at a time). */
+  bodyEditing: string | null
   /**
    * Rects that stand in for the stored ones while a gesture runs. They change at frame rate and
    * never touch the DB; `commitGesture` turns them into one `canvas.apply` (ARCHITECTURE §6).
@@ -25,6 +27,7 @@ interface SelectionState {
   select(ids: Iterable<string>, mode?: 'replace' | 'add' | 'toggle'): void
   clear(): void
   setEditing(id: string | null): void
+  setBodyEditing(id: string | null): void
   setMarquee(rect: Rect | null, kind?: 'select' | 'draft'): void
   /** Starts a gesture on the given cards, from their current rects. */
   beginGesture(gesture: Gesture, rects: ReadonlyMap<string, CanvasRect>): void
@@ -56,6 +59,7 @@ export function gestureOps(items: Items, rects: ReadonlyMap<string, CanvasRect>)
 export const useSelectionStore = create<SelectionState>()((set, get) => ({
   selected: EMPTY,
   editing: null,
+  bodyEditing: null,
   transient: null,
   gesture: null,
   marquee: null,
@@ -75,6 +79,9 @@ export const useSelectionStore = create<SelectionState>()((set, get) => ({
   },
 
   setEditing: (editing) => set({ editing }),
+  setBodyEditing: (bodyEditing) => {
+    if (get().bodyEditing !== bodyEditing) set({ bodyEditing })
+  },
   setMarquee: (marquee, marqueeKind = 'select') => set({ marquee, marqueeKind }),
 
   beginGesture: (gesture, rects) => set({ gesture, transient: rects }),
@@ -93,10 +100,11 @@ export const useSelectionStore = create<SelectionState>()((set, get) => ({
   cancelGesture: () => set({ gesture: null, transient: null }),
 
   prune: (items) => {
-    const { selected, editing } = get()
+    const { selected, editing, bodyEditing } = get()
     const kept = [...selected].filter((id) => items.has(id))
     if (kept.length !== selected.size) set({ selected: new Set(kept) })
     if (editing && !items.has(editing)) set({ editing: null })
+    if (bodyEditing && !items.has(bodyEditing)) set({ bodyEditing: null })
   },
 }))
 

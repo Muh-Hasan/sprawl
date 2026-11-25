@@ -3,7 +3,7 @@ import type { CanvasRect } from '@shared/types'
 import { isTypingTarget } from '@/lib/shortcuts'
 import { canvasGrid, useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
-import { createNoteAt, createNoteIn } from './actions'
+import { createNoteAt, createNoteIn, editCardBody } from './actions'
 import { renderedRect } from './measure'
 import {
   intersects,
@@ -263,10 +263,10 @@ export function useSelectGestures(ref: RefObject<HTMLElement | null>): void {
         createNoteAt(world(e), { edit: true })
         return
       }
-      // later: phase-4 opens the note panel on a double-click off the title (UI_SPEC §4.5).
-      // Until then the whole card edits its title, so a double-click is never a dead end.
+      // The title text edits the title; anywhere else on a note card, the body (UI_SPEC §4.5).
       sel.getState().select([hit.id])
-      sel.getState().setEditing(hit.id)
+      if (target?.closest('[data-card-title-text]')) sel.getState().setEditing(hit.id)
+      else editCardBody(hit.id)
     }
 
     el.addEventListener('pointerdown', onPointerDown)

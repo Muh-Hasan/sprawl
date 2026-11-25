@@ -5,6 +5,7 @@ import type {
   CanvasOp,
   CanvasRect,
   CardNote,
+  NewNote,
 } from '@shared/types'
 
 /**
@@ -32,13 +33,27 @@ export function inputOf(item: CanvasItem): CanvasItemInput {
 /** The note a card shows, looked up when a card comes back (restore) or is copied. */
 export type NoteLookup = (noteId: string) => CardNote | undefined
 
+/** What the card of a new note shows: blank, a paste's text, or a copy (not the due date). */
+export function newCardNote(note: NewNote, source?: CardNote): CardNote {
+  return {
+    title: note.title,
+    color: note.color,
+    preview: note.body ?? source?.preview ?? '',
+    checkTotal: source?.checkTotal ?? 0,
+    checkDone: source?.checkDone ?? 0,
+    attachCount: source?.attachCount ?? 0,
+    linkCount: source?.linkCount ?? 0,
+    dueDay: null,
+    dueTime: null,
+  }
+}
+
 /** Applies one op to `items` in place. */
 function applyOp(items: Map<string, CanvasItem>, op: CanvasOp, now: number, notes: NoteLookup) {
   switch (op.op) {
     case 'create': {
       const { note } = op
-      const preview = note?.body ?? (note?.copyOf ? (notes(note.copyOf)?.preview ?? '') : '')
-      const cardNote = note && { title: note.title, color: note.color, preview }
+      const cardNote = note && newCardNote(note, note.copyOf ? notes(note.copyOf) : undefined)
       items.set(op.item.id, { ...op.item, createdAt: now, updatedAt: now, note: cardNote })
       break
     }

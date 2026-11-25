@@ -4,6 +4,7 @@ import type { NoteColor } from '@shared/constants'
 import type { CanvasOp, CanvasRect } from '@shared/types'
 import { useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
+import { useUiStore } from '@/stores/uiStore'
 import { showUndoToast } from '@/components/UndoToast'
 import { DUPLICATE_OFFSET, inputOf, NOTE_SIZE, restackOps, snapTo, topZ } from './ops'
 import { revealRect } from './camera'
@@ -17,6 +18,34 @@ import { screenToWorld, type Point } from './Viewport'
 
 const canvas = () => useCanvasStore.getState()
 const selection = () => useSelectionStore.getState()
+
+/**
+ * Opens the selected note card's note in the panel (Enter, the menu's Open). With `due`, the
+ * panel also opens its date picker (the menu's Due date…). Only for a single note card.
+ */
+export function openSelectedNote({ due = false }: { due?: boolean } = {}): void {
+  const { selected } = selection()
+  if (selected.size !== 1) return
+  const [id] = selected
+  const item = id === undefined ? undefined : canvas().items.get(id)
+  if (item?.kind !== 'note' || item.refId === null) return
+  // A note is edited in one place at a time: the panel takes over from the card.
+  selection().setBodyEditing(null)
+  useUiStore.getState().openNote(item.refId, { due })
+}
+
+/**
+ * Starts writing in a note card's body, right on the canvas (double-click on the body, or Enter
+ * after the card's title). The panel closes: a note is edited in one place at a time.
+ */
+export function editCardBody(id: string): void {
+  const item = canvas().items.get(id)
+  if (item?.kind !== 'note' || item.refId === null) return
+  useUiStore.getState().closeNote()
+  selection().select([id])
+  selection().setEditing(null)
+  selection().setBodyEditing(id)
+}
 
 /** The world point in the middle of the view. */
 export function viewCenter(): Point {

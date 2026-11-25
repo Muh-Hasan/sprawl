@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { Toaster } from '@/components/Toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { handleBeforeClose } from '@/lib/flushes'
+import { startClock } from '@/stores/clockStore'
 import { useVaultStore } from '@/stores/vaultStore'
 import { ChooseVault } from '@/views/onboarding/ChooseVault'
 import { Shell } from './Shell'
@@ -15,6 +17,8 @@ export function App() {
     void load()
     return subscribe()
   }, [load, subscribe])
+  useEffect(() => startClock(), [])
+  useEffect(() => handleBeforeClose(), [])
 
   return (
     <TooltipProvider delayDuration={400}>

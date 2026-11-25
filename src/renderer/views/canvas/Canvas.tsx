@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef } from 'react'
 import { TopBar } from '@/components/TopBar'
+import { registerFlush } from '@/lib/flushes'
 import { cn } from '@/lib/utils'
 import { useCanvasStore } from '@/stores/canvasStore'
 import { CanvasContextMenu } from './ContextMenu'
@@ -107,9 +108,11 @@ function useCanvasLifecycle(): void {
   useEffect(() => {
     const { load, flush, unload } = useCanvasStore.getState()
     void load()
+    const unregister = registerFlush(flush)
     window.addEventListener('blur', flush)
     window.addEventListener('beforeunload', flush)
     return () => {
+      unregister()
       window.removeEventListener('blur', flush)
       window.removeEventListener('beforeunload', flush)
       unload()

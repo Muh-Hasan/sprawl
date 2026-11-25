@@ -3,7 +3,7 @@ import { IconCopy, IconStackBack, IconStackFront, IconTrash } from '@tabler/icon
 import { NOTE_COLORS, type NoteColor } from '@shared/constants'
 import { HintTooltip } from '@/components/HintTooltip'
 import { IconButton } from '@/components/IconButton'
-import { NOTE_COLOR_CLASSES } from '@/lib/noteColors'
+import { COLOR_NAMES, NOTE_COLOR_CLASSES } from '@/lib/noteColors'
 import { CANVAS_SHORTCUTS, shortcutLabel } from '@/lib/shortcuts'
 import { cn } from '@/lib/utils'
 import { useCanvasStore } from '@/stores/canvasStore'
@@ -17,15 +17,6 @@ const GAP = 14
 /** Below this, there's no room above the selection (the top bar and main toolbar sit there). */
 const MIN_TOP = 104
 const TOOLBAR_H = 40
-
-const COLOR_NAMES: Record<NoteColor, string> = {
-  stone: 'Stone',
-  sand: 'Sand',
-  sage: 'Sage',
-  sky: 'Sky',
-  lilac: 'Lilac',
-  rose: 'Rose',
-}
 
 /** The selection's bounds on screen, or null when there's nothing to show it for. */
 function useSelectionScreenBox(): { box: Rect; colors: Set<NoteColor> } | null {

@@ -66,3 +66,13 @@ export const NOTE_COLOR_CLASSES: Record<NoteColor, NoteColorClasses> = {
     pickerSwatch: 'border-2 border-note-rose-swatch bg-note-rose',
   },
 }
+
+/** The names shown in tooltips and read by screen readers. */
+export const COLOR_NAMES: Record<NoteColor, string> = {
+  stone: 'Stone',
+  sand: 'Sand',
+  sage: 'Sage',
+  sky: 'Sky',
+  lilac: 'Lilac',
+  rose: 'Rose',
+}

@@ -5,6 +5,10 @@
    rather than the OS color scheme, so they render the same whatever Windows' theme is. */
 @custom-variant dark (&:is(.dark *));
 
+/* BlockNote's shadcn UI ships its components' Tailwind classes uncompiled; scan them so its
+   menus and popovers are styled with our theme variables (ARCHITECTURE §6, UI_SPEC §5.1). */
+@source '../../../node_modules/@blocknote/shadcn/dist';
+
 /* UI and note text. Bundled locally; never loaded from the network. */
 @font-face {
   font-family: 'Outfit';
@@ -102,6 +106,8 @@
 
   /* selected text inside a note card: a little stronger than the app-wide one on tinted cards */
   --note-text-selection: rgb(255 255 255 / 0.24);
+  /* Card chips (UI_SPEC §4.5): a faint white over the note color, in the note's text color. */
+  --note-chip: rgb(255 255 255 / 0.06);
 
   /* canvas marquee (UI_SPEC §4.9) */
   --marquee-fill: rgb(250 250 250 / 0.04);
@@ -144,6 +150,7 @@
   --color-inset: var(--inset);
   --color-marquee-fill: var(--marquee-fill);
   --color-note-text-selection: var(--note-text-selection);
+  --color-note-chip: var(--note-chip);
   --color-due-overdue: var(--due-overdue);
   --color-due-overdue-bg: var(--due-overdue-bg);
   --color-due-soon: var(--due-soon);
