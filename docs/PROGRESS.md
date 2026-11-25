@@ -8,10 +8,76 @@ A running log of the build, one phase per session (see `PHASES.md`). Read this f
 | 1 — Vault, database and app shell | ✅ Done | 2026-11-25 |
 | 2 — Canvas foundations | ✅ Done | 2026-11-25 |
 | 3 — Notes on the canvas | ✅ Done | 2026-11-25 |
-| 4 — Note panel and editor | ⏭ Next | |
-| 5–6 | Not started | |
+| 4 — Note panel and editor | ✅ Done | 2026-11-25 |
+| 5 — Done and the daily log | ⏭ Next | |
+| 6 | Not started | |
 | Dogfood checkpoint | Not started | |
 | 7–12 | Not started | |
+
+---
+
+## Phase 4 — Note panel and editor ✅
+
+**Branch:** `feat/phase-4-editor` → PR into `main` (no tag).
+
+### Built
+- **Notes service:** `update` takes the body and due fields and derives the rest in the same transaction:
+  - the body → `body_text` and the checklist and attachment counts (`db/derive.ts deriveBody`, which walks nested blocks);
+  - the due fields → normalized (no day means no time and no reminder, and a time-based reminder without a time becomes none) and `remind_at` (`shared/due.ts`); a change clears `reminded_at`.
+  - Every save, link changes included, upserts `note_activity` for today. `get` returns the note's links.
+- **Note links:** `notes.links.{add, update, remove, reorder}` (http, https and mailto only; a reorder must list exactly the note's links).
+- **Close handshake** (`main/closeGuard.ts`, `lib/flushes.ts`): the window's close waits until the renderer has sent every pending write (note autosave, canvas batch, viewport, panel width), or 2s.
+- **Card chips:** checklist "2/5", links, attachments and the due chip (Today / Tomorrow / weekday / "12 Dec"; overdue, soon and later colors), from `CardNote`'s new fields. A shared 30s clock (`clockStore`) rolls due states over without a timer per card.
+- **Note panel** (lazy-loaded with everything behind it):
+  - opens with Enter or the menu's Open; resizable 320–720px through the shadcn handle (the width is saved); full page (Ctrl+Shift+Enter or the header button); Esc steps back after any open menu or popover;
+  - header: color dot with a swatch popover, "Note", full page, ⋯ (Duplicate, Delete with Undo), close;
+  - title (Enter moves to the body), the BlockNote body, and the meta section: links (add by pasting, edit the label, remove, drag to reorder; a click opens the browser), the due date (DuePicker: quick picks, calendar, an optional time typed or stepped by 15 min, Remind me), the reminder line ("Reminds you Fri 14:45"), colors;
+  - footer: "Saved" / "Saving…" (and "Couldn't save. Retrying…").
+- **Editor:** BlockNote 0.57 via `@blocknote/shadcn` with PRODUCT §3.2's blocks (`shared/blocknoteSchema.ts`), markdown shortcuts and a `/` menu limited to those blocks. No colors and no text alignment; the drag handle is the only side-menu control.
+- **Autosave** (`stores/noteStore.ts`): 500ms after the last change, flushed on blur, panel close, `beforeunload` and the close handshake. The body is serialized only when the save runs, an unchanged body isn't written, and a failed save keeps the edit and retries every 2s.
+- **Writing in the card** (requested during the phase, see below): a double-click on a card's body writes right in the card with the same editor; Enter after a card's title goes on to the body.
+- **Canvas:** Enter opens the selected note; the menu gets Open and Due date… (which opens the panel with the date picker showing). Canvas keys ignore everything inside the panel. A color picked in the panel is an undoable canvas step.
+- **shadcn:** `popover`, `calendar`, `select`, `resizable`, `dropdown-menu`. **New deps:** `@blocknote/core`, `@blocknote/react`, `@blocknote/shadcn`, `date-fns` (all in the stack), plus `react-day-picker` and `react-resizable-panels` from the shadcn adds. Dev: `jsdom`, `@testing-library/react`, `@testing-library/dom` (planned in phase 3's notes).
+- **Tests:**
+  - 222 unit tests (+81): `deriveBody` (text, nesting, counts, junk), `shared/due.ts` in Europe/London (every remind option, both DST changes, the time-cleared reset, due states at the day and time boundaries, labels), the notes service (body, due, re-arming, activity, links CRUD and reorder), the new schemas, time parsing and nudging, URL normalizing, link reordering (`moveItem`), the note store (debounce, one write, lazy serializing, flush on close, retry, card sync), and component tests in jsdom for CardChips, ColorSwatches and DuePicker.
+  - 51 E2E tests (+12): `note-panel.spec.ts` (the full ARCHITECTURE §10.3 flow plus a relaunch; Esc and full page; panel and card taking turns; the menu's Open and Due date…; panel colors undone with Ctrl+Z; delete from the panel with Undo; resize limits and the saved width), `autosave.spec.ts` (close within the debounce, and mid-save, then relaunch), `card-writing.spec.ts` (markdown in a card, title → Enter → body, the `/` menu from a card).
+
+### Exit check
+- ✅ `npm run check` is green: typecheck (3 projects), ESLint + Prettier, 222 unit tests and 51 E2E tests.
+- ✅ **Quitting loses at most 1s of typing:** `autosave.spec.ts` closes the window like a user (the window's `close` event) while the edit is still inside the 500ms debounce, and while a save is on its way; after a relaunch the title, body and checklist are there. With the close handshake turned off the test still passed (the `beforeunload` flush alone got there), so the handshake is a second safety net that makes the order explicit.
+
+### "It should" (checked by automation and screenshots)
+- ✅ Write in a card with a double-click, or open the note in the side panel (Enter): `card-writing.spec.ts`, `note-panel.spec.ts`.
+- ✅ A Notion-style editor: `/` for blocks, `[] ` checklists, `# ` headings (E2E in both places).
+- ✅ The card updates live with "1/2", a link count and a due chip (E2E).
+- ✅ Colors (E2E, including undo).
+- ✅ Nothing is lost (see the exit check).
+- ⚠️ **To try by hand with `npm run dev`:** the feel of typing in a card and in the panel, dragging the panel edge, the date picker and time field, and the slash menu at different zooms.
+
+### Changes requested during the phase (the docs are updated)
+- **Write right in the card** ("why doesn't the note square let me edit the note?"). You chose quick writing with markdown in the card, with the panel kept for links, the due date and the rest. A double-click on the body writes in the card (PRODUCT §3.1, UI_SPEC §4.5); Enter opens the panel. A note is edited in one place at a time. The card's menus render outside the zoomed layer, so they keep their size at any zoom.
+
+### Decisions and findings (the docs are updated)
+- **BlockNote 0.57's shadcn package brings its own components on Base UI,** so the app's Radix ones can't be passed in. They use the same token classes; an `@source` in `globals.css` makes Tailwind generate them, and `views/note/editor.css` maps the `--bn-*` variables onto our tokens.
+- **No colors in the editor:** the schema leaves out text and background colors (monochrome), and the drag-handle menu has Delete only. Text alignment is out too (not in the note model, and markdown can't keep it). The "+" next to blocks is gone, so the drag handle fits the panel's 24px gutter.
+- **Image and file blocks** are in the schema (so counts work) but not in the `/` menu until phase 7 adds attachments.
+- **The placeholder** is "Type '/' for blocks"; phase 9 adds "'[[' to link" with the feature.
+- **Esc:** BlockNote marks Esc handled when it only blurs the editor; the panel treats that as its own Esc. Radix popovers keep their dismiss layer through the ~150ms exit animation, so an Esc pressed during it is swallowed (the tests wait for the picker to close, as a person does).
+- **"Add a time first"** shows inline on the disabled reminder options: a disabled select item takes no pointer events, so it can't show a tooltip.
+- **"Next week" is next Monday,** and the calendar starts weeks on Monday.
+- **Bundle:** the renderer's main chunk is 574 kB (490 kB after phase 3). The panel, the date picker and BlockNote load the first time a note opens (the editor chunk is about 1 MB, and BlockNote's locale files are separate chunks that only load on demand).
+- **BlockNote warns without `interactive-widget=resizes-content`** in the viewport meta tag; it's added (harmless on desktop) rather than allow-listed.
+- **Title double-clicks** now aim at the title text (`[data-card-title-text]`); the two phase-3 tests that double-clicked the middle of the title line were pointed at the text.
+- `noteStore.ts` takes the place of ARCHITECTURE's planned `notesCache.ts`.
+
+### Open / carried forward
+- **Possible follow-up:** cards show their body as plain text when you're not writing in them (from `body_text`), so checkboxes and headings appear as plain lines. Showing the formatting on idle cards would mean loading each card's body JSON; worth deciding after the dogfood checkpoint.
+- **Phase 5:** Mark done in the panel footer (Ctrl+Enter), "Done · 18:30 · Undo", the hover check button on cards, and Mark done in the menu.
+- **Phase 6:** the reminders stored now start firing; the `nav:open-note` handler; "Note · not on canvas" in the panel breadcrumb; Duplicate and Delete in the panel for notes without a card.
+- **Phase 7:** image and file blocks in the `/` menu, with the upload handler.
+- **Phase 9:** `[[` links, the `ref` inline content and "Linked from".
+- **Phase 11:** Export as markdown in the panel's ⋯ menu.
+- `gh` still isn't installed: the PR is opened and merged in the browser. Your npm is still 9.5; this phase installed with `npx npm@11`.
 
 ---
 

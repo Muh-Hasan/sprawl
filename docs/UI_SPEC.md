@@ -105,7 +105,8 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
 - **Hover:** border +8% white and `--shadow-lift`. A **checkmark button** fades in at the top-right (20×20, ghost, `IconCheck` 14px) for a one-click Mark done.
 - **Dragging:** scale 1.02, `--shadow-lift`, 95% opacity.
 - **Below 40% zoom:** the card shows only the title at 13px, with the chips and preview hidden.
-- **Editing the title on the card:** double-clicking the title text (not the card) edits it inline: a textarea that grows with the text, with the old title selected. Enter or clicking away saves (one `notes.update`), Esc puts the old title back. Double-clicking elsewhere opens the panel; until the panel exists (phase 4) it edits the title too.
+- **Editing the title on the card:** double-clicking the title text (not the card) edits it inline: a textarea that grows with the text, with the old title selected. Enter saves (one `notes.update`) and moves on to writing the body; clicking away saves; Esc puts the old title back.
+- **Writing in the card:** double-clicking anywhere else on the card replaces the preview with the note editor (BlockNote, `card` variant): `text-xs` at 18px line height in the note's text color, headings 15/14/13px, 12px checkboxes in the text color, no drag handle. The card grows with the text to its 320 max and then scrolls (the wheel scrolls the text, not the canvas, until it reaches the end). The `/` menu and formatting toolbar render outside the zoomed canvas layer, at full size. Esc (after any open menu) or focus going elsewhere ends it, and the preview comes back. Enter with the card selected (or Open in the menu) opens the panel instead; one place edits a note at a time.
 
 ### 4.6 Drawing card
 - Default 280×200. `--card` background with a 1px `--border` and radius 10, plus 6px padding.
@@ -139,7 +140,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 
 ## 5. Note panel (right)
 
-- Default 420px wide, resizable from 320 to 720px through the shadcn `Resizable` handle, which is a 1px `--border` that turns `--border-strong` on hover with a wider 6px hit area.
+- Default 420px wide, resizable from 320 to 720px through the shadcn `Resizable` handle, which is a 1px `--border` that turns `--border-strong` on hover with a wider 6px hit area. The handle is the panel's left border (the panel has none of its own). The width is saved (`panelWidth`) and stays in px when the window resizes.
 - `--surface` background with a 1px left border.
 - **Full-page mode** fills the main area minus the rail. The content column is centered with a max width of 720px.
 - **Esc** steps back one level: full page → side panel → closed (PRODUCT §3.2). Esc inside the editor first leaves any open BlockNote menu.
@@ -153,8 +154,8 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 4. **Meta section:** 32px top margin, a 1px top border, 16px padding. Rows are 32px tall and `text-sm`, with a 16px icon in subtle and the label in muted:
    - **Links:** each link is a row showing the domain letter square (16px), the label or URL with an ellipsis, and hover actions (edit, remove). Below them is an "Add link" ghost row; clicking it turns the row into an input with the placeholder "Paste a URL".
    - **Due:** "Add due date" or the formatted date as a chip ("Fri 28 Nov · 15:00"). Clicking either opens the **DuePicker** popover (300px):
-     - Left column: quick picks as ghost buttons (Today, Tomorrow, Next week, Clear). Right: the Calendar.
-     - Below, separated by a 1px border: a **Time** row ("Add time" ghost button, which turns into an `HH:mm` input with 15-minute steps and arrow-key nudging, plus a clear button) and a **Remind me** row (shadcn `Select`: None, At due time, 15 min before, 1 hour before, Morning of (9:00), 1 day before). The options that need a time are disabled until a time is set, with a tooltip saying "Add a time first". Clearing the time while one of them is selected resets Remind me to None.
+     - Left column: quick picks as ghost buttons (Today, Tomorrow, Next week (next Monday), Clear). Right: the Calendar (weeks start on Monday).
+     - Below, separated by a 1px border: a **Time** row ("Add time" ghost button, which turns into an `HH:mm` input with 15-minute steps and arrow-key nudging, plus a clear button) and a **Remind me** row (shadcn `Select`: None, At due time, 15 min before, 1 hour before, Morning of (9:00), 1 day before). The options that need a time are disabled until a time is set, with "· Add a time first" after their label (a disabled select item takes no pointer events, so it can't show a tooltip). The time is typed (9, 930, 9:30…) or stepped by 15 minutes with ↑/↓, and saved on Enter or on leaving the field. Clearing the time while one of them is selected resets Remind me to None.
    - **Reminder row** (shown only when a reminder is set): a `IconBell` icon with "Reminds you Fri 14:45", or "Reminded" in subtle text after it fires.
    - **Color:** six 16px swatch circles with an 8px gap. The selected one gets a 2px `--foreground` ring with a 2px offset.
    - **Linked from:** only shown if the note has backlinks. Each backlink is a row with the color dot and title.
@@ -164,15 +165,15 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
    - When done, the footer reads "Done · 18:30" with an **Undo** ghost button instead.
 
 ### 5.1 Editor styling (BlockNote via `@blocknote/shadcn`)
-- Pass the app's shadcn components into `BlockNoteView` so menus and popovers match. Set `theme="dark"` and override BlockNote's CSS variables to the tokens: editor background transparent, text `--foreground`, menus `--popover`, hover `--muted`, borders `--border`.
+- `@blocknote/shadcn` brings its own shadcn components (on Base UI), styled by the same theme variables, so menus and popovers match (ARCHITECTURE §6, Editor notes). Set `theme="dark"` and override BlockNote's CSS variables to the tokens: editor background transparent, text `--foreground`, menus `--popover`, hover `--muted`, borders `--border`.
 - **Body** uses Outfit (override BlockNote's font variable so it inherits `--font-sans`) at `text-editor` (15/26) with 4px between blocks. H1, H2 and H3 are 24, 20 and 17px at weight 600, with 20px above and 4px below.
 - **Checklist:** a 16px checkbox with radius 4 and a 1.5px `--border-strong` border. Checked boxes are white-filled with a black check, and their text gets `--muted-foreground` with a strike-through.
 - **Code block:** Geist Mono 13px on an `--inset` background with a 1px border, radius 8 and 12px padding.
 - **Quote:** a 2px `--border-strong` left bar (radius 0), 12px left padding, muted text.
 - **Image block:** radius 8 with a 1px border. The caption is `text-xs` subtle.
 - **`[[ref]]` pill:** inline-flex, `--muted` background, radius 4, padding 0 4px, the note's color dot (6px) and title in 500 weight. Hover shows a `--muted` +4% white background. Drawing refs use the `IconScribble` 12px icon instead of the dot.
-- **Slash menu and side menu (drag handle):** BlockNote defaults rendered through shadcn. The drag handle uses `IconGripVertical` at 16px in subtle.
-- **Placeholder** for an empty paragraph: "Type '/' for blocks, '[[' to link" in subtle.
+- **Slash menu and side menu (drag handle):** BlockNote's, rendered through its shadcn package. The slash menu lists only PRODUCT §3.2's blocks. The side menu is the drag handle alone (BlockNote's six-dot handle), so it fits the 24px gutter; its menu has Delete only. The formatting toolbar has the block type, bold, italic, underline, strike, code, nest/unnest and link, with no colors or alignment.
+- **Placeholder** for an empty paragraph: "Type '/' for blocks" in subtle; phase 9 adds ", '[[' to link".
 
 ---
 
