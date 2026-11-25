@@ -108,6 +108,20 @@ export async function stubFolderPicker(app: ElectronApplication, path: string): 
   }, path)
 }
 
+/**
+ * Fixes main's injectable clock at `ms` (ARCHITECTURE §10.3), and waits until the window has
+ * heard, so "today" in the renderer matches main's.
+ */
+export async function setNow(app: ElectronApplication, page: Page, ms: number): Promise<void> {
+  await app.evaluate((_electron, t) => {
+    const hooks = (globalThis as { __sprawlTest?: { setNow(ms: number | null): void } })
+      .__sprawlTest
+    if (!hooks) throw new Error('The E2E test hooks are not registered')
+    hooks.setNow(t)
+  }, ms)
+  await expect(page.locator('html')).toHaveAttribute('data-fixed-now', String(ms))
+}
+
 /** Records console errors/warnings and uncaught page errors that aren't on the allow list. */
 export function watchConsole(page: Page, problems: string[]): void {
   page.on('console', (msg) => {
