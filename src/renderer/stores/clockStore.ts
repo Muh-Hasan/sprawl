@@ -8,23 +8,38 @@ interface ClockState {
   now: number
 }
 
+/** Set while main's clock is fixed (E2E tests only), so "today" here matches main's. */
+let fixed: number | null = null
+
+/** Now, in ms: the real time, or main's fixed test clock. */
+export function clockNow(): number {
+  return fixed ?? Date.now()
+}
+
 /**
- * One shared clock for everything that shows time-relative state (due chips, "Today"), so
- * a canvas full of cards doesn't run a timer each.
+ * One shared clock for everything that shows time-relative state (due chips, "Today", the
+ * daily log), so a canvas full of cards doesn't run a timer each.
  */
-export const useClockStore = create<ClockState>()(() => ({ now: Date.now() }))
+export const useClockStore = create<ClockState>()(() => ({ now: clockNow() }))
 
 let timer: ReturnType<typeof setInterval> | null = null
 
 /** Starts the ticks (once, from App). Returns the stop function. */
 export function startClock(): () => void {
-  const tick = (): void => useClockStore.setState({ now: Date.now() })
+  const tick = (): void => useClockStore.setState({ now: clockNow() })
   if (timer) clearInterval(timer)
   timer = setInterval(tick, TICK_MS)
   window.addEventListener('focus', tick)
+  const off = window.sprawl.on('clock:changed', ({ now }) => {
+    fixed = now
+    if (now === null) delete document.documentElement.dataset.fixedNow
+    else document.documentElement.dataset.fixedNow = String(now)
+    tick()
+  })
   return () => {
     if (timer) clearInterval(timer)
     timer = null
     window.removeEventListener('focus', tick)
+    off()
   }
 }

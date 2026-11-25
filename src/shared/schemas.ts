@@ -245,6 +245,7 @@ export const canvasOpSchema = z.discriminatedUnion('op', [
   z.object({ op: z.literal('delete'), id: idSchema }).strict(),
   z.object({ op: z.literal('restore'), item: canvasItemInputSchema }).strict(),
   z.object({ op: z.literal('setColor'), id: idSchema, color: noteColorSchema }).strict(),
+  z.object({ op: z.literal('setDone'), id: idSchema, done: z.boolean() }).strict(),
 ])
 
 /** One `canvas.apply` batch. 5,000 ops covers a big paste or the dev seed with room to spare. */
@@ -288,6 +289,7 @@ export const notePatchSchema = z
 export const noteIdInput = idSchema
 export const notesCreateInput = newNoteSchema
 export const notesUpdateInput = z.object({ id: idSchema, patch: notePatchSchema }).strict()
+export const notesSetDoneInput = z.object({ id: idSchema, done: z.boolean() }).strict()
 
 // note links -------------------------------------------------------------------------------
 
@@ -312,3 +314,33 @@ export const linksReorderInput = z
   .object({ noteId: idSchema, ids: z.array(idSchema).max(1000) })
   .strict()
   .refine(({ ids }) => new Set(ids).size === ids.length, { message: 'Duplicate ids' })
+
+// daily log --------------------------------------------------------------------------------
+
+/** A month, `YYYY-MM`. */
+export const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM')
+
+/** A manual entry's text: one line of inline markdown, never blank. */
+export const logTextSchema = z
+  .string()
+  .max(10_000)
+  .refine((t) => t.trim().length > 0, { message: 'An entry needs some text' })
+
+/** An instant (ms UTC) within reason. */
+const instantSchema = z.number().int().min(0).max(8.64e15)
+
+export const logDayInput = dayKeySchema
+export const logMonthInput = monthSchema
+export const logAddManualInput = z
+  .object({ day: dayKeySchema, text: logTextSchema, at: instantSchema.optional() })
+  .strict()
+export const logUpdateInput = z
+  .object({
+    id: idSchema,
+    patch: z
+      .object({ text: logTextSchema, time: timeOfDaySchema })
+      .strict()
+      .partial()
+      .refine((patch) => Object.keys(patch).length > 0, { message: 'Empty patch' }),
+  })
+  .strict()

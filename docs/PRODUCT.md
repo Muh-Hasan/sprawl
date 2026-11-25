@@ -88,7 +88,7 @@ An infinite, pannable and zoomable board with a dotted background.
 - Its color comes from the note's color.
 - **Writing in the card:** double-clicking the card's body puts the cursor in the card for quick plain text that looks just like the card's preview. Markdown stays text there (`# ` doesn't make a heading), with one exception: `[] ` makes a checklist item. No `/` menu or toolbar; pasted text stays text. Formatting (headings, lists, quotes, code) is done in the panel, and what the panel made keeps a quiet card-sized look while you type in the card. Double-clicking the title text edits the title; Enter after the title moves on to the body, so a new sticky is title, Enter, write. Esc or clicking away ends it.
 - **Opening the panel:** Enter with the card selected, the hover open button (top-right), or Open in the menu. The panel stays open while you write in the card, and follows the typing live (and the card follows the panel). Writing in another card moves the panel to that note.
-- A done note is hidden from the canvas by default. The "Show done" toggle in the canvas top bar (also in Settings; it's the same setting) shows done notes again, faded and struck through.
+- A done note is hidden from the canvas by default. The "Show done" toggle in the canvas top bar (also in Settings; it's the same setting) shows done notes again, faded and struck through. Mark done (the hover check, the menu or Ctrl+Enter) on done notes shown this way marks them not done.
 - Due chip states: none (most notes), later (more than 2 days away), soon (2 days or less), and overdue.
 
 ### 3.2 Note panel
@@ -128,7 +128,7 @@ All notes in one dense list, for when the canvas is too spread out to scan.
 A separate page per calendar day (using the local timezone).
 
 - The **header** has the date with ← and → arrows (Ctrl+[ and ] when this view is focused), and a "Today" button.
-- The **week strip** shows the last 7 days, and days with entries get a dot. Clicking the month name opens a month calendar where days with entries are marked.
+- The **week strip** shows the last 7 days (or, further back, the 7 days ending on the day shown), and days with entries get a dot. The calendar button opens a month calendar where days with entries are marked. The log doesn't go past today.
 - **Entries** are listed by time:
   - Auto entries show "✓ {note title}" with the note's color tag. Clicking one opens the note.
   - Manual entries are free text (markdown inline only) and can be edited or deleted on hover.

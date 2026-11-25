@@ -8,6 +8,8 @@ interface CardTitleProps {
   itemId: string
   title: string
   editing: boolean
+  /** A done note (shown with "Show done") has its title struck through. */
+  done?: boolean
 }
 
 /**
@@ -15,13 +17,18 @@ interface CardTitleProps {
  * it's a textarea that grows with the text. Enter saves and moves on to writing the body in the
  * card, clicking away saves, Esc puts the old title back; the title is written once, at the end.
  */
-export function CardTitle({ itemId, title, editing }: CardTitleProps) {
+export function CardTitle({ itemId, title, editing, done = false }: CardTitleProps) {
   if (!editing) {
     return (
       <p
         data-card-title
         data-testid="note-card-title"
-        className={cn('line-clamp-2 pr-3.5 text-card-title break-words', !title && 'opacity-60')}
+        className={cn(
+          // Clear of the hover done and open buttons at the top-right.
+          'line-clamp-2 pr-9 text-card-title break-words',
+          !title && 'opacity-60',
+          done && 'line-through',
+        )}
       >
         {/* The text itself: a double-click on it edits the title, elsewhere opens the panel. */}
         <span data-card-title-text>{title || 'Untitled'}</span>

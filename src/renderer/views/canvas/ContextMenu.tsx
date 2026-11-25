@@ -24,16 +24,19 @@ import {
   openSelectedNote,
   restackSelection,
   setSelectionColor,
+  toggleSelectionDone,
 } from './actions'
 import { zoomToFit } from './camera'
 import { screenToWorld, type Point } from './Viewport'
 
-type Target = { kind: 'cards'; notes: boolean; single: boolean } | { kind: 'canvas'; at: Point }
+type CardsTarget = { kind: 'cards'; notes: boolean; single: boolean; allDone: boolean }
+type Target = CardsTarget | { kind: 'canvas'; at: Point }
 
 /**
  * The right-click menu (UI_SPEC §4.10). On a card it acts on the whole selection (right-clicking
  * an unselected card selects just that one); on empty space it offers to create and paste.
- * Open and Due date… act on a single note. later: phase-5 adds Mark done, phase-8 New drawing here.
+ * Open and Due date… act on a single note; Mark done on every selected note (Mark not done when
+ * they're all done, shown with "Show done"). later: phase-8 adds New drawing here.
  */
 export function CanvasContextMenu({ children }: { children: ReactNode }) {
   const [target, setTarget] = useState<Target | null>(null)
@@ -53,7 +56,8 @@ export function CanvasContextMenu({ children }: { children: ReactNode }) {
       if (!sel.selected.has(id)) sel.select([id])
       const ids = [...useSelectionStore.getState().selected]
       const notes = ids.every((i) => items.get(i)?.kind === 'note')
-      setTarget({ kind: 'cards', notes, single: notes && ids.length === 1 })
+      const allDone = notes && ids.every((i) => items.get(i)?.note?.doneAt != null)
+      setTarget({ kind: 'cards', notes, single: notes && ids.length === 1, allDone })
       return
     }
     const r = e.currentTarget.getBoundingClientRect()
@@ -75,7 +79,7 @@ export function CanvasContextMenu({ children }: { children: ReactNode }) {
         // Focus stays where the command put it (say, a new note's title), not back on the board.
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
-        {target?.kind === 'cards' && <CardItems notes={target.notes} single={target.single} />}
+        {target?.kind === 'cards' && <CardItems {...target} />}
         {target?.kind === 'canvas' && <CanvasItems at={target.at} />}
       </ContextMenuContent>
     </ContextMenu>
@@ -107,7 +111,7 @@ function Item({
   )
 }
 
-function CardItems({ notes, single }: { notes: boolean; single: boolean }) {
+function CardItems({ notes, single, allDone }: Omit<CardsTarget, 'kind'>) {
   return (
     <>
       {single && (
@@ -117,6 +121,13 @@ function CardItems({ notes, single }: { notes: boolean; single: boolean }) {
       )}
       {notes && (
         <>
+          <Item
+            testId="menu-done"
+            shortcut={shortcutLabel(CANVAS_SHORTCUTS.markDone)}
+            onSelect={toggleSelectionDone}
+          >
+            {allDone ? 'Mark not done' : 'Mark done'}
+          </Item>
           <ContextMenuSub>
             <ContextMenuSubTrigger data-testid="menu-color">Color</ContextMenuSubTrigger>
             <ContextMenuSubContent className="flex gap-1 p-1.5">

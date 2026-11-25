@@ -117,6 +117,7 @@
   --shadow-lift: 0 12px 32px -8px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06);
   --shadow-popover: 0 16px 48px -12px rgb(0 0 0 / 0.8), 0 0 0 1px #27272a;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
 }
 
 @theme inline {
@@ -195,6 +196,17 @@
   --radius-xl: calc(var(--radius) + 4px);
   --radius-card: 10px;
   --radius-capture: 14px;
+
+  /* the daily log's one-time row highlight (DESIGN_SYSTEM §6) */
+  --animate-row-highlight: row-highlight 600ms var(--ease-out);
+  @keyframes row-highlight {
+    from {
+      background-color: var(--muted);
+    }
+    to {
+      background-color: transparent;
+    }
+  }
 
   /* weights listed here are defaults; override with font-* where the type table allows */
   --text-2xs: 11px;

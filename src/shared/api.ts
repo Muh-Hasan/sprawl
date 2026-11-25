@@ -3,11 +3,15 @@ import type {
   CanvasApplyResult,
   CanvasItem,
   CanvasOp,
+  LogDay,
+  LogEntry,
+  LogEntryPatch,
   NewNote,
   Note,
   NoteLink,
   NoteLinkPatch,
   NotePatch,
+  NoteSummary,
 } from './types'
 
 /**
@@ -50,6 +54,11 @@ export interface NotesAPI {
   update(id: string, patch: NotePatch): Promise<Note>
   /** A copy of the title, body, color and links, not placed on the canvas (PRODUCT §3.1). */
   duplicate(id: string): Promise<Note>
+  /**
+   * Marks a note done (with a log entry) or not done (removing it), in one transaction. Notes on
+   * the canvas use the undoable `setDone` canvas op instead.
+   */
+  setDone(id: string, done: boolean): Promise<Note>
   /** Soft delete; purged for good after 30 days. */
   remove(id: string): Promise<void>
   restore(id: string): Promise<void>
@@ -73,6 +82,21 @@ export interface CanvasAPI {
   apply(ops: CanvasOp[]): Promise<CanvasApplyResult>
 }
 
+export interface LogAPI {
+  /** A day's entries (`YYYY-MM-DD`), in time order. */
+  day(day: string): Promise<LogDay>
+  /** A manual entry; `at` defaults to now (or the current time of day on another day). */
+  addManual(day: string, text: string, at?: number): Promise<LogEntry>
+  /** Edits a manual entry's text, or its time (`HH:mm`) on the same day. */
+  update(id: string, patch: LogEntryPatch): Promise<LogEntry>
+  /** Deletes a manual entry. */
+  remove(id: string): Promise<void>
+  /** The days of a month (`YYYY-MM`) that have entries. */
+  daysWithEntries(month: string): Promise<string[]>
+  /** Notes edited the day before `day` and not done by its end. */
+  carriedOver(day: string): Promise<NoteSummary[]>
+}
+
 /** Events main sends to the renderer, with their payloads. */
 export interface MainEvents {
   'vault:changed': VaultInfo
@@ -80,6 +104,8 @@ export interface MainEvents {
   'nav:open-list-due': undefined
   /** The window is closing: save what's pending, then call `app.readyToClose()`. */
   'app:before-close': undefined
+  /** E2E only: the clock was fixed at `now` (or runs again with null), so "today" follows it. */
+  'clock:changed': { now: number | null }
 }
 export type MainEventName = keyof MainEvents
 
@@ -88,6 +114,7 @@ export interface SprawlAPI {
   settings: SettingsAPI
   notes: NotesAPI
   canvas: CanvasAPI
+  log: LogAPI
   /** Subscribes to a main-process event. Returns the unsubscribe function. */
   on<E extends MainEventName>(event: E, listener: (payload: MainEvents[E]) => void): () => void
 }
@@ -111,6 +138,7 @@ export const IPC = {
     create: 'notes:create',
     update: 'notes:update',
     duplicate: 'notes:duplicate',
+    setDone: 'notes:setDone',
     remove: 'notes:remove',
     restore: 'notes:restore',
     links: {
@@ -124,6 +152,14 @@ export const IPC = {
     load: 'canvas:load',
     apply: 'canvas:apply',
   },
+  log: {
+    day: 'log:day',
+    addManual: 'log:addManual',
+    update: 'log:update',
+    remove: 'log:remove',
+    daysWithEntries: 'log:daysWithEntries',
+    carriedOver: 'log:carriedOver',
+  },
 } as const
 
 export const MAIN_EVENTS: readonly MainEventName[] = [
@@ -131,4 +167,5 @@ export const MAIN_EVENTS: readonly MainEventName[] = [
   'nav:open-note',
   'nav:open-list-due',
   'app:before-close',
+  'clock:changed',
 ]

@@ -13,6 +13,7 @@ import {
   openSelectedNote,
   restackSelection,
   selectAll,
+  toggleSelectionDone,
   viewCenter,
 } from './actions'
 import { zoomReset, zoomStep, zoomToFit } from './camera'
@@ -68,6 +69,7 @@ export function useCanvasKeys(): void {
       [CANVAS_SHORTCUTS.sendToBack, () => restackSelection('back')],
       [CANVAS_SHORTCUTS.delete, deleteSelection],
       [CANVAS_SHORTCUTS.open, () => openSelectedNote()],
+      [CANVAS_SHORTCUTS.markDone, toggleSelectionDone],
     ]
 
     const onKeyDown = (e: KeyboardEvent): void => {

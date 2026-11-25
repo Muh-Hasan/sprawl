@@ -12,6 +12,7 @@ export function cardNote(over: Partial<CardNote> = {}): CardNote {
     linkCount: 0,
     dueDay: null,
     dueTime: null,
+    doneAt: null,
     ...over,
   }
 }

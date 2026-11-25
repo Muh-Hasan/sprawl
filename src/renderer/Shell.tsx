@@ -9,7 +9,6 @@ import { useUiStore, type View } from '@/stores/uiStore'
 import { Canvas } from '@/views/canvas/Canvas'
 import { DrawingsGrid } from '@/views/drawings/DrawingsGrid'
 import { ListView } from '@/views/list/ListView'
-import { LogView } from '@/views/log/LogView'
 import { SettingsView } from '@/views/settings/SettingsView'
 
 /**
@@ -20,7 +19,10 @@ const NotePanel = lazy(() =>
   import('@/views/note/NotePanel').then((m) => ({ default: m.NotePanel })),
 )
 
-const VIEW_COMPONENTS: Record<View, () => React.JSX.Element> = {
+/** The daily log isn't the startup view; it (and its calendar and popovers) loads on first use. */
+const LogView = lazy(() => import('@/views/log/LogView').then((m) => ({ default: m.LogView })))
+
+const VIEW_COMPONENTS: Record<View, React.ComponentType> = {
   canvas: Canvas,
   list: ListView,
   log: LogView,
@@ -85,7 +87,9 @@ export function Shell() {
             data-testid={`view-${view}`}
             className="h-full min-w-0 animate-in duration-[260ms] fade-in-0"
           >
-            <ViewComponent />
+            <Suspense fallback={null}>
+              <ViewComponent />
+            </Suspense>
           </main>
         </ResizablePanel>
         {panelOpen && width !== null && (

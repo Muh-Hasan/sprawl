@@ -35,8 +35,9 @@ function escOwnedElsewhere(e: KeyboardEvent): boolean {
 }
 
 /**
- * Panel keys (PRODUCT §4): Ctrl+Shift+Enter toggles full page; Esc steps back, full page →
- * side panel → closed, after any open menu or popover has had it.
+ * Panel keys (PRODUCT §4): Ctrl+Shift+Enter toggles full page; Ctrl+Enter marks the note done
+ * (or not done again); Esc steps back, full page → side panel → closed, after any open menu or
+ * popover has had it.
  */
 function usePanelKeys(): void {
   useEffect(() => {
@@ -46,6 +47,14 @@ function usePanelKeys(): void {
       if (matchesShortcut(e, PANEL_SHORTCUTS.fullPage)) {
         e.preventDefault()
         ui.setPanelMode(ui.panelMode === 'full' ? 'side' : 'full')
+      } else if (matchesShortcut(e, PANEL_SHORTCUTS.markDone)) {
+        // Only from inside the panel (the canvas has its own Ctrl+Enter for the selection), and
+        // not when the editor took it: in a checklist item it ticks the item.
+        const inPanel = e.target instanceof Element && e.target.closest('[data-note-panel]')
+        if (!inPanel || e.defaultPrevented) return
+        e.preventDefault()
+        const notes = useNoteStore.getState()
+        notes.setDone(notes.note?.doneAt == null)
       } else if (matchesShortcut(e, PANEL_SHORTCUTS.close)) {
         if (escOwnedElsewhere(e)) return
         e.preventDefault()

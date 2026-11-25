@@ -166,6 +166,23 @@ describe('invertOps', () => {
     expect(inverse).toEqual([{ op: 'setColor', id: 'b', color: 'sage' }])
   })
 
+  it('inverts setDone into the previous done state, and skips one that changes nothing', () => {
+    const inverse = roundTrip(itemsOf(b), [{ op: 'setDone', id: 'b', done: true }])
+    expect(inverse).toEqual([{ op: 'setDone', id: 'b', done: false }])
+    const done = card('d', { note: cardNote({ doneAt: 5 }) })
+    expect(invertOps(itemsOf(done), [{ op: 'setDone', id: 'd', done: true }])).toEqual([])
+    expect(invertOps(itemsOf(done), [{ op: 'setDone', id: 'd', done: false }])).toEqual([
+      { op: 'setDone', id: 'd', done: true },
+    ])
+  })
+
+  it('applies setDone with the time it ran, and clears it on undo', () => {
+    const done = reduceOps(itemsOf(b), [{ op: 'setDone', id: 'b', done: true }], 1234)
+    expect(done.get('b')?.note?.doneAt).toBe(1234)
+    const undone = reduceOps(done, [{ op: 'setDone', id: 'b', done: false }], 2000)
+    expect(undone.get('b')?.note?.doneAt).toBeNull()
+  })
+
   it('skips ops on cards that are gone, and inverts a mixed batch in reverse order', () => {
     expect(invertOps(itemsOf(a), [{ op: 'update', id: 'x', patch: { x: 1 } }])).toEqual([])
     const ops: CanvasOp[] = [

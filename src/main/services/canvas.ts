@@ -11,6 +11,7 @@ import type {
 } from '@shared/types'
 import type { DbHandle } from '../db/client'
 import { canvasItems, drawings, notes } from '../db/schema'
+import { setNoteDone } from './log'
 import { insertNote } from './notes'
 
 export interface CanvasDeps {
@@ -73,6 +74,9 @@ export class CanvasService {
           case 'setColor':
             this.setColor(op.id, op.color, now)
             break
+          case 'setDone':
+            this.setDone(op.id, op.done, now)
+            break
         }
       }
     })()
@@ -127,6 +131,17 @@ export class CanvasService {
     db.update(notes).set({ color, updatedAt: now }).where(eq(notes.id, card.refId)).run()
   }
 
+  /** Marks a note card's note done or not. A card that's gone is a no-op; any other kind fails. */
+  private setDone(id: string, done: boolean, now: number): void {
+    const handle = this.handle()
+    const card = handle.db.select().from(canvasItems).where(eq(canvasItems.id, id)).get()
+    if (!card) return
+    if (card.kind !== 'note' || card.refId === null) {
+      throw new Error(`Only note cards can be done (${id} is a ${card.kind} card)`)
+    }
+    setNoteDone(handle, card.refId, done, now)
+  }
+
   /** Updating a card that no longer exists is a no-op (it lost a race with a delete). */
   private update(id: string, patch: CanvasItemPatch, now: number): void {
     const { db } = this.handle()
@@ -171,6 +186,7 @@ const CARD_NOTE_FIELDS = {
   >`(SELECT count(*) FROM note_links WHERE note_links.note_id = ${notes.id})`,
   dueDay: notes.dueDay,
   dueTime: notes.dueTime,
+  doneAt: notes.doneAt,
 }
 
 interface CardNoteRow {
@@ -183,6 +199,7 @@ interface CardNoteRow {
   linkCount: number | null
   dueDay: string | null
   dueTime: string | null
+  doneAt: number | null
 }
 
 /** A left join gives nulls for a card that isn't a note's. */
@@ -198,6 +215,7 @@ function toCardNote(row: CardNoteRow): CanvasItem['note'] {
     linkCount: row.linkCount ?? 0,
     dueDay: row.dueDay,
     dueTime: row.dueTime,
+    doneAt: row.doneAt,
   }
 }
 
