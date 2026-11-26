@@ -187,18 +187,21 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 - **Filter bar** (40px, 12px below the header):
   - Left: a shadcn `ToggleGroup` (Open · Due · Done · All), sm size, ghost style, with the selected item in a `--muted` background.
   - Then six color swatch dots (14px circles). Selected dots get a 2px `--foreground` ring, and with none selected all colors show.
-  - Right: a filter input (200px, 28px tall, with a `IconSearch` icon and the placeholder "Filter by title"), then a Sort `Select` (hidden on the Due tab, which always sorts by due date).
+  - Right: a filter input (200px, 28px tall, with a `IconSearch` icon and the placeholder "Filter by title"), then a Sort `Select` (hidden on the Due tab, which always sorts by due date, and on Done, which sorts by done time).
+- The header count reads "24 open", "5 due", "12 done" or "40 notes".
 - **Rows:** 44px tall, a 1px `--border` bottom, 12px horizontal padding and radius 0. Hover gives a `--muted` background, and the keyboard-selected row gets a `--muted` background plus a 2px white left bar (radius 0).
   - Columns: checkbox (16px, the same style as the editor checklist) · color dot (8px) · **title** (`text-sm` 500, ellipsis) · first body line (`text-sm` subtle, ellipsis, takes the remaining space and is hidden when the window is under 1100px wide) · chips (checklist, due, links; same chips as the cards) · "Not on canvas" tag (`text-2xs`, `--muted` background, only when it applies) · edited time (`text-xs` subtle mono, 64px, right-aligned).
-  - Hover actions replace the edited time: `IconFocus2` (Show on canvas) and `IconDots` (Place on canvas, Duplicate, Delete).
+  - Hover actions replace the edited time: `IconFocus2` (Show on canvas; only for a note with a card that isn't done) and `IconDots` (Place on canvas for list-only notes, Duplicate, Delete).
+  - Show on canvas switches to the canvas, selects the card and glides it to the middle at 100% or closer.
 - **Due tab grouping:** sticky section headings (32px, `text-2xs` 600 subtle, `--background` background), in order: Overdue (heading in `--due-overdue`) · Today · Tomorrow · This week · Later. Empty groups are hidden.
 - **Done tab:** rows show the done time instead of the edited time, and the checkbox is checked (unticking undoes done).
 - Ticking a row's checkbox fades the row out over 180ms in the Open and Due tabs.
-- **Empty states:** see PRODUCT §5.
+- **Empty states:** see PRODUCT §5. Done: "Nothing done yet. Tick a note and it shows up here." All: "No notes yet." With a color or title filter on: "No notes match these filters."
+- **New note** opens the note in the panel with the cursor in the title; its breadcrumb reads "Note · not on canvas" until it's placed.
 
 ## 5c. Quick capture window
 
-- A separate frameless window, 520px wide with its height fitted to the content (min 112, max 320). It's centered horizontally at 22% of the active monitor's height. Transparent window background; the inner card has radius 14, a `--card` background, a 1px `--border-strong` border and `--shadow-popover`.
+- A separate frameless window, 520px wide with its height fitted to the content (min 112, max 320). It's centered horizontally at 22% of the active monitor's height (the monitor under the pointer). Transparent window background; the inner card has radius 14, a `--card` background, a 1px `--border-strong` border and `--shadow-popover`.
 - **Layout** (padding 14px):
   - Top row: `sprawl-mark-light` at 14px, then a `ToggleGroup` (Note | Log, xs, 24px tall), and on the right a `kbd Tab` hint in `text-2xs` subtle.
   - The text area: borderless and transparent, `text-base` (14/22), auto-growing up to 8 lines.

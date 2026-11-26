@@ -10,9 +10,70 @@ A running log of the build, one phase per session (see `PHASES.md`). Read this f
 | 3 — Notes on the canvas | ✅ Done | 2026-11-25 |
 | 4 — Note panel and editor | ✅ Done | 2026-11-25 |
 | 5 — Done and the daily log | ✅ Done | 2026-11-25 |
-| 6 — Daily driver: list view, quick capture and reminders | ⏭ Next | |
+| 6 — Daily driver: list view, quick capture and reminders | 🟡 Built; manual checks pending | 2026-11-26 |
 | Dogfood checkpoint | Not started | |
 | 7–12 | Not started | |
+
+---
+
+## Phase 6 — Daily driver: list view, quick capture and reminders 🟡
+
+**Branch:** `feat/phase-6-daily-driver` → PR into `main` (no tag). Automated checks are green; the phase 6 section of `tests/MANUAL.md` still has to be ticked on Windows before merging (exit check).
+
+### Built
+- **List view** (`views/list/`):
+  - `notes.list` (`services/noteList.ts`): Open, Due, Done and All, colors, the title filter and the sorts. Due groups: Overdue · Today · Tomorrow · This week · Later, with sticky headings.
+  - Rows: checkbox, color dot, title, first body line (from 1100px), chips, "Not on canvas", edited (or done) time; hover actions Show on canvas and ⋯ (Place on canvas, Duplicate, Delete).
+  - Ticking done fades the row out of Open, Due and Done (180ms), logs it, and shows "Marked done · Undo". Delete has Undo.
+  - Keys: ↑↓, Enter, Space, Delete. ↓ from the filter box goes to the rows.
+  - New note makes a list-only note, open in the panel with the cursor in the title. Show on canvas switches view, selects the card and glides it to the middle. Place on canvas puts a card in the middle of the last view.
+  - The filter (tab, colors, sort) is remembered in `listFilter`. The rail's List icon shows the overdue count.
+  - The panel: "Note · not on canvas" for list-only notes; Duplicate and Delete work for notes without a loaded card (`notes.duplicate`, `notes.remove` with Undo).
+- **Quick capture:**
+  - The hidden capture window (`main/captureWindow.ts`, `capture.html` + `views/capture/`). Note and Log modes (Tab), the `!date` highlight and "Due Tomorrow · 15:00" chip, Enter / Shift+Enter / Esc, the 600ms "Saved to canvas" / "Logged" flash, and minimize-then-hide.
+  - `shared/parseCapture.ts`. `services/capture.ts` saves a note, its due date (a time adds an "At due time" reminder) and its card in one transaction, stepped 24px over 8 places.
+  - The global shortcut (`CaptureShortcut`). The Settings `ShortcutRecorder` lets go of the old shortcut while recording and shows conflicts. Accelerators are checked by `shared/accelerator.ts`.
+- **Reminders** (`services/reminders.ts`, `services/notify.ts`):
+  - One timer for the soonest of reminders, overdue nudges, the morning summary and the end of a pause; a 60s interval; `powerMonitor` resume and unlock.
+  - Missed (over 2 minutes late) items: one shows as itself, two or more become "While you were away". The morning summary goes once a day (`morningSummarySentOn`).
+  - Due reminders off skips them; a pause holds them. Pending `remind_at` is re-derived on vault open and on a timezone change.
+  - Toasts use `toastXml` protocol activation (`sprawl://note/<id>`, `sprawl://list/due`) and are recorded in E2E mode. `nav:open-note` and `nav:open-list-due` are handled (`lib/mainEvents.ts`, subscribed before React renders).
+- **Tray and background:** `main/tray.ts` (Open · Quick capture · Pause/Resume · Quit, tooltip with the overdue count). Closing hides to the tray when "keep running" is on (`closeGuard`'s `hideInstead`). `--hidden` start, login item synced from `openAtLogin`. `npm run dev` registers the dev `sprawl://` handler (`SPRAWL_NO_PROTOCOL=1` skips it).
+- **Settings:** Notifications (Due reminders, Morning summary + time, Send a test notification, the blocked warning with Open Windows settings), Quick capture (Shortcut, Default mode), System (Keep running, Start with Windows). Split into `NotificationsSection`, `CaptureSection`, `useSettings`.
+- shadcn `toggle-group` and `checkbox` added (own commit); `SegmentedControl` wraps the toggle group.
+- **Bundle:** the main page loads 351 kB of its own plus a 226 kB shared chunk (React, Radix and friends) that the capture page shares; the capture page's own code is 7 kB.
+- **Tests:**
+  - 373 unit tests (+95): `parseCapture` (every form, weekdays, years, leap day, punctuation, what it leaves alone), accelerators, the list query builder and `notes.list` through SQLite (each tab, sort, colors, title, `firstLine`, `onCanvas`), `countOverdue`, `placeNote`, the capture service, the scheduler with a fake clock and timers (arming, firing once, done cancels, deleted, same-time pairs, off, pause, missed summary, single missed, the 2-minute grace, wake from sleep, nudges, the morning summary, timezones, toast wording), list logic (groups, labels), `ShortcutRecorder` (record, conflict, hint, cancel), `NoteRow`, and the new schemas.
+  - E2E (+20): `list.spec.ts` (7), `capture.spec.ts` (6), `reminders.spec.ts` (7). Page objects `ListPage`; fixture helpers `notifications`, `openLink`, `openCapture`, `captureVisible`, `trayState`.
+
+### Exit check
+- ✅ `npm run check` is green: typecheck (3 projects), ESLint + Prettier, 373 unit tests and 77 E2E tests. The last run used one retry, on phase 4's panel-resize drag in `note-panel.spec.ts` (a drag that registered only partly; 8/8 on repeat). Earlier runs showed `instance.spec.ts` racing the main window's first show and two canvas drags failing once; creating the capture window after `ready-to-show` fixed those (instance 10/10, the canvas drags 16/16).
+- ⏳ **`tests/MANUAL.md`, phase 6:** to be ticked on your machine (real shortcut from other apps and focus going back, real toasts and clicking them with the window open, from the tray and from Action Center after a restart, the blocked warning, sleep through a reminder, reboot with start at login).
+
+### "It should" (checked by automation)
+- ✅ Capture "Call Ali !tomorrow 15:00" + Enter: a note with the title, due date, time and reminder, on the canvas, and the capture window hides (`capture.spec.ts`). From your browser: manual.
+- ✅ At the reminder time a notification is recorded, once, and opening its link opens that note (`reminders.spec.ts`). The real toast: manual.
+- ✅ The List tab shows what's open or due at a glance: tabs, groups, colors, title filter, the badge (`list.spec.ts`).
+- ⏳ Closing the window keeps Sprawl in the tray: manual (the tray is off in E2E).
+
+### Decisions and findings (the docs are updated)
+- **A capture with a time gets an "At due time" reminder**, so "Pay rent !fri 10:00" notifies on Friday at 10:00 (the phase's own "It should"). A day without a time sets no reminder.
+- **The overdue nudge reuses `reminded_at`** (no migration): it fires when a reminded note's due moment passes while `reminded_at` is still before it. "At due time" reminders don't nudge.
+- **Late = more than 2 minutes behind.** That covers launch, sleep and pauses with one rule; on-time pairs still get a toast each.
+- **Due reminders off skips; a pause holds.**
+- **The morning summary** also goes out on a start later the same day, and is remembered per day (`morningSummarySentOn`, a new vault setting).
+- **"This week" runs to Sunday.** **Done sorts by done time**, so the sort select hides on Due and Done. **Ties go to the most recently created** (`rowid DESC`), which also keeps fixed-clock tests stable.
+- **The capture window is the app's second window.** Specs that reached for `getAllWindows()[0]` now pick the main window by title (the capture window's URL is empty for a moment at startup; its title isn't). It's created after the main window's `ready-to-show`, so `firstWindow()` stays the main one and the main window's first paint isn't slowed (creating it on `did-finish-load` delayed the main window's show enough to race `instance.spec.ts`).
+- **Closing to the tray** hides instead of running the save handshake; the main window's `closed` now quits the app, since the capture window would keep it alive.
+- **Panel color changes go through the canvas only while it's loaded**; from the list they're note updates (the canvas reloads when it opens).
+- **Title focus for a new list note** is a request the panel takes when the note shows (`titleFocusRequested`), not a timed poll.
+
+### Open / carried forward
+- **Before merging:** tick `tests/MANUAL.md` phase 6 on Windows (I couldn't drive real global shortcuts, toasts, sleep or a reboot).
+- The `notificationStatus` per-app check reads the key under the AppUserModelId, which only exists for the packaged app (`dev.sprawl.app`); unpackaged, only the "all notifications off" switch is detected. Re-check in phase 12.
+- Start at login in dev runs the last `npm run build`. The installed app is the real check (phase 12).
+- Pointer-drag E2E tests (panel resize, canvas resize and marquee) can occasionally register a partial drag when the machine is busy. Worth hardening (wait a frame between drag steps) if it keeps showing up.
+- `gh` still isn't installed: the PR is opened and merged in the browser.
 
 ---
 
