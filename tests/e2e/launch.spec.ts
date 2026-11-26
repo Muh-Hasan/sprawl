@@ -15,17 +15,17 @@ test('opens a dark "Sprawl" window on the vault', async ({ window, dirs }) => {
 test('loads the bundled fonts', async ({ window }) => {
   // A face that resolves proves its @font-face URL is bundled and allowed by the CSP.
   const loaded = await window.evaluate(async () => ({
-    sans: (await document.fonts.load('13px Outfit')).length,
+    sans: (await document.fonts.load('14px Geist')).length,
     mono: (await document.fonts.load('13px "Geist Mono"')).length,
     brand: (await document.fonts.load('600 13px Sora')).length,
   }))
   expect(loaded).toEqual({ sans: 1, mono: 1, brand: 1 })
 })
 
-test('renders UI text in Outfit and paths and keys in Geist Mono', async ({ window }) => {
+test('renders UI text in Geist and paths and keys in Geist Mono', async ({ window }) => {
   await window.getByTestId('rail-settings').click()
   await expect(window.getByTestId('settings-vault-path')).toBeVisible()
-  expect(await renderedFonts(window, '[data-testid="top-bar"] > div')).toEqual(['Outfit'])
+  expect(await renderedFonts(window, '[data-testid="top-bar"] > div')).toEqual(['Geist'])
   expect(await renderedFonts(window, '[data-testid="settings-vault-path"]')).toEqual(['Geist Mono'])
   expect(await renderedFonts(window, '[data-testid="settings-about-name"]')).toEqual(['Sora'])
 })
