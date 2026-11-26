@@ -1,4 +1,4 @@
-<!-- Title: a Conventional Commit line, e.g. "feat(capture): add quick capture window". It becomes the squash commit on main. -->
+<!-- Title: a Conventional Commit line, e.g. "feat(capture): add quick capture window". The PR is merged with a merge commit, so every commit on the branch lands on main. -->
 
 ## Summary
 
