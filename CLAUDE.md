@@ -31,19 +31,19 @@ UI is built with **shadcn/ui + Tailwind v4**, dark only. Use the shadcn componen
 - Add a `data-testid` to every interactive element you build.
 
 ## Git workflow
-Standard open source flow: small branches, Conventional Commits, one pull request per change, squash-merged into `main`.
+Standard open source flow: small branches, Conventional Commits, one pull request per change, merged into `main` with a merge commit so every commit is kept.
 
 **Branches.** Never commit to `main` directly. Branch from an up-to-date `main` as `<type>/<short-kebab-description>`, describing the change, never the phase:
 - `feat/` a new feature (`feat/image-paste`), `fix/` a bug fix (`fix/capture-focus-return`), `perf/`, `refactor/`, `test/`, `docs/`, `ci/`, `build/` (packaging, deps), `chore/` (tooling and the rest).
 - One feature or fix per branch. A phase is split into several branches; never put a whole phase on one branch.
 
-**Commits.** [Conventional Commits](https://www.conventionalcommits.org): `type(scope): subject`, imperative and lowercase, e.g. `feat(list): group due notes by day`. Scopes are areas of the app (`canvas`, `list`, `capture`, `reminders`, `editor`, `log`, `settings`, `db`, `ipc`, `ui`, `deps`, `ci`). A few logical commits per branch, with no WIP or "fix typo" noise. shadcn adds go in their own `chore(ui): shadcn add …` commit. Never mention phase numbers.
+**Commits.** [Conventional Commits](https://www.conventionalcommits.org): `type(scope): subject`, imperative and lowercase, e.g. `feat(list): group due notes by day`. Scopes are areas of the app (`canvas`, `list`, `capture`, `reminders`, `editor`, `log`, `settings`, `db`, `ipc`, `ui`, `deps`, `ci`). A few logical commits per branch, with no WIP or "fix typo" noise: every commit lands on `main` as written, so each one should build and pass on its own. shadcn adds go in their own `chore(ui): shadcn add …` commit. Never mention phase numbers.
 
 **Pull requests.** When the work is done and `npm run check` is green:
 1. Push the branch and open a PR into `main` (`gh pr create` when `gh` is installed; otherwise give the user the title and body to paste).
-2. **Title:** a Conventional Commit line, since it becomes the squash commit on `main` (`feat(capture): add quick capture window`).
+2. **Title:** a Conventional Commit line (`feat(capture): add quick capture window`).
 3. **Body:** follow `.github/pull_request_template.md`. Explain what the PR does and why, then list everything it added, changed, removed and fixed, with screenshots for UI changes and the tests it adds. Don't mention phases or exit checks.
-4. Merge with **squash** (`gh pr merge --squash`), keeping the PR title as the commit subject.
+4. Merge with a **merge commit** (`gh pr merge --merge`), never squash or rebase. `main`'s ruleset allows it (no linear-history rule).
 5. Delete the branch locally and on GitHub, then pull `main`.
 
 **No git tags.** Ask before creating any (for example `v0.1.0` at release).
