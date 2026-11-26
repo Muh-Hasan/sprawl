@@ -14,7 +14,7 @@ Most people juggle three or four apps: a to-do app, a notes app, a whiteboard an
 - **Sticky notes** you drop anywhere on the canvas. A note can be one line or a full page.
 - **To-dos** are just notes or checklist items. A note can be marked done, and a due date is optional; most notes won't have one.
 - **Notes** open in a Notion-style block editor with a `/` menu, headings, lists, checklists, images, code and quotes.
-- **Drawings** are Excalidraw scenes that sit on the canvas as preview cards and open into a full editor.
+- **Drawings** are Excalidraw sketches that live on the canvas. You draw right on the board, and a drawing settles into a card when you click away.
 - **Images and files** can be dropped onto the canvas or into a note.
 - The **daily log** is a separate page per day. Finished notes land there automatically with a timestamp, and you can type quick entries by hand.
 - A **list view** shows every note in one sortable, filterable list, so you can answer "what's due?" or "what's still open?" without hunting across the canvas.
@@ -49,7 +49,7 @@ Everything placed on the canvas is a **canvas item** with a position, a size and
 
 ## 3. Views
 
-The left rail has five entries plus settings: **Canvas**, **List**, **Daily log**, **Drawings**, **Search** (which also opens with Ctrl+K), and **Settings** at the bottom.
+A labelled sidebar on the left holds a **New note** button, a **search** box (it opens the command palette, also on Ctrl+K), the three views (**Canvas**, **List**, **Daily log**), pinned and recent notes, and **Settings** and **Help and shortcuts** at the bottom. Ctrl+\ collapses it to an icon rail with tooltips. There's no separate Drawings page: drawings live on the canvas, and List can show them all (§3.5).
 
 ### 3.1 Canvas (home)
 An infinite, pannable and zoomable board with a dotted background.
@@ -60,7 +60,9 @@ An infinite, pannable and zoomable board with a dotted background.
 - Zoom controls sit at the bottom right: −, the percentage (click to reset to 100%) and +. "Zoom to fit" is Shift+1.
 - The view position and zoom are remembered between launches.
 
-**Toolbar** (floating, top center): Select (V), Hand (H), Note (N), Link (L), Drawing (D), Image (I, opens a file picker).
+**Toolbar** (floating, bottom center): Select (V), Hand (H), Note (N), Drawing (D), Image (I, opens a file picker), Link (L). Every tool shows its name and key on hover.
+
+**Empty canvas:** says "Double-click anywhere to add a sticky note" and offers New sticky note, Paste a list and Open the welcome board (a few sample notes that each teach one thing).
 
 **Creating things**
 - Double-click an empty area to create a note there and focus its title.
@@ -68,7 +70,7 @@ An infinite, pannable and zoomable board with a dotted background.
 - A new note gets its title focused. If it's off screen or the view is zoomed out, the view glides to it at 100%.
 - Pasting text on the canvas creates a note with that text. Pasting a URL creates a link card. Pasting an image creates an image card.
 - Dropping files from the OS: images become image cards, and other files become a note with a file block.
-- The Drawing tool creates an empty drawing card and opens the drawing editor.
+- The Drawing tool: drag out an area (or click for a default 640×420) and draw in it right there on the canvas (§3.5).
 
 **Selecting and moving**
 - Click to select. Shift+click adds to the selection. Dragging on empty space draws a marquee selection.
@@ -141,12 +143,14 @@ A separate page per calendar day (using the local timezone).
 - Notes are never created from the log in v1.
 
 ### 3.5 Drawings
-- The **list view** is a grid of drawing cards (thumbnail, title, last edited), plus a "New drawing" button.
-- The **editor** is full-screen in the main area, with a header containing back, an editable title and a "Saved" indicator, and the Excalidraw component below it.
+There's no separate Drawings page. A drawing is a canvas item, drawn and edited in place:
+- **Drawing in place:** the Drawing tool (D), "New drawing here" on the canvas menu, or Ctrl+Shift+D opens Excalidraw inside the card's bounds on the canvas, with a compact tool bar above it (select, pen, rectangle, ellipse, arrow, text, eraser, the six ink colors, Full screen, Done). Esc, Done or a click outside ends editing and the card shows its thumbnail again. Double-clicking a drawing card edits it again. Dragging a corner while editing makes room.
+- **Full screen** (the button, or F while editing) shows the same scene filling the main area, for big sketches. Esc goes back to the canvas.
   - Excalidraw runs in dark theme. Its own library and export menu are fine to keep.
   - The scene autosaves after a 1s pause. A thumbnail (PNG, roughly 480px wide) is regenerated on save and used by the canvas card and the list.
   - Images pasted into Excalidraw are stored inside the scene's `files` (Excalidraw's native way). v1 doesn't need to move them to attachments.
-- A drawing can be on the canvas (as a card) or not. "Place on canvas" in a drawing's menu adds a card at the center of the view.
+- **Finding drawings:** List has a Notes / Drawings switch. The Drawings side is a grid of every drawing (thumbnail, title, last edited) with a New drawing tile. Search finds drawings by title and text.
+- A drawing whose card was removed from the canvas stays in that grid. "Place on canvas" in its menu adds a card at the center of the view.
 
 ### 3.6 Search (Ctrl+K)
 - A command palette overlay. Typing searches note titles and bodies, the labels and URLs of links attached to notes, drawing titles and text, and manual log entries. Link cards on the canvas aren't searched in v1.
@@ -206,7 +210,11 @@ Native Windows notifications (toasts), and only for things the user asked for.
 | Search / command palette | Ctrl+K |
 | New note at view center | Ctrl+N |
 | New drawing | Ctrl+Shift+D |
-| Go to Canvas / List / Log / Drawings | Ctrl+1 / 2 / 3 / 4 |
+| Go to Canvas / List / Log | Ctrl+1 / 2 / 3 |
+| Toggle the sidebar | Ctrl+\ |
+| Text size bigger / smaller / reset | Ctrl+Shift+= / Ctrl+Shift+- / Ctrl+Shift+0 |
+| Settings | Ctrl+, |
+| Shortcuts sheet | ? |
 | Quick capture (global, works from any app) | Ctrl+Shift+Space (configurable) |
 | Tools: Select, Hand, Note, Link, Drawing, Image | V, H, N, L, D, I |
 | Zoom in / out / reset / fit | Ctrl+= / Ctrl+- / Ctrl+0 / Shift+1 |

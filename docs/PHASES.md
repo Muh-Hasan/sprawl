@@ -193,6 +193,13 @@ Rules for every phase:
 
 ---
 
+## Design refresh (between phase 6 and phase 7)
+**Goal:** Sprawl feels larger, calmer and easy to learn without knowing any shortcuts.
+
+The plan, the agreed decisions, the mockups and the list of pull requests live in **`docs/DESIGN_REFRESH.md`**, which is also the tracker: each PR there is one session. Phase 7 starts when every PR in it is ticked. From here on, every phase builds its screens to the mockups listed there.
+
+---
+
 ## Phase 7 — Attachments, images and links
 **Goal:** files and URLs live in Sprawl too.
 
@@ -214,22 +221,25 @@ Rules for every phase:
 
 ---
 
-## Phase 8 — Drawings (Excalidraw)
-**Goal:** sketch inside the app.
+## Phase 8 — Drawings on the canvas (Excalidraw)
+**Goal:** sketch right on the canvas.
+
+There's no separate Drawings page (PRODUCT §3.5). Build to the `DrawInPlace`, `Main` and `List` mockups in `docs/DESIGN_REFRESH.md`, and rewrite UI_SPEC §4.6 and §7 to match.
 
 **Build**
 - The drawings service and IPC (including `duplicate`, `placeOnCanvas` and `restore`), and the `drawings` table.
 - The `sprawl-file://thumb/<id>` protocol route for thumbnails (ARCHITECTURE §3).
-- The Drawings grid (UI_SPEC §7.1) with an empty state and a tile menu (Rename, Place on canvas, Duplicate, Delete with confirmation).
-- The DrawingEditor (§7.2): lazy-loaded Excalidraw with its fonts bundled locally (`EXCALIDRAW_ASSET_PATH`, no CDN), the dark monochrome overrides, a 1s debounced save, and the thumbnail export.
-- The Drawing tool (D) on the canvas creates a drawing and opens it. A DrawingCard (§4.6) appears on the canvas, and a double-click opens it.
-- Ctrl+Shift+D creates a new drawing.
+- Drawing in place: lazy-loaded Excalidraw mounted inside the drawing card's bounds on the canvas, with its fonts bundled locally (`EXCALIDRAW_ASSET_PATH`, no CDN), the dark monochrome overrides, the compact drawing tool bar, a 1s debounced save and the thumbnail export. Esc, Done or a click outside ends editing.
+- Full screen for the same scene, and back with Esc.
+- The Drawing tool (D) drags out a drawing area (or a click makes a 640×420 one) and starts drawing. A double-click on a DrawingCard (§4.6) edits it again.
+- The Drawings side of List: a grid with a New drawing tile and a tile menu (Rename, Place on canvas, Duplicate, Delete with confirmation).
+- Ctrl+Shift+D and "New drawing here" create a drawing at the view center or the clicked point.
 
 **Tests**
 - Unit: scene save and load round trip, and thumbnails are generated at the right width.
 - E2E: `drawings.spec.ts` (ARCHITECTURE §10.3), up to "the thumbnail shows on the card". The `[[` part comes in phase 9.
 
-**It should:** let you hit D, sketch a quick flow in Excalidraw and go back. A thumbnail of your sketch now sits on the canvas, and all your drawings are in the Drawings tab.
+**It should:** let you hit D, drag out a space and sketch a quick flow right there on the canvas, then click away and see it settle into a card. All your drawings are also in List under Drawings.
 
 **Exit check:** Excalidraw isn't in the main bundle (check the build output, where it should be a separate chunk), opening a drawing makes no network requests (check the devtools Network tab), and all tests pass.
 
@@ -258,7 +268,7 @@ Rules for every phase:
 
 **Build**
 - FTS index maintenance for notes, drawings (title plus text elements) and manual log entries, inside the same transactions as the writes.
-- The CommandPalette (UI_SPEC §8) on Ctrl+K, with grouped results and highlighted snippets.
+- Full-text results in the CommandPalette (UI_SPEC §8). The palette itself (Ctrl+K, title search and commands) ships in the design refresh; this phase adds bodies, drawings' text and log entries, grouped, with highlighted snippets.
 - Opening a result: a note opens its panel and pans the canvas to its card (240ms animation); a drawing opens the editor; a log entry opens that day.
 - `>` commands (PRODUCT §3.5).
 - All remaining shortcuts from PRODUCT §4, with tooltips showing them.
@@ -302,7 +312,7 @@ Rules for every phase:
 - Fill in `relaunch.spec.ts`.
 - An accessibility pass: everything can be reached by keyboard, focus is visible, ARIA labels are on icon buttons, and contrast is checked.
 - The electron-builder **NSIS** config (per-user install, Start-menu shortcut with the AppUserModelId, desktop shortcut optional, uninstaller keeps the vault) with the icons from `build/` (`icon.ico` multi-size), and the app version shown in Settings. The installer is built locally with `npm run dist`.
-- Docs: README with screenshots and the lockup, CONTRIBUTING, and a short architecture overview for contributors.
+- Docs: README with screenshots and the lockup, and a short architecture overview for contributors.
 
 **Tests**
 - E2E: `relaunch.spec.ts` and a full regression run.
