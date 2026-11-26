@@ -9,7 +9,8 @@ export default defineConfig({
   fullyParallel: false,
   retries: 1,
   timeout: 30_000,
-  reporter: [['list']],
+  // On GitHub Actions, failures are also shown as annotations on the pull request.
+  reporter: process.env.CI ? [['list'], ['github']] : [['list']],
   use: {
     trace: 'retain-on-failure',
   },
