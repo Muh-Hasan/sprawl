@@ -12,6 +12,13 @@ import { KNOWN_WARNINGS } from './known-warnings'
 
 export const MAIN_ENTRY = resolve(__dirname, '../../out/main/index.js')
 
+/**
+ * GitHub's Windows runners have a 1024x768 display, smaller than the default 1440x900 window,
+ * so Windows clamps the window and size-dependent specs fail. At half scale that display is
+ * 2048x1536 DIPs. Specs measure in DIPs, so nothing else changes.
+ */
+const CI_ARGS = process.env['CI'] ? ['--force-device-scale-factor=0.5'] : []
+
 export interface TestDirs {
   /** The temp folder holding both; anything else a test creates should go in here too. */
   root: string
@@ -55,7 +62,7 @@ export async function launchApp(
   dirs: TestDirs,
   options: LaunchOptions = {},
 ): Promise<ElectronApplication> {
-  return electron.launch({ args: [MAIN_ENTRY], env: appEnv(dirs, options) })
+  return electron.launch({ args: [MAIN_ENTRY, ...CI_ARGS], env: appEnv(dirs, options) })
 }
 
 /**
