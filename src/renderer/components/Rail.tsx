@@ -114,7 +114,7 @@ export function Rail() {
       aria-label="Views"
       className="flex h-full w-[52px] shrink-0 flex-col items-center border-r border-border bg-surface pb-3"
     >
-      <div className="h-10 w-full shrink-0 [-webkit-app-region:drag]" />
+      <div className="h-11 w-full shrink-0 [-webkit-app-region:drag]" />
       <img src={markLight} alt="" aria-hidden className="mt-3 mb-4 size-[18px]" draggable={false} />
       <div className="flex w-full flex-col items-center gap-1">
         {NAV.map((item) => (

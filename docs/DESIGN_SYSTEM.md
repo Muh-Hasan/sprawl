@@ -92,26 +92,29 @@ Three fonts, all bundled locally as `.woff2` with `@font-face` in `globals.css` 
 
 | Font | Class | Use | Package |
 |---|---|---|---|
-| **Outfit** (variable, 100–900) | `font-sans` (default) | The whole app UI and note text | `@fontsource-variable/outfit` |
+| **Geist** (variable, 100–900) | `font-sans` (default) | The whole app UI and note text | `geist` |
 | **Geist Mono** (variable) | `font-mono` | Times, `kbd`, code blocks, the zoom %, the vault path, the List row's edited time | `geist` |
 | **Sora** SemiBold (600 only) | `font-brand` | **Only** the onboarding title "Welcome to sprawl" and the app name in About. The logo wordmark is already outlined in the brand SVGs, so Sora appears nowhere else. | `@fontsource/sora` |
 
 | Token | Size / line height | Weight | Use |
 |---|---|---|---|
-| `text-2xs` | 11 / 16 | 500 | Chip labels, kbd, meta |
-| `text-xs` | 12 / 16 | 400 | Card body preview, timestamps, captions |
-| `text-sm` | 13 / 20 | 400 / 500 | **Default UI text**: menus, buttons, rail tooltips, log entries |
-| `text-base` | 14 / 22 | 400 | Panel meta rows, settings |
-| `text-editor` | 15 / 26 | 400 | Note body in the editor |
-| `text-card-title` | 13 / 18 | 600 | Note card title |
-| `text-lg` | 18 / 26 | 600 | Log date header, view titles |
-| `text-title` | 24 / 32 | 600 | Note title in the panel (−0.01em tracking) |
-| Editor H1 / H2 / H3 | 24 / 20 / 17 | 600 | |
+| `text-kbd` | 11 / 16 | 400 | `kbd` hints only (Geist Mono). The smallest text in the app |
+| `text-2xs` | 12 / 16 | 500 | Chips, badges, counts |
+| `text-xs` | 13 / 18 | 400 | Card body preview, captions, meta, timestamps |
+| `text-sm` | 14 / 20 | 400 / 500 | **Default UI text**: menus, buttons, tooltips, rows, log entries |
+| `text-base` | 15 / 22 | 400 | Inputs, list titles, panel meta rows, settings |
+| `text-editor` | 16 / 26 | 400 | Note body in the editor |
+| `text-card-title` | 15 / 21 | 600 | Note card title |
+| `text-lg` | 20 / 28 | 600 | Section titles, log date header (−0.01em tracking) |
+| `text-title` | 28 / 36 | 600 | View and panel titles, the note title in the panel (−0.02em tracking) |
+| `text-page-title` | 36 / 44 | 600 | The note title on the full page (−0.02em tracking) |
+| Editor heading | 18 / 26 | 600 | The editor's one heading level |
 
-- **Weights** (Outfit runs light): 400 for body text; **500 for UI labels and buttons** (settings row labels, tooltip labels, top-bar labels, button text); **600 for titles** (card title, panel title, log date, view titles, editor headings). Never below 400, and no 700+ anywhere in the app.
-- **Tracking:** −0.01em at 18px and above, and 0 below.
-- **Numbers:** Outfit's figures are proportional, so every time display (log entry times, reminder times, due chip times, the zoom %, the List edited time) uses `font-mono`. Counts such as the checklist chip "3/5" stay in Outfit. Don't add `tabular-nums` to Outfit text.
-- **Third-party surfaces:** the BlockNote editor must inherit Outfit (override its font variable if it sets its own), and its code blocks use Geist Mono. Leave Excalidraw's hand-drawn font alone.
+- **Weights:** 400 for body text; **500 for UI labels and buttons** (settings row labels, tooltip labels, top-bar labels, button text); **600 for titles** (card title, panel title, log date, view titles, editor headings). Never below 400, and no 700+ anywhere in the app.
+- **Tracking:** −0.01em at 20px, −0.02em at 28px and above, and 0 below.
+- **Smallest text:** 12px everywhere, except 11px `text-kbd` for shortcut keys.
+- **Numbers:** every time display (log entry times, reminder times, due chip times, the zoom %, the List edited time) uses `font-mono`, so times line up. Counts such as the checklist chip "3/5" stay in Geist. Don't add `tabular-nums` to Geist text.
+- **Third-party surfaces:** the BlockNote editor must inherit Geist (override its font variable if it sets its own), and its code blocks use Geist Mono. Leave Excalidraw's hand-drawn font alone.
 
 ---
 
@@ -120,8 +123,8 @@ Three fonts, all bundled locally as `.woff2` with `@font-face` in `globals.css` 
 - **Spacing:** 4px base. Use 4, 8, 12, 16, 20, 24 and 32. Component padding is usually 8 or 12, and section gaps 16 or 24.
 - **Radius:** shadcn `--radius: 0.5rem` (8px).
   - Buttons, inputs and chips: 6px (`rounded-md`); chips can be 5px.
-  - Note cards and canvas cards: 10px (`rounded-card`).
-  - Menus, popovers and the palette: 10px (`rounded-card`).
+  - Note cards and canvas cards: 12px (`rounded-card`).
+  - Menus, popovers and the palette: 12px (`rounded-menu`).
   - Panels and dialogs: 12px (`rounded-xl`).
   - Quick capture window: 14px (`rounded-capture`).
 - **Borders:** 1px `--border` everywhere. No double borders, and panels separate from the canvas with one hairline.
@@ -134,7 +137,7 @@ Three fonts, all bundled locally as `.woff2` with `@font-face` in `globals.css` 
 
 ## 5. Iconography
 
-- Use **Tabler** (`@tabler/icons-react`) at 16px with a 1.75 stroke (`stroke={1.75}`) by default, 14px in chips and 18px in the rail and toolbar. Size icons with Tailwind `size-*` classes (or let the wrapping button size them); don't rely on Tabler's 24px default.
+- Use **Tabler** (`@tabler/icons-react`) with a 1.75 stroke (`stroke={1.75}`): 18px by default (in icon buttons), 16px inline in text and in small row buttons, 14px in chips, 19px in the sidebar and 22px in the canvas toolbar. Size icons with Tailwind `size-*` classes (or let the wrapping button size them); don't rely on Tabler's 24px default.
 - Icons are `--muted-foreground` at rest and `--foreground` on hover or when active.
 - Stock shadcn components keep their own internal `lucide-react` glyphs (check marks, chevrons, close X); don't edit them to swap icons (ARCHITECTURE §1).
 - Icon assignments (UI_SPEC uses these component names):
@@ -194,13 +197,14 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   - `default` is white with black text, used once per view at most (for example "Mark done").
   - `secondary` is `--muted` with white text.
   - `ghost` is transparent with a `--muted` hover. Most toolbar and rail buttons use it.
-  - Height is 32px (`sm`, 28px). Icon buttons are 32×32 (rail and toolbar are 36×36).
-- **Input:** 32px, transparent background with a `--border` border; on focus the border is `--border-strong` plus a 2px `--ring` at 30% alpha.
-- **Kbd:** Geist Mono 11px, `--muted` background, 1px `--border`, 4px radius, 2px 5px padding.
-- **Tooltip:** `--popover` background, 12px text with the shortcut `kbd` on the right, 400ms delay.
+  - Height is 36px (`sm`, 32px). Icon buttons (`IconButton`) are 36×36 with an 18px icon; `size="sm"` is 28×28 with a 16px icon, for buttons inside rows. The canvas toolbar's are 44×44.
+- **Top bar:** 44px, the same as the native title-bar overlay (`TITLE_BAR_HEIGHT`).
+- **Input:** 36px, transparent background with a `--border` border; on focus the border is `--border-strong` plus a 2px `--ring` at 30% alpha.
+- **Kbd:** Geist Mono 11px (`text-kbd`), `--muted` background, 1px `--border`, 4px radius, 2px 5px padding.
+- **Tooltip:** `--popover` background, 13px text with the shortcut `kbd` on the right, 400ms delay.
 - **Command (palette):** 560px wide, 12px radius, `--card` background, `--shadow-popover`, input height 48px, and items 36px tall with a `--muted` selected background.
-- **Context menu and dropdown:** `--popover` background, 10px radius, items 30px tall at 13px, separators in `--border`.
-- **Toast (Sonner):** bottom center, `--popover` background, 13px text, optional "Undo" action. Shown for 4s.
+- **Context menu and dropdown:** use the content and item wrappers in `components/Menu.tsx`: `--popover` background, 12px radius, 6px padding, `--shadow-popover`, items 34px tall at 14px with an 8px radius, separators in `--border`.
+- **Toast (Sonner):** bottom center, `--popover` background, 14px text, optional "Undo" action. Shown for 4s.
 - **Calendar:** today has a 1px `--foreground` ring, the selected day is white with black text, and days with log entries get a 3px `--muted-foreground` dot beneath.
 
 ---
@@ -209,10 +213,10 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 
 - **Selection on the canvas:** a 1.5px `--selection` outline with a 2px offset, plus 8×8 white square handles with 2px radius and a 1px `--background` border at the corners. Multi-select adds a dashed bounding box in `--border-strong`.
 - **Hover on cards:** border goes up one step (note `border` → `border-hover`, +12% white) plus `--shadow-lift`, with no movement.
-- **Selection toolbar (FigJam-style):** a floating `--card` bar (border, radius 10, `--shadow-popover`, 4px padding, 40px tall) centered 14px above the selection, or below it when there's no room under the canvas toolbar. It holds the six color swatches, a divider, then Duplicate, Bring to front, Send to back and Delete (32×32 ghost icon buttons with tooltips). It hides while a move, resize or marquee runs.
+- **Selection toolbar (FigJam-style):** a floating `--card` bar (border, radius 12, `--shadow-popover`, 4px padding, 44px tall) centered 14px above the selection, or below it when there's no room under the canvas toolbar. It holds the six color swatches, a divider, then Duplicate, Bring to front, Send to back and Delete (36×36 ghost icon buttons with tooltips). It hides while a move, resize or marquee runs.
 - **Done state (when "Show done" is on):** 45% opacity and a struck-through title.
 - **Focus:** every interactive element has a visible `--ring` focus. Never remove an outline without replacing it.
-- **Empty states:** a Tabler icon at 20px in `--subtle-foreground`, one 13px line, and an optional ghost button. No illustrations.
+- **Empty states:** a Tabler icon at 20px in `--subtle-foreground`, one 14px line, and an optional ghost button. No illustrations.
 
 ---
 
@@ -226,10 +230,14 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
    rather than the OS color scheme, so they render the same whatever Windows' theme is. */
 @custom-variant dark (&:is(.dark *));
 
+/* BlockNote's shadcn UI ships its components' Tailwind classes uncompiled; scan them so its
+   menus and popovers are styled with our theme variables (ARCHITECTURE §6, UI_SPEC §5.1). */
+@source '../../../node_modules/@blocknote/shadcn/dist';
+
 /* UI and note text. Bundled locally; never loaded from the network. */
 @font-face {
-  font-family: 'Outfit';
-  src: url('../assets/fonts/outfit-latin-wght-normal.woff2') format('woff2');
+  font-family: 'Geist';
+  src: url('../assets/fonts/Geist-Variable.woff2') format('woff2');
   font-weight: 100 900;
   font-display: block;
 }
@@ -323,6 +331,8 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 
   /* selected text inside a note card: a little stronger than the app-wide one on tinted cards */
   --note-text-selection: rgb(255 255 255 / 0.24);
+  /* Card chips (UI_SPEC §4.5): a faint white over the note color, in the note's text color. */
+  --note-chip: rgb(255 255 255 / 0.06);
 
   /* canvas marquee (UI_SPEC §4.9) */
   --marquee-fill: rgb(250 250 250 / 0.04);
@@ -336,9 +346,9 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 }
 
 @theme inline {
-  --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
-  --font-brand: 'Sora', 'Outfit', sans-serif;
+  --font-brand: 'Sora', 'Geist', sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -366,6 +376,7 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   --color-inset: var(--inset);
   --color-marquee-fill: var(--marquee-fill);
   --color-note-text-selection: var(--note-text-selection);
+  --color-note-chip: var(--note-chip);
   --color-due-overdue: var(--due-overdue);
   --color-due-overdue-bg: var(--due-overdue-bg);
   --color-due-soon: var(--due-soon);
@@ -408,7 +419,8 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius-card: 10px;
+  --radius-card: 12px;
+  --radius-menu: 12px;
   --radius-capture: 14px;
 
   /* the daily log's one-time row highlight (DESIGN_SYSTEM §6) */
@@ -423,28 +435,34 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   }
 
   /* weights listed here are defaults; override with font-* where the type table allows */
-  --text-2xs: 11px;
+  --text-kbd: 11px;
+  --text-kbd--line-height: 16px;
+  --text-2xs: 12px;
   --text-2xs--line-height: 16px;
   --text-2xs--font-weight: 500;
-  --text-xs: 12px;
-  --text-xs--line-height: 16px;
-  --text-sm: 13px;
+  --text-xs: 13px;
+  --text-xs--line-height: 18px;
+  --text-sm: 14px;
   --text-sm--line-height: 20px;
-  --text-base: 14px;
+  --text-base: 15px;
   --text-base--line-height: 22px;
-  --text-editor: 15px;
+  --text-editor: 16px;
   --text-editor--line-height: 26px;
-  --text-card-title: 13px;
-  --text-card-title--line-height: 18px;
+  --text-card-title: 15px;
+  --text-card-title--line-height: 21px;
   --text-card-title--font-weight: 600;
-  --text-lg: 18px;
-  --text-lg--line-height: 26px;
+  --text-lg: 20px;
+  --text-lg--line-height: 28px;
   --text-lg--letter-spacing: -0.01em;
   --text-lg--font-weight: 600;
-  --text-title: 24px;
-  --text-title--line-height: 32px;
-  --text-title--letter-spacing: -0.01em;
+  --text-title: 28px;
+  --text-title--line-height: 36px;
+  --text-title--letter-spacing: -0.02em;
   --text-title--font-weight: 600;
+  --text-page-title: 36px;
+  --text-page-title--line-height: 44px;
+  --text-page-title--letter-spacing: -0.02em;
+  --text-page-title--font-weight: 600;
 }
 
 @layer base {

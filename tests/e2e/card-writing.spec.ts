@@ -116,11 +116,11 @@ test.describe('writing in a card', () => {
     await dblclickBody(page, card)
     const heading = card.getByTestId('note-card-editor').locator('[data-content-type="heading"]')
     await expect(heading).toHaveText('Section')
-    // Card-sized: the same 12px as the rest of the card's text.
+    // Card-sized: the same 13px as the rest of the card's text.
     expect(
       await heading.evaluate(
         (el) => getComputedStyle(el.querySelector('.bn-inline-content')!).fontSize,
       ),
-    ).toBe('12px')
+    ).toBe('13px')
   })
 })

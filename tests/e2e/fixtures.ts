@@ -89,7 +89,7 @@ export async function relaunch(
 /**
  * The font families Chromium actually rendered the element's text with (DevTools' "Rendered
  * Fonts"), via the CDP. Proves a face is used, not just declared. Chromium reports the face's
- * full name, so a family comes back as e.g. "Outfit Thin" (the variable font's default
+ * full name, so a family comes back as e.g. "Geist Thin" (a variable font's default
  * instance name; the weight axis still applies) or "Sora SemiBold". Returns the family part.
  */
 export async function renderedFonts(page: Page, selector: string): Promise<string[]> {

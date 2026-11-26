@@ -134,7 +134,7 @@ function ShowDoneToggle() {
       label={showDone ? 'Hide done notes' : 'Show done notes'}
       tooltipSide="bottom"
       active={showDone}
-      className="size-7"
+      size="sm"
       onClick={() => useCanvasStore.getState().setShowDone(!showDone)}
     />
   )

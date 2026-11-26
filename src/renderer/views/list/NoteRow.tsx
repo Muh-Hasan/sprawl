@@ -14,12 +14,8 @@ import type { NoteListRow } from '@shared/types'
 import { Chip } from '@/components/Chip'
 import { IconButton } from '@/components/IconButton'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { DropdownMenuContent, DropdownMenuItem } from '@/components/Menu'
+import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { NOTE_COLOR_CLASSES } from '@/lib/noteColors'
 import { cn } from '@/lib/utils'
 import { doneLabel, editedLabel } from './listLogic'
@@ -145,18 +141,13 @@ export const NoteRow = memo(function NoteRow({
             data-testid="list-row-show"
             icon={IconFocus2}
             label="Show on canvas"
-            className="size-7"
+            size="sm"
             onClick={() => actions.showOnCanvas(row.id)}
           />
         )}
         <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger asChild>
-            <IconButton
-              data-testid="list-row-menu"
-              icon={IconDots}
-              label="More"
-              className="size-7"
-            />
+            <IconButton data-testid="list-row-menu" icon={IconDots} label="More" size="sm" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-44">
             {!row.onCanvas && (

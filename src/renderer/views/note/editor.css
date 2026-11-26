@@ -43,9 +43,9 @@
   padding-block: 0;
 }
 
-/* One heading level: 16px at 600, smaller than the 24px title (the note's main heading). */
+/* One heading level: 18px at 600, between the 16px body and the 28px title (the note's main heading). */
 .sprawl-editor [data-content-type='heading'] {
-  --level: 16px;
+  --level: 18px;
   font-weight: 600;
 }
 .sprawl-editor .bn-block-outer:not(:first-child) > .bn-block > [data-content-type='heading'] {

@@ -42,7 +42,7 @@ export function ChooseVault({ defaultPath }: { defaultPath: string }) {
 
   return (
     <div data-testid="onboarding" className="flex h-full flex-col bg-background">
-      <div className="h-10 shrink-0 [-webkit-app-region:drag]" />
+      <div className="h-11 shrink-0 [-webkit-app-region:drag]" />
       <div className="flex flex-1 items-center justify-center pb-10">
         <div className="flex w-[360px] flex-col items-center text-center">
           <img src={markGradient} alt="" aria-hidden className="size-12" draggable={false} />

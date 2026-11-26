@@ -133,6 +133,7 @@ function ManualEntry({
               data-testid="log-entry-edit"
               icon={IconPencil}
               label="Edit"
+              size="sm"
               className="size-6"
               onClick={() => setEditing('text')}
             />
@@ -140,6 +141,7 @@ function ManualEntry({
               data-testid="log-entry-delete"
               icon={IconTrash}
               label="Delete"
+              size="sm"
               className="size-6 hover:text-destructive"
               onClick={() => remove(entry)}
             />

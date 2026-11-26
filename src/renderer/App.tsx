@@ -25,7 +25,7 @@ export function App() {
       <div data-testid="app-root" className="h-full bg-background">
         {info === null ? (
           // Blank for the few ms until main answers, so onboarding never flashes.
-          <div className="h-10 [-webkit-app-region:drag]" />
+          <div className="h-11 [-webkit-app-region:drag]" />
         ) : info.path === null ? (
           <ChooseVault defaultPath={info.defaultPath} />
         ) : (

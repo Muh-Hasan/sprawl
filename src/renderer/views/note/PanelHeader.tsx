@@ -10,12 +10,8 @@ import {
 import { ColorSwatches } from '@/components/ColorSwatches'
 import { HintTooltip } from '@/components/HintTooltip'
 import { IconButton } from '@/components/IconButton'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { DropdownMenuContent, DropdownMenuItem } from '@/components/Menu'
+import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { NOTE_COLOR_CLASSES } from '@/lib/noteColors'
 import { PANEL_SHORTCUTS, shortcutLabel } from '@/lib/shortcuts'
@@ -64,7 +60,7 @@ export function PanelHeader() {
   }
 
   return (
-    <header className="flex h-10 shrink-0 items-center justify-between gap-2 pr-[140px] pl-6 [-webkit-app-region:drag]">
+    <header className="flex h-11 shrink-0 items-center justify-between gap-2 pr-[140px] pl-6 [-webkit-app-region:drag]">
       <div className="flex min-w-0 items-center gap-2 [&>*]:[-webkit-app-region:no-drag]">
         <Popover open={colorOpen} onOpenChange={setColorOpen}>
           <HintTooltip label="Color">
