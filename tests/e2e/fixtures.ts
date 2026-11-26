@@ -122,6 +122,69 @@ export async function setNow(app: ElectronApplication, page: Page, ms: number): 
   await expect(page.locator('html')).toHaveAttribute('data-fixed-now', String(ms))
 }
 
+export interface RecordedToast {
+  title: string
+  body: string
+  link: string
+  silent?: boolean
+}
+
+interface Hooks {
+  notifications(): RecordedToast[]
+  triggerCapture(): void
+  openLink(url: string): void
+  checkReminders(): void
+  captureVisible(): boolean
+  trayState(): { shortcut: string | null; paused: boolean; overdue: number }
+}
+
+/** Calls one of main's E2E test hooks (ARCHITECTURE §10.3). */
+async function hook<K extends keyof Hooks>(
+  app: ElectronApplication,
+  name: K,
+  ...args: Parameters<Hooks[K]>
+): Promise<ReturnType<Hooks[K]>> {
+  return app.evaluate(
+    (_electron, [n, a]) => {
+      const hooks = (globalThis as { __sprawlTest?: Record<string, (...x: unknown[]) => unknown> })
+        .__sprawlTest
+      if (!hooks) throw new Error('The E2E test hooks are not registered')
+      return hooks[n]!(...a)
+    },
+    [name, args] as [string, unknown[]],
+  ) as Promise<ReturnType<Hooks[K]>>
+}
+
+/** The toasts main would have shown so far (E2E mode records instead of showing). */
+export const notifications = (app: ElectronApplication): Promise<RecordedToast[]> =>
+  hook(app, 'notifications')
+
+/** Routes a `sprawl://` link as if a toast was clicked. */
+export const openLink = (app: ElectronApplication, url: string): Promise<void> =>
+  hook(app, 'openLink', url)
+
+export const captureVisible = (app: ElectronApplication): Promise<boolean> =>
+  hook(app, 'captureVisible')
+
+export const trayState = (app: ElectronApplication) => hook(app, 'trayState')
+
+/**
+ * Opens quick capture as the global shortcut would, and returns its page (the app's second
+ * window), watched for console problems like the main one.
+ */
+export async function openCapture(app: ElectronApplication, problems: string[]): Promise<Page> {
+  await hook(app, 'triggerCapture')
+  await expect.poll(() => captureVisible(app)).toBe(true)
+  const page = app.windows().find((w) => w.url().endsWith('capture.html'))
+  if (!page) throw new Error('The capture window has no page')
+  if (!watched.has(page)) {
+    watched.add(page)
+    watchConsole(page, problems)
+  }
+  return page
+}
+const watched = new WeakSet<Page>()
+
 /** Records console errors/warnings and uncaught page errors that aren't on the allow list. */
 export function watchConsole(page: Page, problems: string[]): void {
   page.on('console', (msg) => {

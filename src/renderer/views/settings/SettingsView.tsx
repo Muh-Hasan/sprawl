@@ -1,13 +1,12 @@
-import { useEffect, useState } from 'react'
-import type { Settings } from '@shared/schemas'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import markGradient from '@/assets/brand/sprawl-mark-gradient.svg'
-import { ShortcutKbd } from '@/components/ShortcutKbd'
 import { TopBar } from '@/components/TopBar'
 import { useCanvasStore } from '@/stores/canvasStore'
-import { useVaultStore } from '@/stores/vaultStore'
+import { CaptureSection, SystemSection } from './CaptureSection'
+import { NotificationsSection } from './NotificationsSection'
 import { SettingsRow, SettingsSection } from './SettingsLayout'
+import { useSettings } from './useSettings'
 import { VaultSection } from './VaultSection'
 
 const REPO_URL = 'https://github.com/Muh-Hasan/sprawl'
@@ -18,21 +17,12 @@ function PlaceholderSwitch({ checked, label }: { checked: boolean | undefined; l
 }
 
 /**
- * Settings (UI_SPEC §9). Phase 1 wires the Vault section and phase 5 "Show done notes"; the
- * other rows show their stored values but stay disabled. later: phase-6 (notifications, quick
- * capture, system), phase-11 (backup, export, snap), phase-12 (version in About).
+ * Settings (UI_SPEC §9). Vault, "Show done notes", Notifications, Quick capture and System are
+ * live; the other rows show their stored values but stay disabled. later: phase-11 (backup,
+ * export, snap), phase-12 (version in About).
  */
 export function SettingsView() {
-  const vaultPath = useVaultStore((s) => s.info?.path)
-  const [settings, setSettings] = useState<Settings | null>(null)
-
-  useEffect(() => {
-    let live = true
-    void window.sprawl.settings.getAll().then((all) => live && setSettings(all))
-    return () => {
-      live = false
-    }
-  }, [vaultPath])
+  const { settings, update, local } = useSettings()
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -56,57 +46,16 @@ export function SettingsView() {
                 checked={settings?.showDone ?? false}
                 disabled={!settings}
                 onCheckedChange={(showDone) => {
-                  setSettings((s) => (s ? { ...s, showDone } : s))
+                  local('showDone', showDone)
                   useCanvasStore.getState().setShowDone(showDone)
                 }}
               />
             </SettingsRow>
           </SettingsSection>
 
-          <SettingsSection title="Notifications">
-            <SettingsRow label="Due reminders">
-              <PlaceholderSwitch label="Due reminders" checked={settings?.remindersOn} />
-            </SettingsRow>
-            <SettingsRow label="Morning summary">
-              <PlaceholderSwitch label="Morning summary" checked={settings?.morningSummary.on} />
-            </SettingsRow>
-            <SettingsRow label="Test notification">
-              <Button variant="secondary" size="sm" disabled>
-                Send a test notification
-              </Button>
-            </SettingsRow>
-          </SettingsSection>
-
-          <SettingsSection title="Quick capture">
-            <SettingsRow label="Shortcut">
-              {settings?.captureShortcut.split('+').map((key) => (
-                <ShortcutKbd key={key}>{key}</ShortcutKbd>
-              ))}
-            </SettingsRow>
-            <SettingsRow label="Default mode">
-              <span className="text-sm text-muted-foreground capitalize">
-                {settings?.captureDefaultMode}
-              </span>
-            </SettingsRow>
-          </SettingsSection>
-
-          <SettingsSection title="System">
-            <SettingsRow
-              label="Keep Sprawl running in the background"
-              description="Needed for reminders and quick capture. Closing the window hides Sprawl to the tray."
-            >
-              <PlaceholderSwitch
-                label="Keep Sprawl running in the background"
-                checked={settings?.keepInTray}
-              />
-            </SettingsRow>
-            <SettingsRow label="Start Sprawl when Windows starts">
-              <PlaceholderSwitch
-                label="Start Sprawl when Windows starts"
-                checked={settings?.openAtLogin}
-              />
-            </SettingsRow>
-          </SettingsSection>
+          <NotificationsSection settings={settings} update={update} />
+          <CaptureSection settings={settings} update={update} local={local} />
+          <SystemSection settings={settings} update={update} />
 
           <SettingsSection title="Backup">
             <SettingsRow label="Daily backup">

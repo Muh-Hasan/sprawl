@@ -272,7 +272,8 @@ export const useNoteStore = create<NoteState>()((set, get) => {
       const note = get().note
       if (!note || note.color === color) return
       set({ note: { ...note, color } })
-      const card = canvas().cardOf(note.id)
+      // Through the canvas (undoable) only while it's loaded; from the list, straight to the note.
+      const card = canvas().ready ? canvas().cardOf(note.id) : null
       if (card !== null) canvas().apply([{ op: 'setColor', id: card, color }])
       else queue({ color }, true)
     },
