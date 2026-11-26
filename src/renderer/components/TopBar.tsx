@@ -10,7 +10,7 @@ interface TopBarProps {
 }
 
 /**
- * The 40px top bar of the main area (UI_SPEC §3). It's the window's drag region, and it keeps
+ * The 44px top bar of the main area (UI_SPEC §3). It's the window's drag region, and it keeps
  * the right 140px clear for the native minimize, maximize and close buttons (UI_SPEC §1).
  * Children are `no-drag` so they stay clickable.
  */
@@ -19,7 +19,7 @@ export function TopBar({ left, right, transparent = false }: TopBarProps) {
     <header
       data-testid="top-bar"
       className={cn(
-        'flex h-10 shrink-0 items-center justify-between pr-[140px] pl-4 [-webkit-app-region:drag]',
+        'flex h-11 shrink-0 items-center justify-between pr-[140px] pl-4 [-webkit-app-region:drag]',
         !transparent && 'border-b border-border',
       )}
     >

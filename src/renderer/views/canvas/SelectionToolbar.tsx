@@ -65,7 +65,7 @@ export function SelectionToolbar() {
       data-canvas-chrome
       role="toolbar"
       aria-label="Selected notes"
-      className="absolute z-10 flex h-10 -translate-x-1/2 animate-in items-center gap-0.5 rounded-card border border-border bg-card p-1 shadow-(--shadow-popover) duration-120 fade-in-0"
+      className="absolute z-10 flex h-11 -translate-x-1/2 animate-in items-center gap-0.5 rounded-card border border-border bg-card p-1 shadow-(--shadow-popover) duration-120 fade-in-0"
       style={{ left, top }}
     >
       {NOTE_COLORS.map((color) => (

@@ -64,7 +64,6 @@ function ToolButton({ def }: { def: ToolDef }) {
       active={active}
       aria-pressed={tool ? active : undefined}
       disabled={!tool}
-      className="[&_svg:not([class*='size-'])]:size-[18px]"
       onClick={tool ? () => setTool(tool) : undefined}
     />
   )

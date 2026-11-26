@@ -1,14 +1,16 @@
 import { useState, type ReactNode } from 'react'
 import { NOTE_COLORS } from '@shared/constants'
 import {
-  ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+} from '@/components/Menu'
+import {
+  ContextMenu,
   ContextMenuSeparator,
   ContextMenuShortcut,
   ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { NOTE_COLOR_CLASSES } from '@/lib/noteColors'

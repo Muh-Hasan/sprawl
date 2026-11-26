@@ -22,7 +22,7 @@ export const APP_BG = '#09090B'
 export const TITLE_BAR_SYMBOL = '#A1A1AA'
 
 /** Height of the title-bar strip in px (UI_SPEC §1). */
-export const TITLE_BAR_HEIGHT = 40
+export const TITLE_BAR_HEIGHT = 44
 
 /** Default and minimum main-window size (UI_SPEC §1). */
 export const WINDOW_DEFAULT = { width: 1440, height: 900 } as const
