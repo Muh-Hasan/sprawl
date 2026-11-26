@@ -26,6 +26,8 @@ npm run check      # typecheck, lint, unit tests and e2e tests
 | `npm run test:e2e`  | Build, then end-to-end tests (Playwright + Electron) |
 | `npm run dist`      | Build the Windows installer                          |
 
+`npm install` also sets up git hooks (Husky). Before each commit, ESLint and Prettier fix the staged files (lint-staged). Commit messages must follow [Conventional Commits](https://www.conventionalcommits.org), e.g. `feat(list): group due notes by day` (commitlint).
+
 ## Docs
 
 - [`docs/PRODUCT.md`](docs/PRODUCT.md): what Sprawl does
