@@ -5,7 +5,7 @@ Two thick arcs from a **Truchet tile**, a square tile with two quarter-circle cu
 
 - **Geometry** (512 grid): a 280×280 tile at (116, 116). The arcs have radius 140, centred on the tile's top-left and bottom-right corners. Stroke 64 with round caps.
 - **Finish:** a white (`#FFFFFF`) to zinc-400 (`#A1A1AA`) linear gradient, top-left to bottom-right. Use flat white or black when a gradient isn't possible.
-- **Wordmark:** "sprawl", always lowercase, in **Sora SemiBold** with −0.05em tracking. It's outlined to paths in the SVGs, so no font is needed. The app UI itself uses **Outfit** (see `docs/DESIGN_SYSTEM.md` §3).
+- **Wordmark:** "sprawl", always lowercase, in **Sora SemiBold** with −0.05em tracking. It's outlined to paths in the SVGs, so no font is needed. The app UI itself uses **Geist** (see `docs/DESIGN_SYSTEM.md` §3).
 
 ## Files
 

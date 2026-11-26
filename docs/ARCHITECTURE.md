@@ -17,7 +17,7 @@ Read `PRODUCT.md` first. This document covers how to build it.
 | Search | **SQLite FTS5** (built in) | No extra search library |
 | UI components | **shadcn/ui** (Radix primitives, copied into `components/ui/`) | Accessible menus, dialogs, popovers and so on, owned in the repo |
 | Styling | **Tailwind CSS v4** + shadcn's CSS-variable theme (zinc base, **dark only**) + `tw-animate-css` | All colors come from the theme variables in `globals.css` |
-| Fonts | **`@fontsource-variable/outfit`**, **`geist`**, **`@fontsource/sora`** (npm) | Outfit (UI), Geist Mono (times, code, kbd) and Sora 600 (brand moments only) as `.woff2` files copied into `src/renderer/assets/fonts/` and bundled locally (DESIGN_SYSTEM §3) |
+| Fonts | **`geist`**, **`@fontsource/sora`** (npm) | Geist (UI), Geist Mono (times, code, kbd) and Sora 600 (brand moments only) as `.woff2` files copied into `src/renderer/assets/fonts/` and bundled locally (DESIGN_SYSTEM §3) |
 | Note editor | **BlockNote** (`@blocknote/core`, `@blocknote/react`, **`@blocknote/shadcn`**), lazy-loaded when the note panel first opens | A Notion-style editor that renders with our shadcn components and theme. **Do not use `@blocknote/xl-*` packages**, because their licenses are incompatible with MIT. |
 | Markdown export | **`@blocknote/server-util`** (main process only) | Runs BlockNote's markdown conversion in Node, so export doesn't need the renderer |
 | Drawings | **`@excalidraw/excalidraw`** | Lazy-loaded, only when a drawing opens |

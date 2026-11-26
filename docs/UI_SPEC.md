@@ -8,15 +8,15 @@ Exact layout and anatomy for every screen. Behavior lives in `PRODUCT.md`, and t
 
 - **Minimum size** 960×600, default 1440×900. The window size and position are remembered.
 - **Windows (v1 target):** `titleBarStyle: 'hidden'` with `titleBarOverlay: { color: '#09090B', symbolColor: '#A1A1AA', height: 40 }`. This gives native minimize, maximize and close buttons at the top right, drawn on our dark color.
-  - The top 40px of the app is a drag region (`-webkit-app-region: drag`), and every button inside it is `no-drag`.
-  - Keep **140px clear on the right of the top 40px of the window** for the overlay buttons. That band is always the window's right edge, whatever is there: the top bar, the note panel's header (§5) or a full-page note. No clickable element goes in it.
+  - The top 44px of the app is a drag region (`-webkit-app-region: drag`), and every button inside it is `no-drag`.
+  - Keep **140px clear on the right of the top 44px of the window** for the overlay buttons. That band is always the window's right edge, whatever is there: the top bar, the note panel's header (§5) or a full-page note. No clickable element goes in it.
   - Windows 11 rounds the window corners and adds the snap-layouts flyout on the maximize button automatically. Don't fight either.
 - (Unofficial macOS: `hiddenInset` with traffic lights at `{ x: 16, y: 14 }`.)
 - **Background** is `--background` on the BrowserWindow as well (`backgroundColor: '#09090B'`), so there's no white flash.
 
 ```
 ┌────┬──────────────────────────────────────────────────────────┬───────────────┐
-│    │  top bar (40px, drag)                                    │               │
+│    │  top bar (44px, drag)                                    │               │
 │ R  ├──────────────────────────────────────────────────────────┤  Note panel   │
 │ a  │                                                          │  (420px,      │
 │ i  │           main view (canvas / list / log / drawings)     │   resizable)  │
@@ -30,7 +30,7 @@ Exact layout and anatomy for every screen. Behavior lives in `PRODUCT.md`, and t
 ## 2. Rail (left, 52px)
 
 - `--surface` background with a 1px right border.
-- **Top:** a 40px drag area.
+- **Top:** a 44px drag area.
 - **Logo:** `sprawl-mark-light` at 18px, centered, 12px below the drag area. Not clickable.
 - **Nav buttons** (36×36, radius 8, 4px gap): Canvas, List, Log, Drawings, Search.
   - **Active:** `--muted` background, `--foreground` icon, plus a 2px × 16px white bar on the rail's left edge (radius 0 1px 1px 0).
@@ -41,7 +41,7 @@ Exact layout and anatomy for every screen. Behavior lives in `PRODUCT.md`, and t
 
 ---
 
-## 3. Top bar (40px, inside the main area)
+## 3. Top bar (44px, inside the main area)
 
 A drag region with a 1px bottom border on every view **except the canvas**. On the canvas the top bar is transparent and has no border, so the canvas runs full-bleed and the floating toolbar sits over it. The toolbar and every button in the top bar are `no-drag`. Right-side content ends 140px from the window's right edge (§1).
 
@@ -68,7 +68,7 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
 
 ### 4.2 Floating toolbar
 - Positioned top center, 12px from the top. `--card` background with a 1px border, radius 10, `--shadow-popover`, and 4px padding.
-- Six 32×32 ghost icon buttons (18px icons): Select, Hand │ Note, Link, Drawing, Image. There's a 1px × 16px divider after Hand.
+- Six 36×36 ghost icon buttons (18px icons): Select, Hand │ Note, Link, Drawing, Image. There's a 1px × 16px divider after Hand.
 - The **active tool** gets a `--muted` background and a `--foreground` icon.
 - **Note tool:** a click places a default-size note there; a click-and-drag draws the note at the dragged size (snapped, within the note size limits), shown as a dashed card-shaped outline while dragging. Either way the title is focused and the tool goes back to Select.
 - Each tooltip shows the label and its single-key shortcut.
@@ -107,7 +107,7 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
 - **Dragging:** scale 1.02, `--shadow-lift`, 95% opacity.
 - **Below 40% zoom:** the card shows only the title at 13px, with the chips and preview hidden.
 - **Editing the title on the card:** double-clicking the title text (not the card) edits it inline: a textarea that grows with the text, with the old title selected. Enter saves (one `notes.update`) and moves on to writing the body; clicking away saves; Esc puts the old title back.
-- **Writing in the card:** double-clicking anywhere else on the card replaces the preview with the note editor's quick `card` variant, styled exactly like the preview (`text-xs`, 16px line height, the note's text color at 70%, no gap between lines). Plain text: no markdown shortcuts except `[] ` (an 11px checkbox in the text color), no `/` menu, no toolbar, no drag handle, and pasted markdown stays text. A heading made in the panel shows as bold card-size text. The card grows with the text to its 320 max and then scrolls (the wheel scrolls the text, not the canvas, until it reaches the end). Esc or focus going elsewhere ends it, and the preview comes back. An open panel stays open and follows the typing live.
+- **Writing in the card:** double-clicking anywhere else on the card replaces the preview with the note editor's quick `card` variant, styled exactly like the preview (`text-xs`, 18px line height, the note's text color at 70%, no gap between lines). Plain text: no markdown shortcuts except `[] ` (an 11px checkbox in the text color), no `/` menu, no toolbar, no drag handle, and pasted markdown stays text. A heading made in the panel shows as bold card-size text. The card grows with the text to its 320 max and then scrolls (the wheel scrolls the text, not the canvas, until it reaches the end). Esc or focus going elsewhere ends it, and the preview comes back. An open panel stays open and follows the typing live.
 
 ### 4.6 Drawing card
 - Default 280×200. `--card` background with a 1px `--border` and radius 10, plus 6px padding.
@@ -148,7 +148,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 - **Esc** steps back one level: full page → side panel → closed (PRODUCT §3.2). Esc inside the editor first leaves any open BlockNote menu.
 
 **Anatomy** (padding 24px horizontal):
-1. **Header row** (40px, drag region on its empty parts). It sits in the window's top 40px, so its right side keeps 140px clear for the Windows caption buttons (§1):
+1. **Header row** (44px, drag region on its empty parts). It sits in the window's top 44px, so its right side keeps 140px clear for the Windows caption buttons (§1):
    - **Left:** the color dot (10px swatch circle, which opens the color popover) and a breadcrumb in `text-xs` subtle showing "Note", or "Note · not on canvas" for list-only notes (clicking that places it on the canvas).
    - **Right**, ending 140px from the window edge: ghost icon buttons for `IconArrowsDiagonal` (full page, or `IconArrowsDiagonalMinimize2` to go back), `IconDots` (Duplicate, Export as markdown, Delete) and `IconX`.
 2. **Title:** a borderless textarea that grows, using `text-title`. The placeholder is "Untitled" in subtle text. 8px top margin.
@@ -169,7 +169,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 
 ### 5.1 Editor styling (BlockNote via `@blocknote/shadcn`)
 - `@blocknote/shadcn` brings its own shadcn components (on Base UI), styled by the same theme variables, so menus and popovers match (ARCHITECTURE §6, Editor notes). Set `theme="dark"` and override BlockNote's CSS variables to the tokens: editor background transparent, text `--foreground`, menus `--popover`, hover `--muted`, borders `--border`.
-- **Body** uses Outfit (override BlockNote's font variable so it inherits `--font-sans`) at `text-editor` (15/26) with 4px between blocks. There's one heading level, 16px at weight 600 (smaller than the 24px title, the note's main heading), with 16px above and 4px below. The `/` menu calls it "Heading".
+- **Body** uses Geist (override BlockNote's font variable so it inherits `--font-sans`) at `text-editor` (16/26) with 4px between blocks. There's one heading level, 18px at weight 600 (smaller than the 28px title, the note's main heading), with 16px above and 4px below. The `/` menu calls it "Heading".
 - **Checklist:** a 16px checkbox with radius 4 and a 1.5px `--border-strong` border. Checked boxes are white-filled with a black check, and their text gets `--muted-foreground` with a strike-through.
 - **Code block:** Geist Mono 13px on an `--inset` background with a 1px border, radius 8 and 12px padding.
 - **Quote:** a 2px `--border-strong` left bar (radius 0), 12px left padding, muted text.

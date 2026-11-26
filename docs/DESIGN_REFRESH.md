@@ -84,8 +84,8 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
 
 ## Pull requests
 
-- [x] **R1 · `docs/design-refresh-plan`**: this tracker, the drawings decision in PRODUCT and PHASES.
-- [ ] **R2 · `feat/ui-type-scale`**: Geist Sans and the new type scale and sizes.
+- [x] **R1 · `docs/design-refresh-plan`** (#12): this tracker, the drawings decision in PRODUCT and PHASES.
+- [x] **R2 · `feat/ui-type-scale`** (#13): Geist Sans and the new type scale and sizes.
   - `globals.css` tokens (`--font-sans`, every `text-*` token, `--radius-card`), the Geist variable font bundled locally, Outfit removed.
   - shadcn button, input and menu sizes come from theme variables and wrapper components, never edits in `components/ui/`.
   - Specs: DESIGN_SYSTEM §3 (type), §5 (spacing and sizes), §7 (components). Artboard: `TypeScale`.
