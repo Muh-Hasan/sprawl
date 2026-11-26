@@ -83,7 +83,7 @@ test('the window size and position are remembered', async ({
   // to catch it, since the debounced save hasn't fired yet.
   const closed = app.waitForEvent('close')
   await app.evaluate(({ BrowserWindow }, bounds) => {
-    const win = BrowserWindow.getAllWindows()[0]
+    const win = BrowserWindow.getAllWindows().find((w) => w.getTitle() !== 'Sprawl quick capture')
     win?.setBounds(bounds)
     win?.close()
   }, target)
@@ -92,7 +92,9 @@ test('the window size and position are remembered', async ({
   await relaunch(dirs, consoleProblems, async (next, page) => {
     await expect(page.getByTestId('shell')).toBeVisible()
     const bounds = await next.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0]?.getBounds(),
+      BrowserWindow.getAllWindows()
+        .find((w) => w.getTitle() !== 'Sprawl quick capture')
+        ?.getBounds(),
     )
     // Allow a pixel of rounding under display scaling.
     for (const key of ['x', 'y', 'width', 'height'] as const) {

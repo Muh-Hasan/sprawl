@@ -1,8 +1,10 @@
 import { BrowserWindow, dialog, ipcMain, shell, type IpcMainInvokeEvent } from 'electron'
 import { z } from 'zod'
-import { IPC, type MainEventName, type MainEvents } from '@shared/api'
+import { IPC, type MainEventName, type MainEvents, type NotificationStatus } from '@shared/api'
 import {
   canvasApplyInput,
+  captureHeightInput,
+  captureSubmitInput,
   linksAddInput,
   linksReorderInput,
   linksUpdateInput,
@@ -12,15 +14,21 @@ import {
   logUpdateInput,
   noteIdInput,
   notesCreateInput,
+  notesListInput,
+  notesPlaceInput,
   notesSetDoneInput,
   notesUpdateInput,
   openExternalInput,
   openVaultInput,
+  pauseNotificationsInput,
+  setShortcutInput,
   settingsGetInput,
   settingsSetInput,
+  shortcutPausedInput,
   type SettingKey,
   type Settings,
 } from '@shared/schemas'
+import type { CaptureService } from '../services/capture'
 import type { CanvasService } from '../services/canvas'
 import type { LogService } from '../services/log'
 import type { NotesService } from '../services/notes'
@@ -61,6 +69,26 @@ export interface IpcDeps {
   log: LogService
   /** The renderer of `sender`'s window has saved everything (the close handshake). */
   onReadyToClose: (sender: Electron.WebContents) => void
+  capture: CaptureService
+  /** The quick-capture window's contents (its calls are only taken from there). */
+  isCaptureWindow: (sender: Electron.WebContents) => boolean
+  hideCapture: () => void
+  setCaptureHeight: (px: number) => void
+  system: SystemControl
+  /** The world point at the middle of the last canvas view (where placed notes go). */
+  viewCenter: () => { x: number; y: number }
+  /** After every write to notes or the canvas: re-check reminders, refresh the tray. */
+  afterWrite: () => void
+}
+
+/** Notifications, the capture shortcut and pausing (ARCHITECTURE §5, `system`). */
+export interface SystemControl {
+  testNotification(): void
+  notificationStatus(): Promise<NotificationStatus>
+  openNotificationSettings(): Promise<void>
+  setShortcut(accel: string): { ok: boolean; conflict?: boolean }
+  pauseShortcut(paused: boolean): void
+  pauseNotifications(minutes: number): void
 }
 
 /** Registers one handler per API method (ARCHITECTURE §5). */
@@ -71,7 +99,37 @@ export function registerIpc({
   canvas,
   log,
   onReadyToClose,
+  capture,
+  isCaptureWindow,
+  hideCapture,
+  setCaptureHeight,
+  system,
+  viewCenter,
+  afterWrite,
 }: IpcDeps): void {
+  /** A handler that writes: reminders and the tray follow once it's done. */
+  const write = <S extends z.ZodType>(
+    channel: string,
+    schema: S,
+    fn: (input: z.infer<S>, event: IpcMainInvokeEvent) => unknown,
+  ): void =>
+    handle(channel, schema, (input, event) => {
+      const result = fn(input, event)
+      afterWrite()
+      return result
+    })
+
+  /** A handler only the quick-capture window may call. */
+  const captureOnly = <S extends z.ZodType>(
+    channel: string,
+    schema: S,
+    fn: (input: z.infer<S>) => unknown,
+  ): void =>
+    handle(channel, schema, (input, event) => {
+      if (!isCaptureWindow(event.sender)) throw new Error(`${channel} is for the capture window`)
+      return fn(input)
+    })
+
   // app ----------------------------------------------------------------------------------
   handle(IPC.app.getVaultInfo, noInput, () => vault.info())
 
@@ -108,13 +166,18 @@ export function registerIpc({
   )
 
   // notes --------------------------------------------------------------------------------
+  handle(IPC.notes.list, notesListInput, (query) => notes.list(query))
+  handle(IPC.notes.overdueCount, noInput, () => notes.overdueCount())
+  write(IPC.notes.placeOnCanvas, notesPlaceInput, ({ id, at }) =>
+    canvas.placeNote(id, at ?? viewCenter()),
+  )
   handle(IPC.notes.get, noteIdInput, (id) => notes.get(id))
-  handle(IPC.notes.create, notesCreateInput, (note) => notes.create(note))
-  handle(IPC.notes.update, notesUpdateInput, ({ id, patch }) => notes.update(id, patch))
-  handle(IPC.notes.duplicate, noteIdInput, (id) => notes.duplicate(id))
-  handle(IPC.notes.setDone, notesSetDoneInput, ({ id, done }) => notes.setDone(id, done))
-  handle(IPC.notes.remove, noteIdInput, (id) => notes.remove(id))
-  handle(IPC.notes.restore, noteIdInput, (id) => notes.restore(id))
+  write(IPC.notes.create, notesCreateInput, (note) => notes.create(note))
+  write(IPC.notes.update, notesUpdateInput, ({ id, patch }) => notes.update(id, patch))
+  write(IPC.notes.duplicate, noteIdInput, (id) => notes.duplicate(id))
+  write(IPC.notes.setDone, notesSetDoneInput, ({ id, done }) => notes.setDone(id, done))
+  write(IPC.notes.remove, noteIdInput, (id) => notes.remove(id))
+  write(IPC.notes.restore, noteIdInput, (id) => notes.restore(id))
   handle(IPC.notes.links.add, linksAddInput, ({ noteId, url, label }) =>
     notes.addLink(noteId, url, label),
   )
@@ -126,7 +189,7 @@ export function registerIpc({
 
   // canvas -------------------------------------------------------------------------------
   handle(IPC.canvas.load, noInput, () => canvas.load())
-  handle(IPC.canvas.apply, canvasApplyInput, (ops) => canvas.apply(ops))
+  write(IPC.canvas.apply, canvasApplyInput, (ops) => canvas.apply(ops))
 
   // daily log ----------------------------------------------------------------------------
   handle(IPC.log.day, logDayInput, (day) => log.day(day))
@@ -139,4 +202,24 @@ export function registerIpc({
   handle(IPC.log.remove, noteIdInput, (id) => log.remove(id))
   handle(IPC.log.daysWithEntries, logMonthInput, (month) => log.daysWithEntries(month))
   handle(IPC.log.carriedOver, logDayInput, (day) => log.carriedOver(day))
+
+  // quick capture ------------------------------------------------------------------------
+  captureOnly(IPC.capture.submit, captureSubmitInput, ({ mode, text }) => {
+    const result = capture.submit(mode, text)
+    afterWrite()
+    broadcast('data:changed', undefined)
+    return result
+  })
+  captureOnly(IPC.capture.hide, noInput, () => hideCapture())
+  captureOnly(IPC.capture.setHeight, captureHeightInput, (px) => setCaptureHeight(px))
+
+  // system -------------------------------------------------------------------------------
+  handle(IPC.system.testNotification, noInput, () => system.testNotification())
+  handle(IPC.system.notificationStatus, noInput, () => system.notificationStatus())
+  handle(IPC.system.openNotificationSettings, noInput, () => system.openNotificationSettings())
+  handle(IPC.system.setShortcut, setShortcutInput, (accel) => system.setShortcut(accel))
+  handle(IPC.system.pauseShortcut, shortcutPausedInput, (paused) => system.pauseShortcut(paused))
+  handle(IPC.system.pauseNotifications, pauseNotificationsInput, (minutes) =>
+    system.pauseNotifications(minutes),
+  )
 }

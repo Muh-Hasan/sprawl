@@ -96,6 +96,8 @@ export interface Note {
   updatedAt: number
   deletedAt: number | null
   links: NoteLink[]
+  /** The note has a card on the canvas (list-only notes don't). */
+  onCanvas: boolean
 }
 
 /**
@@ -181,6 +183,43 @@ export interface LogDay {
 export interface LogEntryPatch {
   text?: string
   time?: string
+}
+
+// list view ----------------------------------------------------------------------------------
+
+/** The List view's tabs (PRODUCT §3.3). */
+export const LIST_TABS = ['open', 'due', 'done', 'all'] as const
+export type ListTab = (typeof LIST_TABS)[number]
+
+/** The List view's sorts, for the Open and All tabs (Due sorts by due date, Done by done time). */
+export const LIST_SORTS = ['edited', 'created', 'title', 'due'] as const
+export type ListSort = (typeof LIST_SORTS)[number]
+
+/** What `notes.list` returns: a tab, its colors (none = all), a title filter and the sort. */
+export interface NoteListQuery {
+  tab: ListTab
+  colors: NoteColor[]
+  /** Matches titles containing it, ignoring case. Empty matches everything. */
+  text: string
+  sort: ListSort
+}
+
+/** One row of the List view (UI_SPEC §5b). */
+export interface NoteListRow {
+  id: string
+  title: string
+  color: NoteColor
+  /** The first non-empty line of the body. */
+  firstLine: string
+  checkTotal: number
+  checkDone: number
+  linkCount: number
+  dueDay: string | null
+  dueTime: string | null
+  doneAt: number | null
+  createdAt: number
+  updatedAt: number
+  onCanvas: boolean
 }
 
 /** A note as lists show it (carried over, later backlinks). */

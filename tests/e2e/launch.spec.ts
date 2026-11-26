@@ -45,7 +45,9 @@ test('page zoom shortcuts do nothing (no application menu)', async ({ app, windo
     await window.keyboard.press(key)
   }
   const zoom = await app.evaluate(({ BrowserWindow }) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.getZoomFactor(),
+    BrowserWindow.getAllWindows()
+      .find((w) => w.getTitle() !== 'Sprawl quick capture')
+      ?.webContents.getZoomFactor(),
   )
   expect(zoom).toBe(1)
 })

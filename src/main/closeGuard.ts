@@ -5,13 +5,25 @@ export const CLOSE_TIMEOUT_MS = 2000
 
 const ready = new WeakMap<WebContents, () => void>()
 
+export interface GuardOptions {
+  timeoutMs?: number
+  /**
+   * True when closing should hide the window instead ("keep running in the background",
+   * PRODUCT §3.8). Nothing needs saving then: the renderer keeps running.
+   */
+  hideInstead?: () => boolean
+}
+
 /**
  * Makes a window save before it closes (ARCHITECTURE §6, "nothing is ever lost"): the first
  * close is held, the renderer gets `app:before-close`, flushes its pending writes and answers
  * with `app.readyToClose()`; then the window really closes. A renderer that doesn't answer
  * (still loading, hung or crashed) gets `CLOSE_TIMEOUT_MS`.
  */
-export function guardClose(win: BrowserWindow, timeoutMs = CLOSE_TIMEOUT_MS): void {
+export function guardClose(
+  win: BrowserWindow,
+  { timeoutMs = CLOSE_TIMEOUT_MS, hideInstead }: GuardOptions = {},
+): void {
   let released = false
   let waiting = false
   const contents = win.webContents
@@ -26,6 +38,10 @@ export function guardClose(win: BrowserWindow, timeoutMs = CLOSE_TIMEOUT_MS): vo
   win.on('close', (event) => {
     if (released) return
     event.preventDefault()
+    if (!waiting && hideInstead?.()) {
+      win.hide()
+      return
+    }
     if (waiting) return
     waiting = true
     ready.set(contents, release)

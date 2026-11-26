@@ -87,3 +87,22 @@ export function textToBody(text: string): DerivedBody {
   }))
   return { bodyJson: JSON.stringify(blocks), bodyText: lines.join('\n') }
 }
+
+/** The text of the first checklist item that isn't ticked, for a reminder's "Next:" (or null). */
+export function firstOpenCheckItem(blocks: readonly unknown[]): string | null {
+  const find = (list: unknown): string | null => {
+    if (!Array.isArray(list)) return null
+    for (const raw of list as unknown[]) {
+      if (typeof raw !== 'object' || raw === null) continue
+      const block = raw as BlockLike
+      if (block.type === 'checkListItem' && block.props?.checked !== true) {
+        const text = inlineText(block.content).trim()
+        if (text !== '') return text
+      }
+      const nested = find(block.children)
+      if (nested !== null) return nested
+    }
+    return null
+  }
+  return find(blocks)
+}

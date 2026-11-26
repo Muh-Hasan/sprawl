@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { IpcInputError, parseInput } from '../../../src/main/ipc/validate'
 import {
+  acceleratorSchema,
   canvasApplyInput,
+  captureHeightInput,
+  captureSubmitInput,
+  notesListInput,
+  notesPlaceInput,
+  pauseNotificationsInput,
+  setShortcutInput,
   canvasOpSchema,
   dayKeySchema,
   defaultSettings,
@@ -296,5 +303,58 @@ describe('done and daily log schemas', () => {
     expect(logUpdateInput.safeParse({ id: 'e1', patch: { time: '24:00' } }).success).toBe(false)
     expect(logUpdateInput.safeParse({ id: 'e1', patch: {} }).success).toBe(false)
     expect(logUpdateInput.safeParse({ id: 'e1', patch: { at: 5 } }).success).toBe(false)
+  })
+})
+
+describe('phase 6 schemas: list, capture and system', () => {
+  it('notes.list takes a tab, colors, a sort and a title filter', () => {
+    const ok = { tab: 'due', colors: ['sage'], sort: 'title', text: 'rent' }
+    expect(notesListInput.parse(ok)).toEqual(ok)
+    for (const bad of [
+      { ...ok, tab: 'later' },
+      { ...ok, colors: ['red'] },
+      { ...ok, sort: 'size' },
+      { ...ok, text: 'x'.repeat(201) },
+      { ...ok, extra: 1 },
+      { tab: 'open', colors: [], sort: 'edited' },
+    ]) {
+      expect(notesListInput.safeParse(bad).success, JSON.stringify(bad)).toBe(false)
+    }
+  })
+
+  it('placeOnCanvas takes an id and an optional world point', () => {
+    expect(notesPlaceInput.parse({ id: 'n1' })).toEqual({ id: 'n1' })
+    expect(notesPlaceInput.parse({ id: 'n1', at: { x: 1, y: -2 } }).at).toEqual({ x: 1, y: -2 })
+    expect(notesPlaceInput.safeParse({ id: 'n1', at: { x: Infinity, y: 0 } }).success).toBe(false)
+    expect(notesPlaceInput.safeParse({ id: '../x' }).success).toBe(false)
+  })
+
+  it('a capture is a mode and some text', () => {
+    expect(captureSubmitInput.parse({ mode: 'log', text: 'Called' })).toEqual({
+      mode: 'log',
+      text: 'Called',
+    })
+    expect(captureSubmitInput.safeParse({ mode: 'note', text: ' \t\n ' }).success).toBe(false)
+    expect(captureSubmitInput.safeParse({ mode: 'todo', text: 'x' }).success).toBe(false)
+    expect(captureSubmitInput.safeParse({ mode: 'note', text: 'x'.repeat(10_001) }).success).toBe(
+      false,
+    )
+    expect(captureHeightInput.safeParse(120.5).success).toBe(false)
+    expect(captureHeightInput.safeParse(-1).success).toBe(false)
+  })
+
+  it('shortcuts are checked accelerators, and a pause is 0 to 1440 minutes', () => {
+    expect(setShortcutInput.parse('Ctrl+Alt+N')).toBe('Ctrl+Alt+N')
+    expect(setShortcutInput.safeParse('Shift+N').success).toBe(false)
+    expect(acceleratorSchema.safeParse('Ctrl+Shift+Space').success).toBe(true)
+    expect(pauseNotificationsInput.safeParse(60).success).toBe(true)
+    expect(pauseNotificationsInput.safeParse(1441).success).toBe(false)
+    expect(pauseNotificationsInput.safeParse(-5).success).toBe(false)
+  })
+
+  it('a bad stored shortcut falls back to the default', () => {
+    expect(parseSetting('captureShortcut', 'Banana')).toBe('Ctrl+Shift+Space')
+    expect(parseSetting('morningSummarySentOn', '2026-02-30')).toBeNull()
+    expect(defaultSettings().morningSummarySentOn).toBeNull()
   })
 })

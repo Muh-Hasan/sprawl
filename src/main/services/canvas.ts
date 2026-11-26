@@ -1,5 +1,6 @@
 import { and, eq, isNull, sql } from 'drizzle-orm'
-import { PREVIEW_CHARS, type NoteColor } from '@shared/constants'
+import { nanoid } from 'nanoid'
+import { NOTE_CARD, PREVIEW_CHARS, SNAP_GRID, type NoteColor } from '@shared/constants'
 import type {
   CanvasApplyResult,
   CanvasItem,
@@ -50,6 +51,48 @@ export class CanvasService {
       .orderBy(canvasItems.z)
       .all()
     return rows.map(({ item, ...note }) => toItem(item, toCardNote(note)))
+  }
+
+  /** The card of a note, or null if it isn't on the canvas. */
+  cardOf(noteId: string): CanvasItem | null {
+    const { db } = this.handle()
+    const row = db
+      .select()
+      .from(canvasItems)
+      .where(and(eq(canvasItems.kind, 'note'), eq(canvasItems.refId, noteId)))
+      .get()
+    return row ? toItem(row, this.cardNote(noteId)) : null
+  }
+
+  /**
+   * Gives a live note a card of the default size, centered on `center` (world, snapped to the
+   * grid) and on top of the others. A note that already has a card keeps it, where it is.
+   */
+  placeNote(noteId: string, center: { x: number; y: number }): CanvasItem {
+    const handle = this.handle()
+    return handle.sqlite.transaction(() => {
+      const existing = this.cardOf(noteId)
+      if (existing) return existing
+      assertRefExists(handle, 'note', noteId)
+      const top = handle.sqlite.prepare('SELECT max(z) FROM canvas_items').pluck().get() as
+        number | null
+      const snap = (v: number): number => Math.round(v / SNAP_GRID) * SNAP_GRID
+      return this.insertItem(
+        {
+          id: nanoid(),
+          kind: 'note',
+          refId: noteId,
+          url: null,
+          title: null,
+          x: snap(center.x - NOTE_CARD.w / 2),
+          y: snap(center.y - NOTE_CARD.h / 2),
+          w: NOTE_CARD.w,
+          h: NOTE_CARD.h,
+          z: (top ?? -1) + 1,
+        },
+        this.now(),
+      )
+    })()
   }
 
   apply(ops: readonly CanvasOp[]): CanvasApplyResult {
