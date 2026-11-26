@@ -19,6 +19,9 @@ const api: SprawlAPI = {
     set: (key, value) => ipcRenderer.invoke(IPC.settings.set, { key, value }),
   },
   notes: {
+    list: (query) => ipcRenderer.invoke(IPC.notes.list, query),
+    overdueCount: () => ipcRenderer.invoke(IPC.notes.overdueCount),
+    placeOnCanvas: (id, at) => ipcRenderer.invoke(IPC.notes.placeOnCanvas, { id, at }),
     get: (id) => ipcRenderer.invoke(IPC.notes.get, id),
     create: (note) => ipcRenderer.invoke(IPC.notes.create, note),
     update: (id, patch) => ipcRenderer.invoke(IPC.notes.update, { id, patch }),
@@ -44,6 +47,19 @@ const api: SprawlAPI = {
     remove: (id) => ipcRenderer.invoke(IPC.log.remove, id),
     daysWithEntries: (month) => ipcRenderer.invoke(IPC.log.daysWithEntries, month),
     carriedOver: (day) => ipcRenderer.invoke(IPC.log.carriedOver, day),
+  },
+  capture: {
+    submit: (capture) => ipcRenderer.invoke(IPC.capture.submit, capture),
+    hide: () => ipcRenderer.invoke(IPC.capture.hide),
+    setHeight: (px) => ipcRenderer.invoke(IPC.capture.setHeight, px),
+  },
+  system: {
+    testNotification: () => ipcRenderer.invoke(IPC.system.testNotification),
+    notificationStatus: () => ipcRenderer.invoke(IPC.system.notificationStatus),
+    openNotificationSettings: () => ipcRenderer.invoke(IPC.system.openNotificationSettings),
+    setShortcut: (accel) => ipcRenderer.invoke(IPC.system.setShortcut, accel),
+    pauseShortcut: (paused) => ipcRenderer.invoke(IPC.system.pauseShortcut, paused),
+    pauseNotifications: (minutes) => ipcRenderer.invoke(IPC.system.pauseNotifications, minutes),
   },
   on: (event, listener) => {
     if (!MAIN_EVENTS.includes(event)) throw new Error(`Unknown event: ${event}`)

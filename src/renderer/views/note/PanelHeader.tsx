@@ -25,10 +25,16 @@ import { useNoteStore } from '@/stores/noteStore'
 import { useSelectionStore } from '@/stores/selectionStore'
 import { useUiStore } from '@/stores/uiStore'
 import { deleteSelection, duplicateSelection, openSelectedNote } from '../canvas/actions'
+import { deleteNote, duplicateNote } from '../list/listActions'
 
-/** Selects the note's card, so the canvas commands (with their toasts and undo) act on it. */
+/**
+ * Selects the note's card, so the canvas commands (with their toasts and undo) act on it. Only
+ * while the canvas is loaded; otherwise (the list, the log) the note commands are used.
+ */
 function selectCard(noteId: string): boolean {
-  const card = useCanvasStore.getState().cardOf(noteId)
+  const canvas = useCanvasStore.getState()
+  if (!canvas.ready) return false
+  const card = canvas.cardOf(noteId)
   if (card === null) return false
   useSelectionStore.getState().select([card])
   return true
@@ -37,8 +43,8 @@ function selectCard(noteId: string): boolean {
 /**
  * The panel's header row (UI_SPEC §5): the color dot and breadcrumb on the left; full page, the
  * ⋯ menu and close on the right, ending 140px from the window edge (the caption buttons).
- * Its empty parts are the window's drag region. later: phase-6 shows "Note · not on canvas"
- * for list-only notes, phase-11 adds Export as markdown to the menu.
+ * Its empty parts are the window's drag region. A list-only note reads "Note · not on canvas".
+ * later: phase-11 adds Export as markdown to the menu.
  */
 export function PanelHeader() {
   const note = useNoteStore((s) => s.note)
@@ -48,12 +54,13 @@ export function PanelHeader() {
   const full = mode === 'full'
 
   const duplicate = (): void => {
-    if (!selectCard(note.id)) return
+    if (!selectCard(note.id)) return void duplicateNote(note.id)
     duplicateSelection()
     openSelectedNote()
   }
   const remove = (): void => {
     if (selectCard(note.id)) deleteSelection()
+    else void deleteNote(note.id)
   }
 
   return (
@@ -86,7 +93,7 @@ export function PanelHeader() {
           </PopoverContent>
         </Popover>
         <span data-testid="note-panel-breadcrumb" className="text-xs text-subtle-foreground">
-          Note
+          {note.onCanvas ? 'Note' : 'Note · not on canvas'}
         </span>
       </div>
       <div className="flex items-center gap-0.5 [&>*]:[-webkit-app-region:no-drag]">

@@ -42,3 +42,17 @@ export function revealRect(rect: CanvasRect): void {
   const next = revealViewport(vp, rect, canvas().size)
   if (next !== vp) canvas().animateViewport(next, JUMP_MS)
 }
+
+/** Glides to center a card, at 100% or closer ("Show on canvas" from the list). */
+export function centerOnRect(rect: CanvasRect): void {
+  const { size } = canvas()
+  const zoom = Math.max(viewportTarget().zoom, 1)
+  canvas().animateViewport(
+    {
+      zoom,
+      x: size.width / 2 - (rect.x + rect.w / 2) * zoom,
+      y: size.height / 2 - (rect.y + rect.h / 2) * zoom,
+    },
+    JUMP_MS,
+  )
+}

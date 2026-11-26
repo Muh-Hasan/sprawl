@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { NOTE_COLORS, PANEL_WIDTH, REMIND_OPTIONS } from './constants'
-import { CANVAS_ITEM_KINDS } from './types'
+import { isValidAccelerator } from './accelerator'
+import { CANVAS_ITEM_KINDS, LIST_SORTS, LIST_TABS } from './types'
 
 /**
  * zod schemas shared by main and renderer (ARCHITECTURE §9): the settings schema with its
@@ -52,6 +53,12 @@ export const externalUrlSchema = z
   .max(4096)
   .refine(isAllowedExternalUrl, { message: 'Only http, https and mailto links can be opened' })
 
+/** A global shortcut as an Electron accelerator, e.g. `Ctrl+Shift+Space`. */
+export const acceleratorSchema = z
+  .string()
+  .max(64)
+  .refine(isValidAccelerator, { message: 'Expected a shortcut like Ctrl+Shift+Space' })
+
 // settings ---------------------------------------------------------------------------------
 
 export const viewportSchema = z.object({
@@ -61,9 +68,9 @@ export const viewportSchema = z.object({
 })
 
 export const listFilterSchema = z.object({
-  tab: z.enum(['open', 'due', 'done', 'all']),
+  tab: z.enum(LIST_TABS),
   colors: z.array(noteColorSchema).max(NOTE_COLORS.length),
-  sort: z.enum(['edited', 'created', 'title', 'due']),
+  sort: z.enum(LIST_SORTS),
 })
 
 export const morningSummarySchema = z.object({
@@ -110,9 +117,11 @@ export const SETTINGS = {
   remindersOn: def('vault', z.boolean(), true),
   morningSummary: def('vault', morningSummarySchema, { on: false, time: '09:00' }),
   notificationsPausedUntil: def('vault', z.number().int().nonnegative().nullable(), null),
+  /** The day the morning summary was last sent, so it goes out once a day. */
+  morningSummarySentOn: def('vault', dayKeySchema.nullable(), null),
   lastCaptureOffset: def('vault', z.number().int().min(0).max(100), 0),
   // machine
-  captureShortcut: def('machine', z.string().min(1).max(64), 'Ctrl+Shift+Space'),
+  captureShortcut: def('machine', acceleratorSchema, 'Ctrl+Shift+Space'),
   captureDefaultMode: def('machine', z.enum(['note', 'log']), 'note'),
   keepInTray: def('machine', z.boolean(), true),
   openAtLogin: def('machine', z.boolean(), false),
@@ -344,3 +353,41 @@ export const logUpdateInput = z
       .refine((patch) => Object.keys(patch).length > 0, { message: 'Empty patch' }),
   })
   .strict()
+
+// list view --------------------------------------------------------------------------------
+
+export const notesListInput = listFilterSchema.extend({ text: z.string().max(200) }).strict()
+
+/** `placeOnCanvas`: the note, and the world point to center its card on (default: the view center). */
+export const notesPlaceInput = z
+  .object({ id: idSchema, at: z.object({ x: coordSchema, y: coordSchema }).strict().optional() })
+  .strict()
+
+// quick capture and system -----------------------------------------------------------------
+
+export const captureModeSchema = z.enum(['note', 'log'])
+
+/** One capture: at most 10,000 characters, never blank. */
+export const captureSubmitInput = z
+  .object({
+    mode: captureModeSchema,
+    text: z
+      .string()
+      .max(10_000)
+      .refine((t) => t.trim().length > 0, { message: 'Nothing to capture' }),
+  })
+  .strict()
+
+/** The capture card's height in px; main clamps it to 112–320. */
+export const captureHeightInput = z.number().int().min(0).max(2000)
+
+export const setShortcutInput = acceleratorSchema
+
+/** Pause for this many minutes (0 resumes). At most a day. */
+export const pauseNotificationsInput = z
+  .number()
+  .int()
+  .min(0)
+  .max(24 * 60)
+
+export const shortcutPausedInput = z.boolean()

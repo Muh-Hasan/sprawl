@@ -49,7 +49,16 @@ export default defineConfig({
       alias: { ...sharedAlias, '@': resolve(__dirname, 'src/renderer') },
     },
     plugins: [react(), tailwindcss(), cspPlugin()],
-    // electron-vite doesn't minify by default; a smaller renderer bundle parses faster on cold start.
-    build: { minify: true },
+    build: {
+      // electron-vite doesn't minify by default; a smaller bundle parses faster on cold start.
+      minify: true,
+      // Two pages: the app, and the quick-capture window (ARCHITECTURE §2).
+      rollupOptions: {
+        input: {
+          index: resolve(__dirname, 'src/renderer/index.html'),
+          capture: resolve(__dirname, 'src/renderer/capture.html'),
+        },
+      },
+    },
   },
 })

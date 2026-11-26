@@ -15,6 +15,8 @@ export interface SettingsDeps {
   config: ConfigStore
   /** The open vault's database, or null before onboarding. */
   db: () => DbHandle | null
+  /** Called after a setting is stored, so main can follow it (reminders, tray, login item). */
+  onChange?: (key: SettingKey) => void
 }
 
 /**
@@ -50,6 +52,7 @@ export class SettingsService {
     const parsed = SETTINGS[key].schema.parse(value)
     if (SETTINGS[key].store === 'machine') {
       this.deps.config.update((c) => void (c.settings[key] = parsed))
+      this.deps.onChange?.(key)
       return
     }
     const handle = this.deps.db()
@@ -60,6 +63,7 @@ export class SettingsService {
       .values({ key, value: json })
       .onConflictDoUpdate({ target: settingsTable.key, set: { value: json } })
       .run()
+    this.deps.onChange?.(key)
   }
 }
 

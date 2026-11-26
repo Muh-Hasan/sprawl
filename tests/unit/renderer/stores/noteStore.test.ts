@@ -39,6 +39,7 @@ const stored: Note = {
   updatedAt: 1,
   deletedAt: null,
   links: [],
+  onCanvas: true,
 }
 
 const card: CanvasItem = {

@@ -1,4 +1,6 @@
+import { useEffect, useRef } from 'react'
 import { useNoteStore } from '@/stores/noteStore'
+import { useUiStore } from '@/stores/uiStore'
 
 interface NoteTitleProps {
   /** Enter moves on to the body, like Notion. */
@@ -11,8 +13,14 @@ interface NoteTitleProps {
  */
 export function NoteTitle({ onEnter }: NoteTitleProps) {
   const title = useNoteStore((s) => s.note?.title ?? '')
+  const ref = useRef<HTMLTextAreaElement>(null)
+  // A note made from the list opens with the cursor here.
+  useEffect(() => {
+    if (useUiStore.getState().takeTitleFocusRequest()) ref.current?.focus()
+  }, [])
   return (
     <textarea
+      ref={ref}
       data-testid="note-panel-title"
       aria-label="Title"
       rows={1}

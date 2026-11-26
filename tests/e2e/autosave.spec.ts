@@ -9,7 +9,11 @@ import { NotePanel } from './pages/NotePanel'
  */
 async function closeLikeAUser(app: ElectronApplication): Promise<void> {
   const quit = app.waitForEvent('close')
-  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.close())
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()
+      .find((w) => w.getTitle() !== 'Sprawl quick capture')
+      ?.close(),
+  )
   await quit
 }
 

@@ -53,3 +53,26 @@ export const AUTOSAVE_MS = 500
 
 /** How much of `body_text` a card gets for its preview (it shows at most four lines). */
 export const PREVIEW_CHARS = 400
+
+/** A new note card's size in world px (the canvas's NOTE_SIZE starts from it). */
+export const NOTE_CARD = { w: 220, h: 64 } as const
+
+/** The canvas snap grid in world px. */
+export const SNAP_GRID = 8
+
+/**
+ * The quick-capture window (UI_SPEC §5c): 520px wide, its height fitted to the card, its top at
+ * 22% of the monitor. Captured notes step this far down and right of the last one, over this
+ * many places, so they don't stack exactly.
+ */
+export const CAPTURE_WINDOW = { width: 520, minHeight: 112, maxHeight: 320, top: 0.22 } as const
+export const CAPTURE_STAGGER = { step: 24, places: 8 } as const
+
+/** How long the "Saved to canvas" / "Logged" flash shows before the capture window hides. */
+export const CAPTURE_FLASH_MS = 600
+
+/** Toast titles are cut to this many characters (UI_SPEC §5d). */
+export const TOAST_TITLE_MAX = 60
+
+/** The rail's width in px (UI_SPEC §2): the canvas is the window minus this. */
+export const RAIL_WIDTH = 52

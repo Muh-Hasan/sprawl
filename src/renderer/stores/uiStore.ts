@@ -17,8 +17,14 @@ interface UiState {
   duePickerRequested: boolean
   /** The panel showed the picker it was asked for. */
   takeDuePickerRequest(): boolean
-  /** Opens a note in the panel (side mode if it was closed); `due` also opens its date picker. */
-  openNote(id: string, options?: { due?: boolean }): void
+  /** The panel should put the cursor in the title once the note shows (a new list note). */
+  titleFocusRequested: boolean
+  takeTitleFocusRequest(): boolean
+  /**
+   * Opens a note in the panel (side mode if it was closed); `due` also opens its date picker,
+   * `focusTitle` puts the cursor in the title.
+   */
+  openNote(id: string, options?: { due?: boolean; focusTitle?: boolean }): void
   closeNote(): void
   setPanelMode(mode: PanelMode): void
   /** Esc in the panel: full page → side panel → closed (PRODUCT §3.2). */
@@ -36,11 +42,18 @@ export const useUiStore = create<UiState>()((set, get) => ({
     set({ duePickerRequested: false })
     return true
   },
-  openNote: (id, { due = false } = {}) =>
+  titleFocusRequested: false,
+  takeTitleFocusRequest: () => {
+    if (!get().titleFocusRequested) return false
+    set({ titleFocusRequested: false })
+    return true
+  },
+  openNote: (id, { due = false, focusTitle = false } = {}) =>
     set((s) => ({
       openNoteId: id,
       panelMode: s.openNoteId === null ? 'side' : s.panelMode,
       duePickerRequested: due,
+      titleFocusRequested: focusTitle,
     })),
   closeNote: () => set({ openNoteId: null, panelMode: 'side' }),
   setPanelMode: (panelMode) => set({ panelMode }),

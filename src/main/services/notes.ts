@@ -2,11 +2,20 @@ import { and, asc, eq, isNull } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import type { NoteColor, RemindOption } from '@shared/constants'
 import { dayKey, deriveRemindAt, normalizeDue } from '@shared/due'
-import type { NewNote, Note, NoteLink, NoteLinkPatch, NotePatch } from '@shared/types'
+import type {
+  NewNote,
+  Note,
+  NoteLink,
+  NoteLinkPatch,
+  NoteListQuery,
+  NoteListRow,
+  NotePatch,
+} from '@shared/types'
 import type { DbHandle } from '../db/client'
 import { deriveBody, textToBody } from '../db/derive'
 import { noteLinks, notes } from '../db/schema'
 import { setNoteDone } from './log'
+import { countOverdue, listNotes } from './noteList'
 
 /** Soft-deleted notes and drawings are purged for good this long after deletion. */
 export const PURGE_AFTER_MS = 30 * 24 * 60 * 60 * 1000
@@ -47,7 +56,17 @@ export class NotesService {
       .where(eq(noteLinks.noteId, id))
       .orderBy(asc(noteLinks.position))
       .all()
-    return toNote(row, links)
+    return toNote(row, links, onCanvas(this.handle(), id))
+  }
+
+  /** The List view's rows (PRODUCT §3.3). */
+  list(query: NoteListQuery): NoteListRow[] {
+    return listNotes(this.handle(), query)
+  }
+
+  /** How many open notes are overdue now. */
+  overdueCount(): number {
+    return countOverdue(this.handle(), this.now())
   }
 
   create(note: NewNote): Note {
@@ -297,11 +316,19 @@ export function purgeDeleted({ sqlite }: DbHandle, now: number): PurgeResult {
 
 type LinkRow = typeof noteLinks.$inferSelect
 
-export function toNote(row: NoteRow, links: LinkRow[]): Note {
+export function toNote(row: NoteRow, links: LinkRow[], onCanvas: boolean): Note {
   return {
     ...row,
     color: row.color as NoteColor,
     remind: row.remind as RemindOption,
     links: links.map((l) => ({ ...l })),
+    onCanvas,
   }
+}
+
+function onCanvas({ sqlite }: DbHandle, noteId: string): boolean {
+  return (
+    sqlite.prepare("SELECT 1 FROM canvas_items WHERE kind = 'note' AND ref_id = ?").get(noteId) !==
+    undefined
+  )
 }

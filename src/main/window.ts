@@ -11,10 +11,16 @@ export interface MainWindowOptions {
   /** The window state remembered in config.json. */
   saved: WindowState | null
   onStateChange: (state: WindowState) => void
+  /** Start hidden in the tray (`--hidden`, from start at login). */
+  hidden?: boolean
 }
 
 /** Creates the main window with the settings from UI_SPEC §1 and the security rules from ARCHITECTURE §2. */
-export function createMainWindow({ saved, onStateChange }: MainWindowOptions): BrowserWindow {
+export function createMainWindow({
+  saved,
+  onStateChange,
+  hidden = false,
+}: MainWindowOptions): BrowserWindow {
   const bounds = initialBounds(
     saved,
     screen.getAllDisplays().map((d) => d.workArea),
@@ -49,6 +55,7 @@ export function createMainWindow({ saved, onStateChange }: MainWindowOptions): B
   // call setVisualZoomLevelLimits. The canvas handles pinch itself (ctrl+wheel, phase 2).
 
   win.once('ready-to-show', () => {
+    if (hidden) return
     if (bounds.maximized) win.maximize()
     win.show()
   })

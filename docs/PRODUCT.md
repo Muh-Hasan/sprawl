@@ -115,13 +115,15 @@ All notes in one dense list, for when the canvas is too spread out to scan.
 - **Rows** show a done checkbox, the color dot, the title, the first line of the body (muted), and chips for checklist progress, due date and links. On the far right is the "Edited 2h ago" time.
 - **Filters** (segmented control at the top): **Open** (default), **Due** (has a due date, sorted soonest first, overdue at the top), **Done**, **All**. There's also a color filter (swatch dots, multi-select) and a text filter box that filters by title as you type.
 - **Sort** (Open and All): Recently edited (default), Created, Title A–Z, Due date.
-- **Due filter grouping:** Overdue · Today · Tomorrow · This week · Later, each with a small heading.
+- **Due filter grouping:** Overdue · Today · Tomorrow · This week · Later, each with a small heading. "This week" runs to Sunday (weeks start on Monday, as in the date picker's "Next week").
+- The **Done** tab lists the most recently done first; the sort applies to Open and All. Equal times go to the most recently created.
 - **Actions:**
   - Clicking the checkbox marks the note done (creating a log entry, as everywhere else).
   - Clicking a row opens the note panel.
   - "Show on canvas" (row hover button) switches to the canvas and flies to the card.
   - Notes that aren't on the canvas show a small "Not on canvas" tag, and "Place on canvas" puts them at the view center.
-  - ↑↓ moves through rows, Enter opens, Space toggles done, and Delete deletes (with an Undo toast).
+  - ↑↓ moves through rows, Enter opens, Space toggles done, and Delete deletes (with an Undo toast). When the selected row leaves the list, the row that takes its place is selected. ↓ in the filter box moves into the rows.
+  - Ticking done shows "Marked done · Undo", like the canvas.
 - **New note** button at the top. Notes created here aren't placed on the canvas until you choose "Place on canvas". This keeps the canvas tidy for people who prefer the list.
 
 ### 3.4 Daily log
@@ -160,7 +162,7 @@ A small always-on-top window for getting things out of your head fast, from any 
   - **Note** (default): the first line becomes the title and the rest becomes the body. The note is placed on the canvas near the center of the last view, offset so new captures don't stack exactly on top of each other.
   - **Log:** adds a manual entry to today's log at the current time.
   - Tab switches the mode.
-- Typing `!today`, `!tomorrow`, `!fri` or `!12dec` anywhere in a note capture sets the due date (and `!fri 15:00` also sets the time). The token is removed from the text.
+- Typing `!today`, `!tomorrow`, `!fri` or `!12dec` anywhere in a note capture sets the due date (and `!fri 15:00` also sets the time, with an "At due time" reminder). The token is removed from the text.
   - A weekday always means the next one, 1–7 days ahead and never today (use `!today` for today). So `!fri` typed on a Friday means next Friday.
   - A date without a year means this year, or next year if that date has already passed.
 - **Enter** saves and closes, **Shift+Enter** adds a new line, and **Esc** closes without saving (unless there's text, in which case Esc first clears it).
@@ -179,7 +181,8 @@ Native Windows notifications (toasts), and only for things the user asked for.
   - "Keep Sprawl running in the background" (on by default) means closing the window hides it to the **system tray** instead of quitting.
   - The tray icon menu has: Open Sprawl · Quick capture · Pause notifications for 1 hour · Quit.
   - "Start Sprawl when Windows starts" (off by default) launches it hidden in the tray.
-- **Missed reminders:** if the app wasn't running at reminder time, the next launch shows one summary notification ("2 reminders while you were away") instead of a burst of separate ones, and the overdue notes are marked in the List view.
+- **Missed reminders:** if the app wasn't running at reminder time, the next launch shows one summary notification ("2 reminders while you were away") instead of a burst of separate ones, and the overdue notes are marked in the List view. A single missed reminder shows as itself. The same goes after the PC wakes from sleep.
+- With **Due reminders** off, reminders that come due are skipped for good (turning it on again doesn't bring a burst). A **pause** holds them until it ends.
 - **Do not disturb:** Windows Focus Assist is respected automatically by the OS. "Pause notifications for 1 hour" is the app's own switch.
 - **Marking done** or clearing the due date cancels any pending reminder for that note.
 

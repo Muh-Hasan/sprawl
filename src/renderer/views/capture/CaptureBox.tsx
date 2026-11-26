@@ -1,0 +1,188 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { IconCalendarDue, IconCheck } from '@tabler/icons-react'
+import { CAPTURE_FLASH_MS } from '@shared/constants'
+import type { CaptureMode } from '@shared/api'
+import { dueChipLabel } from '@shared/due'
+import { parseCapture } from '@shared/parseCapture'
+import markLight from '@/assets/brand/sprawl-mark-light.svg'
+import { SegmentedControl } from '@/components/SegmentedControl'
+import { ShortcutKbd } from '@/components/ShortcutKbd'
+import { clockNow, useClockStore } from '@/stores/clockStore'
+import { CaptureText } from './CaptureText'
+import { useShowStore } from './showStore'
+
+const MODES = [
+  { value: 'note', label: 'Note' },
+  { value: 'log', label: 'Log' },
+] as const
+
+const PLACEHOLDER: Record<CaptureMode, string> = {
+  note: 'Write a note… first line is the title. Try !tomorrow 15:00',
+  log: 'What did you just do?',
+}
+
+/** Reports the card's height, so main fits the window to it. */
+function useFitWindow(ref: React.RefObject<HTMLElement | null>): void {
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const report = (): void => void window.sprawl.capture.setHeight(Math.ceil(el.offsetHeight))
+    const observer = new ResizeObserver(report)
+    observer.observe(el)
+    report()
+    return () => observer.disconnect()
+  }, [ref])
+}
+
+/**
+ * The quick-capture card (PRODUCT §3.7, UI_SPEC §5c). Note mode: the first line is the title and
+ * a `!date` token sets the due date (highlighted, with a preview chip). Log mode: a line in
+ * today's log. Enter saves, Shift+Enter adds a line, Tab switches the mode, Esc clears the text
+ * or closes. After saving, "Saved to canvas" or "Logged" shows for 600ms, then the window hides.
+ */
+export function CaptureBox() {
+  const showRev = useShowStore((s) => s.rev)
+  const now = useClockStore((s) => s.now)
+  const [mode, setMode] = useState<CaptureMode>('note')
+  const [text, setText] = useState('')
+  const [saved, setSaved] = useState<string | null>(null)
+  const [error, setError] = useState(false)
+  const card = useRef<HTMLDivElement>(null)
+  const input = useRef<HTMLTextAreaElement>(null)
+  const busy = useRef(false)
+  useFitWindow(card)
+
+  // Shown again: a fresh capture in the default mode, unless a draft is still there.
+  useEffect(
+    () =>
+      useShowStore.subscribe((s, prev) => {
+        if (s.rev === prev.rev) return
+        setSaved(null)
+        setError(false)
+        if ((input.current?.value ?? '') === '') setMode(s.mode)
+        requestAnimationFrame(() => {
+          const el = input.current
+          el?.focus()
+          el?.setSelectionRange(el.value.length, el.value.length)
+        })
+      }),
+    [],
+  )
+
+  const parsed = useMemo(
+    () => (mode === 'note' ? parseCapture(text, now) : null),
+    // `now` only matters at day boundaries; the clock store ticks every 30s.
+    [mode, text, now],
+  )
+
+  const hide = (): void => void window.sprawl.capture.hide()
+
+  const submit = async (): Promise<void> => {
+    if (busy.current || text.trim() === '') return
+    busy.current = true
+    try {
+      await window.sprawl.capture.submit({ mode, text })
+      setSaved(mode === 'note' ? 'Saved to canvas' : 'Logged')
+      setTimeout(() => {
+        hide()
+        setText('')
+        setSaved(null)
+        busy.current = false
+      }, CAPTURE_FLASH_MS)
+    } catch (err) {
+      console.error('[capture] save failed', err)
+      setError(true)
+      busy.current = false
+    }
+  }
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault()
+      void submit()
+    } else if (e.key === 'Tab') {
+      e.preventDefault()
+      setMode((m) => (m === 'note' ? 'log' : 'note'))
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      if (text !== '') setText('')
+      else hide()
+    }
+  }
+
+  const due = parsed?.due ?? null
+  return (
+    <div
+      ref={card}
+      data-testid="capture-root"
+      data-mode={mode}
+      className="flex flex-col overflow-hidden rounded-[14px] border border-border-strong bg-card shadow-(--shadow-popover)"
+    >
+      {saved !== null ? (
+        <div
+          data-testid="capture-saved"
+          className="flex h-[110px] items-center justify-center gap-2 text-sm animate-in fade-in-0 motion-safe:zoom-in-95"
+        >
+          <IconCheck className="size-4" stroke={2} aria-hidden />
+          {saved}
+        </div>
+      ) : (
+        <div
+          key={showRev}
+          className="flex flex-col gap-2.5 p-3.5 animate-in duration-[120ms] fade-in-0 motion-safe:slide-in-from-bottom-1.5"
+        >
+          <div className="flex items-center gap-2">
+            <img src={markLight} alt="" aria-hidden className="size-3.5" draggable={false} />
+            <SegmentedControl
+              label="Capture as"
+              size="xs"
+              value={mode}
+              options={MODES}
+              onChange={(m) => {
+                setMode(m)
+                input.current?.focus()
+              }}
+              testIdPrefix="capture-mode"
+            />
+            <span className="ml-auto flex items-center gap-1 text-2xs text-subtle-foreground">
+              <ShortcutKbd>Tab</ShortcutKbd>
+            </span>
+          </div>
+          <CaptureText
+            ref={input}
+            value={text}
+            placeholder={PLACEHOLDER[mode]}
+            token={parsed?.token ?? null}
+            onChange={(v) => {
+              setText(v)
+              setError(false)
+            }}
+            onKeyDown={onKeyDown}
+          />
+          {due && (
+            <span
+              data-testid="capture-due-chip"
+              className="inline-flex h-5 w-fit items-center gap-1 rounded-[5px] bg-muted px-1.5 text-2xs font-medium"
+            >
+              <IconCalendarDue className="size-3" stroke={2} aria-hidden />
+              Due {dueChipLabel(due.day, clockNow())}
+              {due.time !== null && ` · ${due.time}`}
+            </span>
+          )}
+          <div className="flex items-center justify-between text-2xs text-subtle-foreground">
+            {error ? (
+              <span data-testid="capture-error" className="text-destructive">
+                Couldn't save. Try again.
+              </span>
+            ) : (
+              <span>↵ save · shift ↵ new line · esc close</span>
+            )}
+            <span data-testid="capture-destination">
+              {mode === 'note' ? '→ Canvas' : '→ Today’s log'}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

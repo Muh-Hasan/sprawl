@@ -7,7 +7,8 @@ import { useSelectionStore } from '@/stores/selectionStore'
 import { useUiStore } from '@/stores/uiStore'
 import { showUndoToast } from '@/components/UndoToast'
 import { DUPLICATE_OFFSET, inputOf, NOTE_SIZE, restackOps, snapTo, topZ } from './ops'
-import { revealRect } from './camera'
+import { centerOnRect, revealRect } from './camera'
+import { renderedRect } from './measure'
 import { markFresh } from './fresh'
 import { screenToWorld, type Point } from './Viewport'
 
@@ -243,4 +244,26 @@ export function nudgeSelection(dx: number, dy: number) {
 
 export function endNudge() {
   if (selection().gesture === 'nudge') selection().commitGesture()
+}
+
+/**
+ * "Show on canvas" (the list, PRODUCT §3.3): switches to the canvas, then selects the note's
+ * card and glides to it once the canvas has loaded.
+ */
+export function showNoteOnCanvas(noteId: string): void {
+  const go = (): void => {
+    const id = canvas().cardOf(noteId)
+    const item = id === null ? undefined : canvas().items.get(id)
+    if (!item) return
+    selection().select([item.id])
+    centerOnRect(renderedRect(item))
+  }
+  const ui = useUiStore.getState()
+  if (ui.view === 'canvas' && canvas().ready) return go()
+  ui.setView('canvas')
+  const stop = useCanvasStore.subscribe((s) => {
+    if (!s.ready) return
+    stop()
+    go()
+  })
 }

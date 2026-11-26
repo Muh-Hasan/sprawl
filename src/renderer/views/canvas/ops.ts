@@ -1,3 +1,4 @@
+import { NOTE_CARD, SNAP_GRID } from '@shared/constants'
 import type {
   CanvasItem,
   CanvasItemInput,
@@ -16,10 +17,10 @@ import type {
 export type Items = ReadonlyMap<string, CanvasItem>
 
 /** Note card sizes (UI_SPEC §4.5). The height is a floor: the card grows to fit its content. */
-export const NOTE_SIZE = { w: 220, h: 64, minW: 160, maxW: 480, minH: 64, maxH: 320 } as const
+export const NOTE_SIZE = { ...NOTE_CARD, minW: 160, maxW: 480, minH: 64, maxH: 320 } as const
 
-/** Moves and resizes snap to this grid unless Alt is held (PRODUCT §3.1). */
-export const SNAP_GRID = 8
+/** Moves and resizes snap to the 8px grid unless Alt is held (PRODUCT §3.1). */
+export { SNAP_GRID }
 
 /** A duplicate lands this far down and right of its original. */
 export const DUPLICATE_OFFSET = 24

@@ -74,15 +74,23 @@ Read `PRODUCT.md` first. This document covers how to build it.
 
 **Windows app plumbing** (main process):
 - **AppUserModelId**, which Windows needs for toast notifications: `app.setAppUserModelId('dev.sprawl.app')` in the packaged app, where the installer creates the Start-menu shortcut with the same ID. In dev (`!app.isPackaged`) use `process.execPath` instead, or toasts won't show.
-- **Deep links:** `app.setAsDefaultProtocolClient('sprawl')`, **only in the packaged app** (the installer registers it too), so `npm run dev` and E2E runs never repoint your machine's handler at a dev build. Phase 6 may add a dev registration for clicking real toasts. Links look like `sprawl://note/<id>` and `sprawl://list/due`.
+- **Deep links:** `app.setAsDefaultProtocolClient('sprawl')` in the packaged app (the installer registers it too). `npm run dev` registers the dev build (`electron.exe` plus the app folder) so real toasts can be clicked while testing; `SPRAWL_NO_PROTOCOL=1` skips that. E2E runs never register. Links look like `sprawl://note/<id>` and `sprawl://list/due`.
 - `app.requestSingleInstanceLock()`: a second launch (or a protocol activation from a toast) focuses the existing instance. Its `second-instance` handler reads any `sprawl://` URL from argv and routes it (`nav:open-note`, `nav:open-list-due`). The first instance also checks its own argv on startup.
 - **No application menu:** `Menu.setApplicationMenu(null)`. Otherwise Electron's default menu takes Ctrl+0, Ctrl+= and Ctrl+- (zooming the whole UI instead of the canvas), Ctrl+R (reload) and Ctrl+Shift+I (devtools). Electron already disables visual (pinch) zoom by default, so don't re-enable it. Register the canvas wheel listener with `{ passive: false }`, so it can `preventDefault()` the ctrl+wheel events a touchpad pinch sends.
-- **Tray:** a `Tray` with `resources/tray.ico` (multi-size, from `brand/tray-source.svg`) and the menu from PRODUCT §3.8. Closing the main window hides it when "keep running" is on, and real quit happens only from the tray menu.
-- **Start at login:** `app.setLoginItemSettings({ openAtLogin, args: ['--hidden'] })`. With `--hidden`, the app starts in the tray and no window is shown.
-- **Quick capture window:** a second `BrowserWindow` (frameless, `alwaysOnTop`, `skipTaskbar`, transparent background with rounded corners, 520 wide) created once at startup and kept hidden. The global shortcut shows and focuses it, and blurring it or pressing Esc hides it. It has its own small renderer entry (`src/renderer/capture.html`) that uses the same preload, API and styles.
-  - **Hiding without activating the main window:** when a focused window hides, Windows hands focus to the app's next window, which would bring the main window forward. Call `minimize()` and then `hide()` on the capture window, so focus goes back to the app the user was in. Restore it (un-minimize) before the next show. Check this by hand (tests/MANUAL.md).
-- **Reminder scheduler** (`services/reminders.ts`): on startup and on every note save that touches due or remind fields, compute the next `remind_at` and arm a single `setTimeout` for the soonest one (capped at 24h, then recomputed). It also re-checks on a 60s interval and on `powerMonitor` `resume` and `unlock-screen`, because timers drift or stop while the PC sleeps. Fired reminders set `reminded_at` so they never fire twice.
-- **Toasts** (`services/notify.ts`): use Electron `Notification` with a custom `toastXml` whose `launch` attribute is the deep link and whose `activationType="protocol"`. Clicking the toast then works even from Action Center after the app has restarted, not only while the toast is visible.
+- **Tray** (`main/tray.ts`): a `Tray` with `resources/tray.ico` (multi-size, from `brand/tray-source.svg`) and the menu from PRODUCT §3.8. It exists whenever Sprawl runs (not in E2E). Closing the main window hides it when "keep running" is on (`closeGuard`'s `hideInstead`; nothing needs saving, the renderer keeps running); otherwise, and after Quit, the window really closes and the app quits (the hidden capture window would otherwise keep it alive).
+- **Start at login:** `app.setLoginItemSettings({ openAtLogin, path: process.execPath, args: ['--hidden'] })`, synced on startup and when the setting changes. Unpackaged, the args start with the app folder, so the login item runs the last `npm run build`. With `--hidden`, the app starts in the tray and no window is shown.
+- **Quick capture window** (`main/captureWindow.ts`): a second `BrowserWindow` (frameless, `alwaysOnTop` at the `screen-saver` level so it shows over fullscreen apps, `skipTaskbar`, transparent background with rounded corners, 520 wide) created hidden once the main window has painted (`ready-to-show`, so it never slows the first paint, and it's always the app's second window). The global shortcut shows and focuses it, and blurring it or pressing Esc hides it. It has its own small renderer entry (`src/renderer/capture.html`) that uses the same preload, API and styles.
+  - **Hiding without activating the main window:** when a focused window hides, Windows hands focus to the app's next window, which would bring the main window forward. Call `minimize()` and then `hide()` on the capture window, so focus goes back to the app the user was in (its opacity goes to 0 first, so the minimize doesn't animate). Restore it (un-minimize) before the next show. Check this by hand (tests/MANUAL.md).
+  - Each show sends `capture:show { mode }` (the default mode), places it on the monitor under the pointer and focuses it. The renderer reports its card's height (`capture.setHeight`, clamped to 112–320). Blur hides it, except in E2E mode.
+  - **The global shortcut** (`CaptureShortcut`): `globalShortcut.register` returning false means another app holds the combo; the old one is kept. While Settings records a new one, `system.pauseShortcut(true)` lets go of it so the keys reach the recorder. Not registered in E2E mode.
+- **Reminder scheduler** (`services/reminders.ts`): on startup and after every write to notes or the canvas (and when the reminder settings change), show what's due and arm a single `setTimeout` for the soonest next thing (a reminder, an overdue nudge, the morning summary, the end of a pause), capped at 24h, then recomputed. It also re-checks on a 60s interval and on `powerMonitor` `resume` and `unlock-screen`, because timers drift or stop while the PC sleeps. Fired reminders set `reminded_at` so they never fire twice. As built (phase 6):
+  - **Missed:** anything more than 2 minutes behind its time is late (Sprawl wasn't running, the PC slept, a pause). One late item shows as itself; two or more become one "While you were away" toast ("2 reminders · 1 now overdue") that opens the List view's Due tab.
+  - **Overdue nudge:** reuses `reminded_at`, no extra column: a note with a reminder whose `reminded_at` is before its due moment (its time, or the end of its day) gets one toast when it becomes overdue, and `reminded_at` moves past the due moment. "At due time" reminders never nudge (the reminder already said it). Changing the due fields clears `reminded_at`, so both come back.
+  - **Due reminders off** skips (marks) reminders as they come due, so turning it back on doesn't bring a burst. **A pause** (`notificationsPausedUntil`) holds them until it ends.
+  - **Morning summary:** once a day at its time (or on the first check after it, on a later start), if anything is due today or overdue; the day it went out is the `morningSummarySentOn` setting.
+  - On the first check after a vault opens, and when the timezone changes, every pending `remind_at` is re-derived from the wall-clock due fields.
+  - The tray follows every check (overdue count in the tooltip, Pause/Resume).
+- **Toasts** (`services/notify.ts`): use Electron `Notification` with a custom `toastXml` whose `launch` attribute is the deep link and whose `activationType="protocol"`. Clicking the toast then works even from Action Center after the app has restarted, not only while the toast is visible. A `click` handler routes the link too, in case Windows hands the click to the running app; toasts are kept referenced until they close. In E2E mode a `RecordingNotifier` keeps them instead.
 - **"Notifications blocked" detection:** Electron has no API for this, so read the registry with `reg query` (child_process). Notifications are blocked if `HKCU\Software\Microsoft\Windows\CurrentVersion\PushNotifications` has `ToastEnabled = 0` (all apps off), or `HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\<AUMID>` has `Enabled = 0` (Sprawl off). A missing key means allowed.
 
 **Security:** `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` and a strict CSP. External links open via `shell.openExternal`, and only `http`, `https` and `mailto` are allowed. The renderer never touches `fs` or the DB directly.
@@ -214,7 +222,7 @@ CREATE TABLE note_activity (          -- for "carried over"
 CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL); -- JSON values
 -- vault keys (stored here): viewport {x,y,zoom}, showDone, snap, autoBackup, panelWidth,
 --       listFilter {tab,colors,sort}, remindersOn, morningSummary {on, time}, notificationsPausedUntil,
---       lastCaptureOffset (stagger for the next captured note)
+--       morningSummarySentOn (the day it last went out), lastCaptureOffset (stagger for the next captured note)
 -- machine keys (stored in config.json, not here): captureShortcut, captureDefaultMode, keepInTray, openAtLogin
 -- The settings service hides the split: settings.get/set route each key to the right store.
 
@@ -307,9 +315,17 @@ interface SprawlAPI {
 - **Injectable clock** (`services/clock.ts`): every service reads `now()` from one `Clock`, and so does the purge. In E2E mode, `setNow` fixes it and broadcasts `clock:changed { now }`, and the renderer's `clockNow()` (`stores/clockStore.ts`) uses that instead of `Date.now()`, so "today" agrees on both sides. The renderer marks `<html data-fixed-now>` so a test can wait for it.
 - **Close handshake:** the window's first `close` is held (`main/closeGuard.ts`). Main sends `app:before-close`; the renderer runs every registered flush (`lib/flushes.ts`: the note autosave, the canvas batch, the viewport and the panel width) and answers `app.readyToClose()`. IPC from one window is handled in order, so the writes land before the window closes. A renderer that doesn't answer gets 2s. (The `beforeunload` flushes alone also passed the autosave test; the handshake makes the order explicit rather than relying on Chromium's timing.)
 
-Main also sends these events to the renderer: `vault:changed` (after a vault switch), `nav:open-note` (from a notification click, tray or deep link), `nav:open-list-due` (from the morning summary click), `data:changed` (after a capture or a reminder state change, so open views refresh), and `clock:changed` (E2E only, when a test fixes the clock).
+- **List, capture and system API (phase 6):**
+  - `notes.list(query)`: `{ tab, colors, text, sort }` → `NoteListRow[]` (`services/noteList.ts`; the SQL builder is pure and unit-tested). Deleted notes never show. Open = not done; Due = not done with a due date, soonest first (a time before "sometime that day"); Done = by done time, newest first; All. The sort applies to Open and All. Colors are an `IN` list (none = all), the title filter a `LIKE` with `%` and `_` escaped. Ties go to the most recently created. Each row has `firstLine` (of `body_text`), the chip counts, the due fields, `doneAt`, the times and `onCanvas`.
+  - `notes.overdueCount()` (the List badge and the tray tooltip) and `notes.placeOnCanvas(id, at?)`: a default-size card centered on `at` (snapped, on top), or on the middle of the last view (the saved viewport and the main window's size) when the renderer doesn't know it. A note that has a card keeps it. `Note` carries `onCanvas`.
+  - `capture.submit({ mode, text })`, `capture.hide()`, `capture.setHeight(px)`: only the capture window may call them. A note capture runs in one transaction: the note (first line the title, the rest the body), its `!date` (with a time it also gets an "At due time" reminder, so "Pay rent !fri 10:00" reminds on Friday at 10:00), and its card near the middle of the last view, stepped 24px over 8 places (`lastCaptureOffset`). A log capture joins its lines into one manual entry. Then main sends `data:changed`.
+  - `system.testNotification()`, `notificationStatus()`, `openNotificationSettings()`, `setShortcut(accel)` (registers, then saves; `{ ok: false, conflict: true }` when another app holds it), `pauseShortcut(paused)` and `pauseNotifications(minutes)` (0 resumes).
+  - Shortcuts are Electron accelerators checked by `shared/accelerator.ts` (`Ctrl`, `Alt`, `Shift`, `Super` in that order, then one key; Ctrl, Alt or Super is required, so a shortcut never swallows typing).
+  - Writes (`notes.*` changes, `canvas.apply`, `placeOnCanvas`, captures) re-check reminders and the tray in main afterwards. Settings that main acts on (`remindersOn`, `morningSummary`, `notificationsPausedUntil`, `captureShortcut`, `openAtLogin`) go through the settings service's `onChange`.
 
-`!date` parsing for quick capture lives in `shared/parseCapture.ts` (pure function, unit-tested): `!today`, `!tomorrow`, weekday names (the next one, 1–7 days ahead, never today), `!12dec` and `!dec12` (this year, or next year if already past), with an optional `HH:mm` after it.
+Main also sends these events to the renderer: `vault:changed` (after a vault switch), `nav:open-note` (from a notification click, tray or deep link), `nav:open-list-due` (from the morning summary click), `data:changed` (after a capture, so the main window's canvas, list and log refetch), `capture:show { mode }` (to the capture window), and `clock:changed` (E2E only, when a test fixes the clock). The main window subscribes to the `nav:*` and `data:changed` events before React renders (`lib/mainEvents.ts`), so a link routed as soon as the page loads isn't lost.
+
+`!date` parsing for quick capture lives in `shared/parseCapture.ts` (pure function, unit-tested): `!today`, `!tomorrow`, weekday names (`!fri`, `!friday`; the next one, 1–7 days ahead, never today), `!12dec` and `!dec12` (also full month names; this year, or next year if already past; a 29 Feb goes to the next leap year), with an optional `HH:mm` after it. The token must start a word and end at a space, the end or punctuation; the first one that names a date counts, and anything else with a `!` stays as typed. A time that isn't one (`25:00`) stays in the text.
 
 ---
 
@@ -317,20 +333,22 @@ Main also sends these events to the renderer: `vault:changed` (after a vault swi
 
 ```
 src/
-  main/            index.ts, env.ts, config.ts (config.json), window.ts, windowState.ts, closeGuard.ts, deepLinks.ts, protocol.ts
+  main/            index.ts, env.ts, config.ts (config.json), window.ts, windowState.ts, closeGuard.ts, deepLinks.ts, protocol.ts,
+                   captureWindow.ts (the capture window + global shortcut), tray.ts
     db/            client.ts, schema.ts, migrations/, derive.ts
     services/      notes.ts, canvas.ts, drawings.ts, files.ts, log.ts (+ setNoteDone), search.ts, vault.ts, export.ts,
-                   reminders.ts, notify.ts, tray.ts, capture.ts (window + global shortcut), clock.ts (injectable now())
+                   reminders.ts, notify.ts, capture.ts (saving a capture), noteList.ts (the List query), clock.ts (injectable now())
     ipc/           register.ts (one handler per API method), validate.ts (zod parsing, IpcInputError), testHooks.ts (E2E only)
   preload/         index.ts
-  shared/          api.ts, types.ts, constants.ts, schemas.ts (zod + the settings schema), deepLink.ts, parseCapture.ts, due.ts,
+  shared/          api.ts, types.ts, constants.ts, schemas.ts (zod + the settings schema), deepLink.ts, parseCapture.ts, due.ts, accelerator.ts,
                    blocknoteSchema.ts (blocks + ref inline; used by the editor and the export)
   renderer/
     main.tsx, App.tsx (onboarding or shell), Shell.tsx (rail + views, Ctrl+1–4), capture.html + capture.tsx (quick-capture window entry)
     styles/        globals.css (Tailwind v4 + shadcn theme vars, dark only + Sprawl tokens)
     stores/        canvasStore.ts, selectionStore.ts (selection, title and body editing, gestures), uiStore.ts (view, open note, panel mode), vaultStore.ts,
                    noteStore.ts (the open note and its autosave), clockStore.ts (a shared 30s clock, clockNow()), historyStore.ts,
-                   logStore.ts (the log's day and a revision bumped when notes are marked done)
+                   logStore.ts (the log's day and a revision bumped when notes are marked done),
+                   listStore.ts (the list filter, remembered in settings, and a revision for the list and the overdue badge)
     views/
       canvas/      Canvas.tsx, Viewport.ts (pan/zoom math), spatial.ts (culling grid), ItemLayer.tsx,
                    ops.ts (op reduce/invert, snap, resize), actions.ts (canvas commands), camera.ts (gliding zoom),
@@ -339,24 +357,26 @@ src/
                    items/{NoteCard,CardTitle,CardBody,CardChips,ResizeHandles,DrawingCard,ImageCard,LinkCard}.tsx,
                    Toolbar.tsx, SelectionToolbar.tsx, SelectionBox.tsx, Marquee.tsx, ContextMenu.tsx, ZoomControls.tsx, StatusPill.tsx,
                    useCanvasKeys.ts
-      list/        ListView.tsx, ListFilters.tsx, NoteRow.tsx, DueGroups.tsx
-      capture/     CaptureBox.tsx
+      list/        ListView.tsx, ListFilters.tsx, NoteRow.tsx, listLogic.ts (due groups, row times), listActions.ts,
+                   useListRows.ts, useListKeys.ts
+      capture/     CaptureBox.tsx, CaptureText.tsx (the text box with the token highlight), showStore.ts
       note/        NotePanel.tsx, PanelHeader.tsx, NoteTitle.tsx, Editor.tsx (BlockNote setup, lazy) + editor.css,
                    MetaSection.tsx, MetaRow.tsx, LinksSection.tsx, PanelFooter.tsx, RefInline.tsx
       log/         LogView.tsx, LogHeader.tsx, WeekStrip.tsx, MonthPicker.tsx, Entry.tsx, Composer.tsx, CarriedOver.tsx,
                    days.ts (week strip and day stepping), useLogData.ts
       drawings/    DrawingsGrid.tsx, DrawingEditor.tsx (lazy Excalidraw)
       search/      CommandPalette.tsx
-      settings/    SettingsView.tsx
+      settings/    SettingsView.tsx, SettingsLayout.tsx, useSettings.ts, VaultSection.tsx, NotificationsSection.tsx,
+                   CaptureSection.tsx (Quick capture and System)
       onboarding/  ChooseVault.tsx
     components/
       ui/          shadcn components: generated by the CLI, NEVER edited by hand
                    ── Sprawl components below wrap ui/ ──
                    Rail.tsx, TopBar.tsx, IconButton.tsx, HintTooltip.tsx, ShortcutKbd.tsx, EmptyState.tsx, Chip.tsx, DuePicker.tsx (Popover + Calendar + time + remind select),
                    Toaster.tsx (Sonner, dark, bottom center), UndoToast.tsx (showUndoToast),
-                   ShortcutRecorder.tsx,
+                   ShortcutRecorder.tsx, SegmentedControl.tsx (ToggleGroup, one of N),
                    ColorSwatches.tsx, ConfirmDialog.tsx (AlertDialog), InlineMarkdown.tsx (manual log entries)
-    lib/           utils.ts (shadcn cn()), debounce.ts, dates.ts, shortcuts.ts, noteColors.ts, flushes.ts, inlineMarkdown.ts,
+    lib/           utils.ts (shadcn cn()), debounce.ts, dates.ts, shortcuts.ts, noteColors.ts, flushes.ts, inlineMarkdown.ts, mainEvents.ts,
                    time.ts (HH:mm parsing and nudging), urls.ts (normalizeUrl, domains), reorder.ts
 ```
 
@@ -462,9 +482,13 @@ vitest.config.ts
   - `SPRAWL_E2E`: turns on E2E mode (below).
 - **E2E mode** (`SPRAWL_E2E=1`) registers test-only hooks. They live on a main-process global (`globalThis.__sprawlTest`, `ipc/testHooks.ts`) that Playwright calls through `app.evaluate`, not on IPC channels, so nothing test-only is reachable from a renderer:
   - `setNow(ms)` fixes the injectable clock, so day, log and reminder tests are deterministic. The fixture's `setNow(app, page, ms)` also waits for the renderer to follow (`clock:changed`).
-  - `test:notifications()` returns the notifications that *would* have been shown. In E2E mode `notify.ts` records instead of calling the real `Notification`, so tests don't spam the desktop and stay reliable.
-  - `test:triggerCapture()` opens the capture window as if the global shortcut was pressed. Real global shortcuts aren't pressed in tests.
-  - The tray and start-at-login are disabled in E2E mode, and `keepInTray` is forced off, so closing the window quits the app (otherwise `autosave.spec.ts` and `relaunch.spec.ts` would hang).
+  - `setNow` also runs a reminder check, so advancing the clock is enough to fire what's due.
+  - `notifications()` returns the notifications that *would* have been shown. In E2E mode `notify.ts` records instead of calling the real `Notification`, so tests don't spam the desktop and stay reliable.
+  - `triggerCapture()` opens the capture window as if the global shortcut was pressed (and tells it the fixed clock). Real global shortcuts aren't registered in tests. `captureVisible()` says whether it's shown.
+  - `openLink(url)` routes a `sprawl://` link as if a toast was clicked; `checkReminders()` runs a check; `trayState()` is what the tray would show.
+  - The fixture's helpers (`notifications`, `openLink`, `openCapture`, `captureVisible`, `trayState`) wrap these. `openCapture` returns the capture window's page and watches its console too.
+  - The tray and start-at-login are disabled in E2E mode, and `keepInTray` is forced off, so closing the window quits the app (otherwise `autosave.spec.ts` and `relaunch.spec.ts` would hang). The capture window doesn't hide on blur.
+  - The capture window is the app's second `BrowserWindow`: specs that reach for the main window in main pick it by title (the capture window's is "Sprawl quick capture" from the start), not `getAllWindows()[0]`.
   - The protocol registration (`setAsDefaultProtocolClient`) is skipped, so tests don't change your machine's `sprawl://` handler.
 - **Console check:** the fixture fails a test on any console error or warning, except the ones in `tests/e2e/known-warnings.ts`. That list is only for third-party libraries (BlockNote, Excalidraw, React dev notices), and each entry has a comment saying why it's there.
 - Tests select elements with `data-testid` attributes. Every interactive element named in UI_SPEC gets one, such as `canvas`, `note-card`, `list-row`, `note-panel-title`, `log-entry` and `capture-input`.

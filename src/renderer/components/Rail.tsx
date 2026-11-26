@@ -7,8 +7,11 @@ import {
   IconSettings,
   type TablerIcon,
 } from '@tabler/icons-react'
+import { useEffect, useState } from 'react'
 import markLight from '@/assets/brand/sprawl-mark-light.svg'
 import { NAV_SHORTCUTS, shortcutLabel } from '@/lib/shortcuts'
+import { useClockStore } from '@/stores/clockStore'
+import { useListStore } from '@/stores/listStore'
 import { useUiStore, type View } from '@/stores/uiStore'
 import { IconButton } from './IconButton'
 
@@ -38,6 +41,44 @@ const NAV: readonly NavItem[] = [
 
 const SETTINGS_ITEM: NavItem = { view: 'settings', label: 'Settings', icon: IconSettings }
 
+/**
+ * How many open notes are overdue, for the List badge. Asked again as the clock ticks, when notes
+ * change, and when the panel closes or the view changes (an edited due date).
+ */
+function useOverdueCount(): number {
+  const now = useClockStore((s) => s.now)
+  const rev = useListStore((s) => s.rev)
+  const view = useUiStore((s) => s.view)
+  const openNoteId = useUiStore((s) => s.openNoteId)
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    let live = true
+    void window.sprawl.notes
+      .overdueCount()
+      .then((n) => live && setCount(n))
+      .catch(() => undefined)
+    return () => {
+      live = false
+    }
+  }, [now, rev, view, openNoteId])
+  return count
+}
+
+/** The List icon's overdue count (UI_SPEC §2): a small pill, only when something is overdue. */
+function OverdueBadge() {
+  const count = useOverdueCount()
+  if (count === 0) return null
+  return (
+    <span
+      data-testid="rail-list-badge"
+      aria-label={`${count} overdue`}
+      className="pointer-events-none absolute top-0 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-due-overdue-bg px-1 text-2xs leading-none font-semibold text-due-overdue"
+    >
+      {count > 99 ? '99+' : count}
+    </span>
+  )
+}
+
 function RailButton({ item }: { item: NavItem }) {
   const active = useUiStore((s) => s.view === item.view)
   const setView = useUiStore((s) => s.setView)
@@ -60,6 +101,7 @@ function RailButton({ item }: { item: NavItem }) {
         className="size-9 rounded-lg [&_svg:not([class*='size-'])]:size-[18px]"
         onClick={() => setView(item.view)}
       />
+      {item.view === 'list' && <OverdueBadge />}
     </div>
   )
 }
