@@ -1,6 +1,8 @@
 # Sprawl — Build Phases
 
-Build in this order, one phase at a time. There are 13 phases (0–12) plus a **dogfood checkpoint** after phase 6. Everything is built and tested on **Windows**. **Don't start a phase until the previous one's exit check is fully green.** Each phase ends with a commit tagged `phase-N`.
+Build in this order, one phase at a time. There are 13 phases (0–12). Everything is built and tested on **Windows**. **Don't start a phase until the previous one's exit check is fully green.**
+
+A phase is a roadmap milestone, not a branch. It ships as several small pull requests, one per feature or fix, named by what they change (see the Git workflow in `CLAUDE.md`). Phase numbers never appear in branch names, commit messages or PR titles.
 
 Each phase has the same five parts:
 - **Goal:** one line.
@@ -188,16 +190,6 @@ Rules for every phase:
 - Closing the window keeps Sprawl in the tray, so reminders still arrive.
 
 **Exit check:** all the automated tests pass, and every item in the phase 6 section of `tests/MANUAL.md` has been ticked on your Windows machine.
-
----
-
-## ✋ Dogfood checkpoint (after phase 6)
-**Stop building for 1–2 weeks and use Sprawl for real, every day.**
-
-- Keep a running `docs/DOGFOOD.md` with three lists: *annoying*, *missing* and *never used*.
-- Fix small annoyances (crashes, papercuts, wrong defaults) as `phase-6.x` patch commits, with tests for each fix.
-- At the end, review the list and **update PRODUCT.md and PHASES.md** before starting phase 7. Cut, reorder or add based on what you actually felt. It's expected and fine if phases 7–12 change.
-- Only move on once Sprawl has fully replaced your old notes and to-do setup for at least a week.
 
 ---
 
