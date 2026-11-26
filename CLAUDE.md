@@ -5,7 +5,7 @@ Sprawl is a local-first Electron desktop app that combines sticky notes, to-dos,
 **Platform: Windows 10/11 only for v1.** Develop, test and package on Windows. Keep code portable where it's free (`path.join`, `app.getPath`), but never spend time on macOS or Linux specifics.
 
 ## Read before working
-0. `docs/PHASES.md`: **the build plan. Work through it phase by phase.**
+0. `docs/PHASES.md`: **the build plan. Work through it phase by phase.** Right now the **design refresh** is in progress: `docs/DESIGN_REFRESH.md` is its tracker. Start each session there and take the first unticked PR.
 1. `docs/PRODUCT.md`: what to build, behaviors, shortcuts, scope and the "not in v1" list.
 2. `docs/ARCHITECTURE.md`: stack, processes, data model, IPC API, folder layout and build order.
 3. `docs/DESIGN_SYSTEM.md`: brand, tokens, type, motion and the drop-in `globals.css`. The app is **strictly monochrome**: the only color is on sticky notes (plus red for overdue and destructive).
