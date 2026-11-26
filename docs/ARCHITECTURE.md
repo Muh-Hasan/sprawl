@@ -439,7 +439,7 @@ Export runs in main. Use `ServerBlockNoteEditor` from `@blocknote/server-util` (
 
 ## 8. Build order
 
-See **`PHASES.md`**. It lists 13 phases (0–12) plus a dogfood checkpoint after phase 6, each with what to build, the tests to write, what the app should do by the end, and an exit check. Follow it in order.
+See **`PHASES.md`**. It lists 13 phases (0–12), each with what to build, the tests to write, what the app should do by the end, and an exit check. Follow it in order.
 
 ## 9. Quality bar
 - TypeScript strict, with no `any` in shared types.

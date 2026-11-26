@@ -1,6 +1,6 @@
 # Sprawl — Progress
 
-A running log of the build, one phase per session (see `PHASES.md`). Read this first at the start of every session. Each phase records what was built, how the exit check was verified, decisions that differ from or add to the docs, and anything left open.
+A running log of the build, one phase per session (see `PHASES.md`). Read this first at the start of every session. Each phase records what was built, how it was verified, decisions that differ from or add to the docs, and anything left open.
 
 | Phase | Status | Date |
 |---|---|---|
@@ -10,15 +10,14 @@ A running log of the build, one phase per session (see `PHASES.md`). Read this f
 | 3 — Notes on the canvas | ✅ Done | 2026-11-25 |
 | 4 — Note panel and editor | ✅ Done | 2026-11-25 |
 | 5 — Done and the daily log | ✅ Done | 2026-11-25 |
-| 6 — Daily driver: list view, quick capture and reminders | 🟡 Built; manual checks pending | 2026-11-26 |
-| Dogfood checkpoint | Not started | |
+| 6 — Daily driver: list view, quick capture and reminders | ✅ Merged (PR #7) | 2026-11-26 |
 | 7–12 | Not started | |
 
 ---
 
-## Phase 6 — Daily driver: list view, quick capture and reminders 🟡
+## Phase 6 — Daily driver: list view, quick capture and reminders ✅
 
-**Branch:** `feat/phase-6-daily-driver` → PR into `main` (no tag). Automated checks are green; the phase 6 section of `tests/MANUAL.md` still has to be ticked on Windows before merging (exit check).
+**Branch:** `feat/phase-6-daily-driver` → merged into `main` (PR #7). The last phase shipped as a single phase branch; from phase 7 on, work ships as small conventional branches and PRs (see `CLAUDE.md`).
 
 ### Built
 - **List view** (`views/list/`):
@@ -69,7 +68,6 @@ A running log of the build, one phase per session (see `PHASES.md`). Read this f
 - **Title focus for a new list note** is a request the panel takes when the note shows (`titleFocusRequested`), not a timed poll.
 
 ### Open / carried forward
-- **Before merging:** tick `tests/MANUAL.md` phase 6 on Windows (I couldn't drive real global shortcuts, toasts, sleep or a reboot).
 - The `notificationStatus` per-app check reads the key under the AppUserModelId, which only exists for the packaged app (`dev.sprawl.app`); unpackaged, only the "all notifications off" switch is detected. Re-check in phase 12.
 - Start at login in dev runs the last `npm run build`. The installed app is the real check (phase 12).
 - Pointer-drag E2E tests (panel resize, canvas resize and marquee) can occasionally register a partial drag when the machine is busy. Worth hardening (wait a frame between drag steps) if it keeps showing up.
@@ -199,7 +197,7 @@ A running log of the build, one phase per session (see `PHASES.md`). Read this f
 - `noteStore.ts` takes the place of ARCHITECTURE's planned `notesCache.ts`.
 
 ### Open / carried forward
-- **Possible follow-up:** cards show their body as plain text when you're not writing in them (from `body_text`), so checkboxes and headings appear as plain lines. Showing the formatting on idle cards would mean loading each card's body JSON; worth deciding after the dogfood checkpoint.
+- **Possible follow-up:** cards show their body as plain text when you're not writing in them (from `body_text`), so checkboxes and headings appear as plain lines. Showing the formatting on idle cards would mean loading each card's body JSON; worth deciding before polish (phase 12).
 - **Phase 5:** Mark done in the panel footer (Ctrl+Enter), "Done · 18:30 · Undo", the hover check button on cards, and Mark done in the menu.
 - **Phase 6:** the reminders stored now start firing; the `nav:open-note` handler; "Note · not on canvas" in the panel breadcrumb; Duplicate and Delete in the panel for notes without a card.
 - **Phase 7:** image and file blocks in the `/` menu, with the upload handler.

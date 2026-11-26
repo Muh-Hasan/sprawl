@@ -17,8 +17,7 @@ UI is built with **shadcn/ui + Tailwind v4**, dark only. Use the shadcn componen
 **Never edit files in `src/renderer/components/ui/`.** They come from the shadcn CLI only (`npx shadcn@latest add …`). To extend or customize one, create a new component in `src/renderer/components/` that wraps it. Theme changes go through CSS variables in `globals.css`. Never hard-code colors in components; use theme classes such as `bg-background`, `text-muted-foreground`, `bg-note-sand` and `border-border`.
 
 ## How to work
-- Build **one phase at a time**, following `docs/PHASES.md` in order. Don't start the next phase until the current phase's **Exit check** is fully green. Ship each finished phase through a pull request (see Git workflow).
-- **After phase 6, stop at the dogfood checkpoint** (PHASES.md). Don't start phase 7 until the user says the checkpoint is done and the docs have been updated.
+- `docs/PHASES.md` is the roadmap. Work through its phases in order and don't start the next phase until the current phase's **Exit check** is fully green. A phase is a milestone only: it ships as several small branches and pull requests, one per feature or fix (see Git workflow).
 - At the start of each phase, re-read that phase in PHASES.md and the doc sections it points to. At the end, confirm each "It should" line by hand and report what you checked.
 - Stay inside the listed stack. Ask before adding a dependency that isn't listed there.
 - Nothing from the "Not in v1" list gets built, even partially.
@@ -32,15 +31,23 @@ UI is built with **shadcn/ui + Tailwind v4**, dark only. Use the shadcn componen
 - Add a `data-testid` to every interactive element you build.
 
 ## Git workflow
-- **Never commit to `main` directly.** Every unit of work gets its own branch from an up-to-date `main`: `feat/phase-N-<name>` for a phase; `fix/…` or `patch/…` for fixes, including the dogfood `phase-6.x` patches; and `chore/…` or `docs/…` for the rest.
-- Commits are meaningful: a few logical commits per branch, with no WIP or "fix typo" noise. shadcn adds go in their own `chore(ui): shadcn add …` commit.
-- When the work is done and `npm run check` is green:
-  1. Push the branch.
-  2. Open a pull request into `main` (`gh pr create`). A phase PR's title is `phase-N: <name>`, and its body summarizes what was built and how the exit check was verified.
-  3. Merge it with a merge commit (`gh pr merge --merge`, never squash or rebase), titled `phase-N: <name>` for a phase.
-  4. Delete the branch locally and on GitHub, then pull `main`.
-- **No git tags.** Ask before creating any (for example `v0.1.0` in phase 12).
+Standard open source flow: small branches, Conventional Commits, one pull request per change, squash-merged into `main`.
+
+**Branches.** Never commit to `main` directly. Branch from an up-to-date `main` as `<type>/<short-kebab-description>`, describing the change, never the phase:
+- `feat/` a new feature (`feat/image-paste`), `fix/` a bug fix (`fix/capture-focus-return`), `perf/`, `refactor/`, `test/`, `docs/`, `ci/`, `build/` (packaging, deps), `chore/` (tooling and the rest).
+- One feature or fix per branch. A phase is split into several branches; never put a whole phase on one branch.
+
+**Commits.** [Conventional Commits](https://www.conventionalcommits.org): `type(scope): subject`, imperative and lowercase, e.g. `feat(list): group due notes by day`. Scopes are areas of the app (`canvas`, `list`, `capture`, `reminders`, `editor`, `log`, `settings`, `db`, `ipc`, `ui`, `deps`, `ci`). A few logical commits per branch, with no WIP or "fix typo" noise. shadcn adds go in their own `chore(ui): shadcn add …` commit. Never mention phase numbers.
+
+**Pull requests.** When the work is done and `npm run check` is green:
+1. Push the branch and open a PR into `main` (`gh pr create` when `gh` is installed; otherwise give the user the title and body to paste).
+2. **Title:** a Conventional Commit line, since it becomes the squash commit on `main` (`feat(capture): add quick capture window`).
+3. **Body:** follow `.github/pull_request_template.md`. Explain what the PR does and why, then list everything it added, changed, removed and fixed, with screenshots for UI changes and the tests it adds. Don't mention phases or exit checks.
+4. Merge with **squash** (`gh pr merge --squash`), keeping the PR title as the commit subject.
+5. Delete the branch locally and on GitHub, then pull `main`.
+
+**No git tags.** Ask before creating any (for example `v0.1.0` at release).
 
 ## Checks before each commit
 - `npm run check` (typecheck, lint, unit tests and e2e tests) must pass.
-- `npm run dev`, then exercise the phase's "It should" by hand.
+- `npm run dev`, then exercise what you changed by hand.
