@@ -254,6 +254,8 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 
 ## 7. Drawings
 
+> **Being replaced.** Drawings move onto the canvas and the Drawings page goes away (PRODUCT §3.5). Phase 8 rewrites this section to the `DrawInPlace` and `List` mockups in `docs/DESIGN_REFRESH.md`. The grid below becomes the Drawings side of List.
+
 ### 7.1 Grid
 - Padding 24px, a CSS grid of `repeat(auto-fill, minmax(220px, 1fr))` with 16px gaps.
 - **Tile:** `--card` background, border, radius 10, and a thumbnail area with a 4:3 aspect ratio on `--inset`.
