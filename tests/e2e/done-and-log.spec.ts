@@ -33,10 +33,10 @@ test.describe('done and the daily log', () => {
     const day = await today(page)
     await expect(page.getByTestId('status-pill')).toContainText('Nothing done yet')
 
-    // One click on the hover check.
+    // Select it, then one click on Mark done in the selection toolbar.
     const card = canvas.card('Call the bank')
-    await card.hover()
-    await card.getByTestId('note-card-done').click()
+    await card.click()
+    await page.getByTestId('selection-done').click()
     await expect(canvas.card('Call the bank')).toHaveCount(0)
     await expect(canvas.cards).toHaveCount(1)
     await expect(page.getByText('Marked done', { exact: true })).toBeVisible()
@@ -132,8 +132,9 @@ test.describe('done and the daily log', () => {
       'text-decoration-line',
       'line-through',
     )
-    await keys.hover()
-    await keys.getByTestId('note-card-done').click()
+    await keys.click()
+    await expect(page.getByTestId('selection-done')).toHaveAttribute('aria-label', 'Mark not done')
+    await page.getByTestId('selection-done').click()
     await expect(keys).not.toHaveAttribute('data-done')
     expect(await page.evaluate(() => self.sprawl.settings.get('showDone'))).toBe(true)
 

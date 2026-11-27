@@ -134,7 +134,7 @@ export function NotePanel() {
               <NoteTitle onEnter={focusBody} />
               <div ref={body} className="mt-4 min-h-24">
                 <Suspense fallback={<div data-testid="note-editor-loading" className="h-24" />}>
-                  <Editor key={note.id} bodyJson={note.bodyJson} />
+                  <Editor key={note.id} bodyJson={note.bodyJson} noteId={note.id} />
                 </Suspense>
               </div>
               <MetaSection />

@@ -33,12 +33,13 @@ test.describe('note panel', () => {
     await canvas.seed([{ key: 'a', x: 100, y: 120, title: 'Homepage redo' }])
     const card = canvas.cards.first()
 
-    // A single click only selects; Enter opens the panel.
+    // A single click only selects; Enter opens the panel, with the cursor in the body.
     await card.click()
     await expect(panel.root).toHaveCount(0)
     await page.keyboard.press('Enter')
     await panel.ready()
     await expect(panel.title).toHaveValue('Homepage redo')
+    await expect(panel.body).toBeFocused()
 
     // The title updates the card as it's typed.
     await panel.title.fill('Homepage v2')
@@ -174,15 +175,19 @@ test.describe('note panel', () => {
       { key: 'b', x: 100, y: 320, title: 'Other' },
     ])
     const card = canvas.card('Plan')
-    // The hover button opens the panel.
-    await card.hover()
-    await card.getByTestId('note-card-open').click()
+    // Open in the selection toolbar opens the panel with the cursor in the body: typing goes
+    // straight into the note, not to the toolbar or the canvas's keys.
+    await card.click()
+    await page.getByTestId('selection-open').click()
     await panel.ready()
     await expect(panel.title).toHaveValue('Plan')
+    await expect(panel.body).toBeFocused()
 
     // Type in the panel, then go straight to the card, before the panel's typing is saved: the
     // card starts from what the panel shows, never from the stale stored body.
-    await panel.typeLines('# Hero', 'from the panel')
+    await page.keyboard.type('# Hero')
+    await page.keyboard.press('Enter')
+    await page.keyboard.type('from the panel')
     await dblclickBody(page, card)
     const cardEditor = card.getByTestId('note-card-editor')
     await expect(cardEditor).toBeVisible()

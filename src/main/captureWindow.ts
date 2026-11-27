@@ -3,6 +3,7 @@ import { BrowserWindow, globalShortcut, screen, type WebContents } from 'electro
 import { CAPTURE_WINDOW } from '@shared/constants'
 import type { CaptureMode } from '@shared/api'
 import { TEXT_SIZE_ZOOM, toWindowPx, type TextSize } from '@shared/textSize'
+import { e2ePosition } from './window'
 
 /**
  * The quick-capture window (ARCHITECTURE §2, UI_SPEC §5c): created hidden at startup, so the
@@ -90,16 +91,18 @@ export class CaptureWindow {
     return { width: toWindowPx(CAPTURE_WINDOW.width, size), height: toWindowPx(css, size) }
   }
 
-  /** Centered on the monitor under the pointer, its top at 22% of that monitor's height. */
+  /**
+   * Centered on the monitor under the pointer, its top at 22% of that monitor's height. In E2E
+   * it goes to the right edge like the main window, out of the way of your work.
+   */
   private place(win: BrowserWindow): void {
     const { workArea } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
     const { width, height } = this.size()
-    win.setBounds({
-      x: Math.round(workArea.x + (workArea.width - width) / 2),
-      y: Math.round(workArea.y + workArea.height * CAPTURE_WINDOW.top),
-      width,
-      height,
-    })
+    const y = Math.round(workArea.y + workArea.height * CAPTURE_WINDOW.top)
+    const x = this.options.e2e
+      ? e2ePosition(width).x
+      : Math.round(workArea.x + (workArea.width - width) / 2)
+    win.setBounds({ x, y, width, height })
   }
 
   show(): void {

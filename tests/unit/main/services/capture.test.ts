@@ -5,7 +5,6 @@ import { CaptureService, viewCenterOf } from '../../../../src/main/services/capt
 import { LogService } from '../../../../src/main/services/log'
 import { NotesService } from '../../../../src/main/services/notes'
 import { localInstant } from '../../../../src/shared/due'
-import { defaultSettings, type SettingKey, type Settings } from '../../../../src/shared/schemas'
 
 const savedTz = process.env['TZ']
 afterAll(() => {
@@ -15,7 +14,6 @@ afterAll(() => {
 
 let handle: DbHandle
 let now = 0
-let settings: Settings
 let notes: NotesService
 let canvas: CanvasService
 let log: LogService
@@ -25,7 +23,6 @@ beforeEach(() => {
   process.env['TZ'] = 'Europe/London'
   handle = openDatabase(':memory:')
   now = localInstant('2026-11-25', '10:00') // a Wednesday
-  settings = defaultSettings()
   const deps = { db: () => handle, now: () => now }
   notes = new NotesService(deps)
   canvas = new CanvasService(deps)
@@ -34,10 +31,6 @@ beforeEach(() => {
     ...deps,
     canvas,
     log,
-    settings: {
-      get: <K extends SettingKey>(key: K) => settings[key],
-      set: <K extends SettingKey>(key: K, value: Settings[K]) => void (settings[key] = value),
-    },
     viewCenter: () => ({ x: 400, y: 300 }),
   })
 })
@@ -56,7 +49,7 @@ describe('a note capture', () => {
       remindAt: localInstant('2026-11-27', '10:00'),
       onCanvas: true,
     })
-    expect(canvas.cardOf(noteId!)).toMatchObject({ x: 288, y: 272, w: 220, h: 64 })
+    expect(canvas.cardOf(noteId!)).toMatchObject({ x: 280, y: 272, w: 240, h: 64 })
   })
 
   it('sets no reminder for a day without a time, and nothing without a token', () => {
@@ -66,12 +59,24 @@ describe('a note capture', () => {
     expect(b).toMatchObject({ title: 'Just a thought!', dueDay: null, remind: 'none' })
   })
 
-  it('steps each capture 24px down and right, over 8 places', () => {
-    const xs: number[] = []
-    for (let i = 0; i < 9; i++) xs.push(canvas.cardOf(capture.submit('note', `n${i}`).noteId!)!.x)
-    expect(xs.slice(0, 3)).toEqual([288, 312, 336])
-    expect(xs[8]).toBe(xs[0])
-    expect(settings.lastCaptureOffset).toBe(1)
+  it('fans captures out 40px down and right instead of stacking them', () => {
+    const spots: { x: number; y: number }[] = []
+    for (let i = 0; i < 10; i++) {
+      const { x, y } = canvas.cardOf(capture.submit('note', `n${i}`).noteId!)!
+      spots.push({ x, y })
+    }
+    expect(spots.slice(0, 3)).toEqual([
+      { x: 280, y: 272 },
+      { x: 320, y: 312 },
+      { x: 360, y: 352 },
+    ])
+    expect(new Set(spots.map((s) => `${s.x},${s.y}`)).size).toBe(10)
+  })
+
+  it('goes back to the middle once the spot there is free again', () => {
+    const first = canvas.cardOf(capture.submit('note', 'a').noteId!)!
+    canvas.apply([{ op: 'update', id: first.id, patch: { x: 1000, y: 1000 } }])
+    expect(canvas.cardOf(capture.submit('note', 'b').noteId!)).toMatchObject({ x: 280, y: 272 })
   })
 
   it('stacks new captures on top', () => {

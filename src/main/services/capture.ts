@@ -1,5 +1,4 @@
 import { nanoid } from 'nanoid'
-import { CAPTURE_STAGGER } from '@shared/constants'
 import type { CaptureMode } from '@shared/api'
 import { dayKey, deriveRemindAt } from '@shared/due'
 import { parseCapture, splitCapture } from '@shared/parseCapture'
@@ -7,14 +6,12 @@ import type { DbHandle } from '../db/client'
 import type { CanvasService } from './canvas'
 import type { LogService } from './log'
 import { insertNote } from './notes'
-import type { ReminderSettings } from './reminders'
 
 export interface CaptureDeps {
   db: () => DbHandle | null
   now: () => number
   canvas: CanvasService
   log: LogService
-  settings: ReminderSettings
   /** The world point at the middle of the last canvas view. */
   viewCenter: () => { x: number; y: number }
 }
@@ -27,8 +24,8 @@ export interface CaptureResult {
 /**
  * Saving a quick capture (PRODUCT §3.7). Note mode: the first line is the title and the rest the
  * body; a `!date` token sets the due date, and with a time also a reminder at that time ("Pay
- * rent !fri 10:00" reminds on Friday at 10:00). The card goes near the middle of the last view,
- * stepped 24px down and right of the last capture over 8 places, so captures don't stack. Log
+ * rent !fri 10:00" reminds on Friday at 10:00). The card goes in the middle of the last view, or
+ * 40px down and right of a card already there, so captures fan out instead of stacking. Log
  * mode adds the text (its lines joined) to today's log at the current time.
  */
 export class CaptureService {
@@ -46,9 +43,7 @@ export class CaptureService {
     const parsed = parseCapture(text, now)
     const { title, body } = splitCapture(parsed.text)
     const id = nanoid()
-    const step = this.deps.settings.get('lastCaptureOffset') % CAPTURE_STAGGER.places
     const center = this.deps.viewCenter()
-    const offset = step * CAPTURE_STAGGER.step
 
     handle.sqlite.transaction(() => {
       insertNote(handle, { id, title, color: 'stone', ...(body ? { body } : {}) }, now)
@@ -64,9 +59,8 @@ export class CaptureService {
           )
           .run(due.dueDay, due.dueTime, due.remind, deriveRemindAt(due), id)
       }
-      this.deps.canvas.placeNote(id, { x: center.x + offset, y: center.y + offset })
+      this.deps.canvas.placeNote(id, center)
     })()
-    this.deps.settings.set('lastCaptureOffset', (step + 1) % CAPTURE_STAGGER.places)
     return { ok: true, noteId: id }
   }
 }

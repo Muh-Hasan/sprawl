@@ -112,7 +112,7 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
   - Empty canvas: the start tiles from `EmptyCanvas`. "Open the welcome board" places five sample notes that each teach one thing (it replaces UI_SPEC §10's single welcome note).
   - Status pill and zoom control restyled; a `?` button opens the shortcuts sheet once R13 lands (until then it's hidden).
   - Specs: UI_SPEC §4.1–4.4, §10. Tests: update canvas specs that click the toolbar.
-- [ ] **R7 · `feat/card-redesign`**: cards and selection.
+- [x] **R7 · `feat/card-redesign`**: cards and selection.
   - New card size, padding, radius and shadow; lift on hover and drag; hover actions (Done, Open) at 26px; the stronger "soon" due chip; the selection outline and floating selection toolbar from `Main`.
   - Fix: pasted text and quick-captured notes land at the cursor or view center and fan out instead of stacking.
   - Specs: UI_SPEC §4.5, §4.9, DESIGN_SYSTEM §8. Tests: update card and selection specs.

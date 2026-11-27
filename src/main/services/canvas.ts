@@ -1,6 +1,7 @@
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { NOTE_CARD, PREVIEW_CHARS, SNAP_GRID, type NoteColor } from '@shared/constants'
+import { cascadeSpot } from '@shared/placement'
 import type {
   CanvasApplyResult,
   CanvasItem,
@@ -66,7 +67,9 @@ export class CanvasService {
 
   /**
    * Gives a live note a card of the default size, centered on `center` (world, snapped to the
-   * grid) and on top of the others. A note that already has a card keeps it, where it is.
+   * grid) and on top of the others. If a card already sits there, it steps 40px down and right
+   * until the spot is free, so a run of captures fans out. A note that already has a card keeps
+   * it, where it is.
    */
   placeNote(noteId: string, center: { x: number; y: number }): CanvasItem {
     const handle = this.handle()
@@ -77,6 +80,8 @@ export class CanvasService {
       const top = handle.sqlite.prepare('SELECT max(z) FROM canvas_items').pluck().get() as
         number | null
       const snap = (v: number): number => Math.round(v / SNAP_GRID) * SNAP_GRID
+      const start = { x: snap(center.x - NOTE_CARD.w / 2), y: snap(center.y - NOTE_CARD.h / 2) }
+      const { x, y } = cascadeSpot(start, this.load())
       return this.insertItem(
         {
           id: nanoid(),
@@ -84,8 +89,8 @@ export class CanvasService {
           refId: noteId,
           url: null,
           title: null,
-          x: snap(center.x - NOTE_CARD.w / 2),
-          y: snap(center.y - NOTE_CARD.h / 2),
+          x,
+          y,
           w: NOTE_CARD.w,
           h: NOTE_CARD.h,
           z: (top ?? -1) + 1,

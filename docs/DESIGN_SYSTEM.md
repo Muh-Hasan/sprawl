@@ -59,7 +59,7 @@ Short, plain and lowercase-friendly. Use sentence case everywhere, with no excla
 |---|---|---|
 | `--destructive` | `#F87171` | Delete actions, error text |
 | `--due-overdue` | `#F87171` | Overdue chip text, with `--due-overdue-bg` `#2A1517` |
-| `--due-soon` | `#FAFAFA` | Due-soon chip: white text on `#27272A` (monochrome emphasis) |
+| `--due-soon` | `#FAFAFA` | Due-soon chip: white text on `rgb(250 250 250 / .14)` (monochrome emphasis) |
 | `--due-later` | `#A1A1AA` | Later chip (more than 2 days away): muted text on `#1F1F23` |
 | `--success` | `#FAFAFA` | Done checkmarks stay white. Don't add green. |
 
@@ -131,8 +131,8 @@ Three fonts, all bundled locally as `.woff2` with `@font-face` in `globals.css` 
   - Quick capture window: 14px (`rounded-capture`).
 - **Borders:** 1px `--border` everywhere. No double borders, and panels separate from the canvas with one hairline.
 - **Shadows** are used sparingly, because on black most depth comes from surface steps:
-  - `--shadow-card`: `0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.4)`
-  - `--shadow-lift` (hovered or dragged card): `0 12px 32px -8px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06)`
+  - `--shadow-card`: `0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px -6px rgb(0 0 0 / 0.5)`
+  - `--shadow-lift` (hovered or dragged card): `0 1px 0 0 rgb(255 255 255 / 0.05) inset, 0 16px 36px -10px rgb(0 0 0 / 0.75), 0 0 0 1px rgb(255 255 255 / 0.07)`
   - `--shadow-popover`: `0 16px 48px -12px rgb(0 0 0 / 0.8), 0 0 0 1px #27272A`
   - `--shadow-palette` (the command palette): `0 32px 80px -20px rgb(0 0 0 / 0.9)`
   - `--shadow-toolbar` (the canvas toolbar): `0 20px 48px -16px rgb(0 0 0 / 0.85), 0 1px 0 rgb(255 255 255 / 0.04) inset`
@@ -185,7 +185,7 @@ Three fonts, all bundled locally as `.woff2` with `@font-face` in `globals.css` 
 - **Durations:** fast 120ms (hover, press, chips), base 180ms (popovers, panel), slow 260ms (view switch fade).
 - **Easing:** `cubic-bezier(0.2, 0.8, 0.2, 1)` (ease-out) for entering, and `cubic-bezier(0.4, 0, 1, 1)` for exiting.
 - **Note panel:** slides in 16px plus fades over 180ms.
-- **Card lift on drag:** scale 1.02 with `--shadow-lift` over 120ms.
+- **Card lift:** on hover a card rises 2px with `--shadow-lift` over 180ms ease-out; while dragged it also scales to 1.02. Reduced motion keeps the shadow and drops the movement.
 - **New card:** fades in over 150ms. Opacity only: a scale-in moves the card's hit area while it runs, so a quick grab right after creating a note would miss.
 - **Mark done:** the card fades to 0 and scales to 0.96 over 180ms, then is removed. The log gets a one-time row highlight (a `--muted` background fading out over 600ms).
 - **Canvas:** wheel, pinch and drag pans and zooms are direct (never animated). Commands glide, FigJam-style: zoom steps and reset (Ctrl+= / Ctrl+- / Ctrl+0 and the pill) over 180ms, and "zoom to fit", "jump to note" and bringing a new note into view over 240ms, all ease-out. A repeated zoom step builds on where the glide is heading, so a held Ctrl+= never lags.
@@ -215,9 +215,9 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 
 ## 8. Patterns
 
-- **Selection on the canvas:** a 1.5px `--selection` outline with a 2px offset, plus 8×8 white square handles with 2px radius and a 1px `--background` border at the corners. Multi-select adds a dashed bounding box in `--border-strong`.
-- **Hover on cards:** border goes up one step (note `border` → `border-hover`, +12% white) plus `--shadow-lift`, with no movement.
-- **Selection toolbar (FigJam-style):** a floating `--card` bar (border, radius 12, `--shadow-popover`, 4px padding, 44px tall) centered 14px above the selection, or below it when there's no room under the top bar. It holds the six color swatches, a divider, then Duplicate, Bring to front, Send to back and Delete (36×36 ghost icon buttons with tooltips). It hides while a move, resize or marquee runs.
+- **Selection on the canvas:** a 1.5px `--selection` outline 3.5px outside the card (it follows the card's radius), plus 9×9 handles at its corners: `--background` squares with a 1.5px `--selection` border and 3px radius. All of it stays the same size on screen at any zoom. Multi-select adds a dashed bounding box in `--border-strong`, 8px out.
+- **Hover on cards:** border goes up one step (note `border` → `border-hover`, +12% white), `--shadow-lift`, and the card lifts 2px (a 2px strip under the lifted card keeps the pointer on it, so the bottom edge doesn't flicker).
+- **Selection toolbar (FigJam-style):** a floating `--card` bar (border, radius 12, `--shadow-popover`, 4px padding, 44px tall) centered 14px above the selection, or below it when there's no room under the top bar. It holds the six color swatches, a divider, Open and Mark done, a divider, then Duplicate and Delete (36×36 ghost icon buttons with tooltips). It hides while a move, resize or marquee runs.
 - **Done state (when "Show done" is on):** 45% opacity and a struck-through title.
 - **Focus:** every interactive element has a visible `--ring` focus. Never remove an outline without replacing it.
 - **Empty states:** a Tabler icon at 20px in `--subtle-foreground`, one 14px line, and an optional ghost button. No illustrations.
@@ -299,7 +299,7 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   --due-overdue: #f87171;
   --due-overdue-bg: #2a1517;
   --due-soon: #fafafa;
-  --due-soon-bg: #27272a;
+  --due-soon-bg: rgb(250 250 250 / 0.14);
   --due-later: #a1a1aa;
   --due-later-bg: #1f1f23;
 
@@ -339,7 +339,7 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   /* selected text inside a note card: a little stronger than the app-wide one on tinted cards */
   --note-text-selection: rgb(255 255 255 / 0.24);
   /* Card chips (UI_SPEC §4.5): a faint white over the note color, in the note's text color. */
-  --note-chip: rgb(255 255 255 / 0.06);
+  --note-chip: rgb(255 255 255 / 0.08);
 
   /* canvas marquee (UI_SPEC §4.9) */
   --marquee-fill: rgb(250 250 250 / 0.04);
@@ -348,8 +348,12 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   --overlay: rgb(0 0 0 / 0.55);
 
   /* elevation & motion */
-  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-lift: 0 12px 32px -8px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --shadow-card:
+    0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 1px 2px rgb(0 0 0 / 0.4),
+    0 4px 12px -6px rgb(0 0 0 / 0.5);
+  --shadow-lift:
+    0 1px 0 0 rgb(255 255 255 / 0.05) inset, 0 16px 36px -10px rgb(0 0 0 / 0.75),
+    0 0 0 1px rgb(255 255 255 / 0.07);
   --shadow-popover: 0 16px 48px -12px rgb(0 0 0 / 0.8), 0 0 0 1px #27272a;
   --shadow-palette: 0 32px 80px -20px rgb(0 0 0 / 0.9);
   --shadow-toolbar: 0 20px 48px -16px rgb(0 0 0 / 0.85), 0 1px 0 rgb(255 255 255 / 0.04) inset;

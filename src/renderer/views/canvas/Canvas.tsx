@@ -10,6 +10,7 @@ import { CanvasContextMenu } from './ContextMenu'
 import { EmptyCanvas } from './EmptyCanvas'
 import { ItemLayer } from './ItemLayer'
 import { Marquee } from './Marquee'
+import { usePointerSpot } from './pointer'
 import { SelectionToolbar } from './SelectionToolbar'
 import { StatusPill } from './StatusPill'
 import { Toolbar } from './Toolbar'
@@ -165,6 +166,7 @@ export function Canvas() {
   useViewportGestures(rootRef)
   useSelectGestures(rootRef)
   useCanvasKeys()
+  usePointerSpot(rootRef)
 
   return (
     <CanvasContextMenu>

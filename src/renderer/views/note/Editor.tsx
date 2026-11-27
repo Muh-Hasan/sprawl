@@ -17,9 +17,10 @@ import {
   type SideMenuProps,
 } from '@blocknote/react'
 import { BlockNoteView } from '@blocknote/shadcn'
-import { useEffect, useId, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef } from 'react'
 import { noteSchema } from '@shared/blocknoteSchema'
 import { currentBody, liveBody, useNoteStore } from '@/stores/noteStore'
+import { useFocusRequest } from './useFocusRequest'
 
 /**
  * The note body editor (PRODUCT §3.2, UI_SPEC §5.1): BlockNote with Sprawl's block schema,
@@ -123,9 +124,19 @@ interface EditorProps {
   variant?: 'panel' | 'card'
   /** Put the cursor at the end of the body on mount. */
   autoFocus?: boolean
+  /**
+   * In the panel, the open note: the editor puts the cursor at the end of the body when the
+   * note is opened asking for it (`uiStore.openNote`'s `focus: 'body'`).
+   */
+  noteId?: string
 }
 
-export default function Editor({ bodyJson, variant = 'panel', autoFocus = false }: EditorProps) {
+export default function Editor({
+  bodyJson,
+  variant = 'panel',
+  autoFocus = false,
+  noteId,
+}: EditorProps) {
   const card = variant === 'card'
   const editor = useCreateBlockNote({
     schema: noteSchema,
@@ -147,12 +158,15 @@ export default function Editor({ bodyJson, variant = 'panel', autoFocus = false 
     [editor],
   )
 
-  useEffect(() => {
-    if (!autoFocus) return
+  const focusEnd = useCallback(() => {
     const last = editor.document.at(-1)
     if (last) editor.setTextCursorPosition(last, 'end')
     editor.focus()
-  }, [editor, autoFocus])
+  }, [editor])
+  useEffect(() => {
+    if (autoFocus) focusEnd()
+  }, [focusEnd, autoFocus])
+  useFocusRequest(noteId, 'body', focusEnd)
 
   // Follow the other editor of this note (the panel while typing in the card, or the other way
   // round). Its document is copied in once per frame; the copy isn't reported back as an edit.

@@ -69,5 +69,5 @@ export async function createListNote(title = ''): Promise<void> {
   const id = nanoid()
   await window.sprawl.notes.create({ id, title, color: 'stone' })
   changed()
-  useUiStore.getState().openNote(id, { focusTitle: title === '' })
+  useUiStore.getState().openNote(id, { focus: title === '' ? 'title' : undefined })
 }

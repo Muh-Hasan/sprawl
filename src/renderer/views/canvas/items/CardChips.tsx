@@ -12,7 +12,7 @@ export function CardChips({ note }: { note: CardNote }) {
   const { checkTotal, checkDone, linkCount, attachCount, dueDay } = note
   if (checkTotal === 0 && linkCount === 0 && attachCount === 0 && dueDay === null) return null
   return (
-    <div data-testid="note-card-chips" className="mt-2.5 flex flex-wrap gap-1.5">
+    <div data-testid="note-card-chips" className="mt-3 flex flex-wrap gap-1.5">
       {checkTotal > 0 && (
         <Chip data-testid="chip-checklist" icon={IconChecklist}>
           {checkDone}/{checkTotal}

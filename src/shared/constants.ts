@@ -55,18 +55,16 @@ export const AUTOSAVE_MS = 500
 export const PREVIEW_CHARS = 400
 
 /** A new note card's size in world px (the canvas's NOTE_SIZE starts from it). */
-export const NOTE_CARD = { w: 220, h: 64 } as const
+export const NOTE_CARD = { w: 240, h: 64 } as const
 
 /** The canvas snap grid in world px. */
 export const SNAP_GRID = 8
 
 /**
  * The quick-capture window (UI_SPEC §5c): 520px wide, its height fitted to the card, its top at
- * 22% of the monitor. Captured notes step this far down and right of the last one, over this
- * many places, so they don't stack exactly.
+ * 22% of the monitor.
  */
 export const CAPTURE_WINDOW = { width: 520, minHeight: 112, maxHeight: 320, top: 0.22 } as const
-export const CAPTURE_STAGGER = { step: 24, places: 8 } as const
 
 /** How long the "Saved to canvas" / "Logged" flash shows before the capture window hides. */
 export const CAPTURE_FLASH_MS = 600

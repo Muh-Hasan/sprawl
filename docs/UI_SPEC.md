@@ -108,29 +108,29 @@ When the canvas has no cards at all, a start screen floats in the middle of the 
 
 ### 4.5 Note card
 ```
-┌──────────────────────────────┐  w default 220 (min 160, max 480)
-│ Homepage redo           ●    │  h auto by content (min 64, max 320), unless resized
-│ Hero needs a shorter line.   │  ● = due/overdue indicator dot (optional)
+┌──────────────────────────────┐  w default 240 (min 160, max 480)
+│ Homepage redo                │  h auto by content (min 64, max 320), unless resized
+│ Hero needs a shorter line.   │
 │ Show 3 featured projects…    │
 │ ┌──────┐ ┌──────┐ ┌──────┐   │
 │ │ 3/5  │ │🔗 2  │ │Fri   │   │
 │ └──────┘ └──────┘ └──────┘   │
 └──────────────────────────────┘
 ```
-- **Box:** note `bg`, 1px note `border`, radius 10, padding 12px 14px, `--shadow-card`.
+- **Box:** note `bg`, 1px note `border`, radius 12, padding 14px 16px, `--shadow-card`.
 - **Height:** the stored `h` is a floor. The card grows with its content up to the 320 max, and a resize sets the floor (so it can be made taller than its content, not shorter).
 - **New card:** fades in (DESIGN_SYSTEM §6). If it's off screen or the view is below 100%, the view glides to it (240ms), zooming in to 100% around it.
-- **Title:** `text-card-title` (13/18, 600) in note `text`, max 2 lines with an ellipsis. An empty title shows "Untitled" in note `text` at 60% opacity (subtle text is too low-contrast on note colors; DESIGN_SYSTEM §2.3).
-- **Preview:** `text-xs` at note `text` with 70% opacity, an 8px gap after the title, max 4 lines with a fade-out ellipsis. It's hidden if the body is empty.
-- **Chips row:** 10px top margin, 6px gap, wraps.
-  - Chips are 20px tall, radius 5, padding 0 6px, `text-2xs` 500, with a 12px icon and 4px gap. The background is `rgb(255 255 255 / .06)` in note `text` color.
+- **Title:** `text-card-title` (15/21, 600) in note `text`, max 2 lines with an ellipsis. An empty title shows "Untitled" in note `text` at 60% opacity (subtle text is too low-contrast on note colors; DESIGN_SYSTEM §2.3).
+- **Preview:** `text-xs` at note `text` with 75% opacity, a 6px gap after the title, max 4 lines with a fade-out ellipsis. It's hidden if the body is empty.
+- **Chips row:** 12px top margin, 6px gap, wraps.
+  - Chips are 22px tall, radius 6, padding 0 7px, `text-2xs` 500, with a 13px icon and 5px gap. The background is `--note-chip` (`rgb(255 255 255 / .08)`) in note `text` color.
   - **Checklist chip:** `IconChecklist` plus "3/5", shown only if the checklist total is above 0.
   - **Links chip:** `IconLink` plus the count.
   - **Attachments chip:** `IconPaperclip` plus the count.
-  - **Due chip:** `IconCalendarDue` plus a label ("Today", "Tomorrow", "Fri" or "12 Dec"), styled by state: overdue is `--due-overdue` text on `--due-overdue-bg`, soon is `--due-soon` on `--due-soon-bg`, and later is `--due-later` on `--due-later-bg`.
-- **Hover:** border +8% white and `--shadow-lift`. An **open button** fades in at the top-right (20×20, ghost, `IconArrowsDiagonal` 14px, 70% then 100% on its own hover; tooltip "Open · Enter") and opens the panel; a **checkmark button** sits left of it (20×20, ghost, `IconCheck` 14px, 4px gap; tooltip "Mark done · Ctrl+Enter") for a one-click Mark done. The title keeps 36px clear for the two. testids `note-card-open`, `note-card-done`.
-- **Done:** the card fades to 0 and shrinks to 0.96 over 180ms (ease-in), then hides. With "Show done" on, a done card stays at 50% opacity with its title struck through, and its checkmark button (shown at 70%, "Mark not done") undoes it.
-- **Dragging:** scale 1.02, `--shadow-lift`, 95% opacity.
+  - **Due chip:** `IconCalendarDue` plus a label ("Today", "Tomorrow", "Fri" or "12 Dec"), styled by state: overdue is `--due-overdue` text on `--due-overdue-bg`, soon (today or tomorrow) is the stronger `--due-soon` white on `--due-soon-bg` (`rgb(250 250 250 / .14)`), and later is `--due-later` on `--due-later-bg`.
+- **Hover:** the card lifts 2px with `--shadow-lift` and its border goes one step up (180ms ease-out). The card has no buttons of its own: Open and Mark done are in the selection toolbar (§4.9), so the title uses the card's full width.
+- **Done:** the card fades to 0 and shrinks to 0.96 over 180ms (ease-in), then hides. With "Show done" on, a done card stays at 50% opacity with its title struck through, and the selection toolbar's Mark not done undoes it.
+- **Dragging:** lifted like hover (2px up, `--shadow-lift`), plus scale 1.02 and 95% opacity.
 - **Below 40% zoom:** the card shows only the title at 13px, with the chips and preview hidden.
 - **Editing the title on the card:** double-clicking the title text (not the card) edits it inline: a textarea that grows with the text, with the old title selected. Enter saves (one `notes.update`) and moves on to writing the body; clicking away saves; Esc puts the old title back.
 - **Writing in the card:** double-clicking anywhere else on the card replaces the preview with the note editor's quick `card` variant, styled exactly like the preview (`text-xs`, 18px line height, the note's text color at 70%, no gap between lines). Plain text: no markdown shortcuts except `[] ` (an 11px checkbox in the text color), no `/` menu, no toolbar, no drag handle, and pasted markdown stays text. A heading made in the panel shows as bold card-size text. The card grows with the text to its 320 max and then scrolls (the wheel scrolls the text, not the canvas, until it reaches the end). Esc or focus going elsewhere ends it, and the preview comes back. An open panel stays open and follows the typing live.
@@ -153,9 +153,14 @@ When the canvas has no cards at all, a start screen floats in the middle of the 
 - Clicking selects it, and **Ctrl+click** or the hover `IconExternalLink` button opens the URL in the browser.
 
 ### 4.9 Selection and marquee
-- Selection follows DESIGN_SYSTEM §8. A click selects, Shift+click toggles, a click on empty space clears; resize handles show on a single selected card.
+- Selection follows DESIGN_SYSTEM §8: a 1.5px white outline 3.5px outside the card. A click selects, Shift+click toggles, a click on empty space clears; resize handles show at the outline's four corners on a single selected card.
 - **Marquee:** a 1px `--muted-foreground` dashed outline with a `--marquee-fill` (`rgb(250 250 250 / .04)`) fill. It selects every card it touches (Shift+drag adds to the selection).
-- **Selection toolbar:** over selected notes, FigJam-style (DESIGN_SYSTEM §8): the six color swatches, then Duplicate, Bring to front, Send to back and Delete. testids `selection-toolbar`, `selection-color-<color>`, `selection-duplicate`, `selection-front`, `selection-back`, `selection-delete`.
+- **Selection toolbar:** over selected notes, FigJam-style (DESIGN_SYSTEM §8), centered 14px above the selection. Every button has a tooltip with its name and shortcut:
+  - The six color swatches (20px, the card color in a ring of the bright hue); the current color has a white ring.
+  - A divider, then **Open** (`IconArrowsDiagonal`, one note only; Enter) and **Mark done** (`IconCheck`, every selected note; Ctrl+Enter). When they're all done (only with "Show done") it reads **Mark not done** and shows pressed.
+  - A divider, then **Duplicate** (Ctrl+D) and **Delete** (Del). Bring to front and Send to back stay in the context menu and on Ctrl+] / Ctrl+[.
+  - A click doesn't take focus (mousedown is cancelled on the toolbar), so keys keep going to the canvas; Tab still reaches the buttons.
+  - testids `selection-toolbar`, `selection-color-<color>`, `selection-open`, `selection-done`, `selection-duplicate`, `selection-delete`.
 
 ### 4.10 Context menu
 Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatches inline in the submenu, 16px circles) · Due date… · Pin to sidebar (Unpin from sidebar when pinned) · ─ · Duplicate (Ctrl+D) · Bring to front (Ctrl+]) · Send to back (Ctrl+[) · ─ · Delete (Del, destructive text).
@@ -177,7 +182,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 1. **Header row** (44px, drag region on its empty parts). It sits in the window's top 44px, so its right side keeps 140px clear for the Windows caption buttons (§1):
    - **Left:** the color dot (10px swatch circle, which opens the color popover) and a breadcrumb in `text-xs` subtle showing "Note", or "Note · not on canvas" for list-only notes (clicking that places it on the canvas).
    - **Right**, ending 140px from the window edge: ghost icon buttons for `IconArrowsDiagonal` (full page, or `IconArrowsDiagonalMinimize2` to go back), `IconDots` (Pin to sidebar or Unpin from sidebar with `IconPin` / `IconPinnedOff`, Duplicate, Export as markdown, Delete; testid `note-panel-pin`) and `IconX`.
-2. **Title:** a borderless textarea that grows, using `text-title`. The placeholder is "Untitled" in subtle text. 8px top margin.
+2. **Title:** a borderless textarea that grows, using `text-title`. The placeholder is "Untitled" in subtle text. 8px top margin. A note opened from the canvas (Enter, Open in the toolbar or menu) gets the cursor at the end of the body, or in the title while it has none; a new list note gets it in the title.
 3. **Editor:** BlockNote with 16px top margin (styling in §5.1).
 4. **Meta section:** 32px top margin, a 1px top border, 16px padding. Rows are 32px tall and `text-sm`, with a 16px icon in subtle and the label in muted:
    - **Links:** each link is a row showing the domain letter square (16px), the label or URL with an ellipsis, and hover actions (edit, remove). Below them is an "Add link" ghost row; clicking it turns the row into an input with the placeholder "Paste a URL".

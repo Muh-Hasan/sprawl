@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import { useNoteStore } from '@/stores/noteStore'
-import { useUiStore } from '@/stores/uiStore'
+import { useFocusRequest } from './useFocusRequest'
 
 interface NoteTitleProps {
   /** Enter moves on to the body, like Notion. */
@@ -13,11 +13,14 @@ interface NoteTitleProps {
  */
 export function NoteTitle({ onEnter }: NoteTitleProps) {
   const title = useNoteStore((s) => s.note?.title ?? '')
+  const noteId = useNoteStore((s) => s.note?.id)
   const ref = useRef<HTMLTextAreaElement>(null)
-  // A note made from the list opens with the cursor here.
-  useEffect(() => {
-    if (useUiStore.getState().takeTitleFocusRequest()) ref.current?.focus()
-  }, [])
+  // A new list note, or an untitled one opened from the canvas, opens with the cursor here.
+  useFocusRequest(
+    noteId,
+    'title',
+    useCallback(() => ref.current?.focus(), []),
+  )
   return (
     <textarea
       ref={ref}

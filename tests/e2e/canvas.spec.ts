@@ -53,9 +53,9 @@ test.describe('notes on the canvas', () => {
     await expect
       .poll(async () => (await canvas.stored())[0])
       .toMatchObject({
-        x: 288,
+        x: 280,
         y: 272,
-        w: 220,
+        w: 240,
         h: 64,
         note: { title: 'Homepage redo', color: 'stone' },
       })
@@ -71,21 +71,21 @@ test.describe('notes on the canvas', () => {
       (await window.evaluate(() => (self as unknown as { __log: string[] }).__log)).join(' || '),
     )
     // Snapped: the card's corner lands on the grid.
-    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ x: 392, y: 328 })
+    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ x: 384, y: 328 })
 
     // Alt skips the snap.
     const box = (await card.boundingBox())!
     await canvas.dragBetween({ x: box.x + 20, y: box.y + 6 }, { x: box.x + 23, y: box.y + 11 }, [
       'Alt',
     ])
-    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ x: 395, y: 333 })
+    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ x: 387, y: 333 })
 
     await app.close()
     await relaunch(dirs, consoleProblems, async (_app, page) => {
       const again = new CanvasPage(page)
       await again.ready()
       await expect(again.card('Homepage redo')).toBeVisible()
-      expect((await again.stored())[0]).toMatchObject({ x: 395, y: 333 })
+      expect((await again.stored())[0]).toMatchObject({ x: 387, y: 333 })
     })
   })
 
@@ -109,12 +109,23 @@ test.describe('notes on the canvas', () => {
     await expect(canvas.cards.getByText('Untitled')).toBeVisible()
 
     await app.evaluate(({ clipboard }) => clipboard.writeText('Groceries\neggs\nmilk'))
-    await canvas.root.click({ position: { x: 40, y: 400 } }) // clear the selection, focus the board
+    await canvas.root.click({ position: { x: 200, y: 520 } }) // clear the selection, focus the board
     await window.keyboard.press('Control+KeyV')
     const pasted = canvas.card('Groceries')
     await expect(pasted).toBeVisible()
     await expect(pasted.getByTestId('note-card-preview')).toHaveText('eggs\nmilk')
     await expect(canvas.cards).toHaveCount(3)
+
+    // It lands under the pointer, and pasting there again fans out 40px instead of stacking.
+    const spot = async (title: string) => {
+      const item = (await canvas.stored()).find((i) => i.note?.title === title)
+      return item && { x: item.x, y: item.y }
+    }
+    await expect.poll(() => spot('Groceries')).toEqual({ x: 80, y: 488 })
+    await app.evaluate(({ clipboard }) => clipboard.writeText('Errands'))
+    await canvas.root.click({ position: { x: 200, y: 520 } })
+    await window.keyboard.press('Control+KeyV')
+    await expect.poll(() => spot('Errands')).toEqual({ x: 120, y: 528 })
   })
 
   test('the Note tool draws a note at the size you drag', async ({ window }) => {
@@ -201,16 +212,16 @@ test.describe('notes on the canvas', () => {
       { x: handle.x + 4, y: handle.y + 4 },
       { x: handle.x + 84, y: handle.y + 4 },
     )
-    await expect.poll(async () => (await canvas.stored())[0]?.w).toBe(304)
+    await expect.poll(async () => (await canvas.stored())[0]?.w).toBe(320)
     await window.keyboard.press('Delete')
     await expect(canvas.cards).toHaveCount(0)
 
     await window.keyboard.press('Control+KeyZ') // delete
     await expect(canvas.card('Undo me')).toBeVisible()
     await window.keyboard.press('Control+KeyZ') // resize
-    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ w: 220, x: 448 })
+    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ w: 240, x: 440 })
     await window.keyboard.press('Control+KeyZ') // move
-    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ x: 288 })
+    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ x: 280 })
     await window.keyboard.press('Control+KeyZ') // create
     await expect(canvas.cards).toHaveCount(0)
     await expect.poll(async () => (await canvas.stored()).length).toBe(0)
@@ -225,6 +236,8 @@ test.describe('notes on the canvas', () => {
     await a.click()
     await window.getByTestId('selection-color-sage').click()
     await expect(a).toHaveClass(/bg-note-sage/)
+    // A click on the toolbar leaves focus with the canvas.
+    await expect(window.getByTestId('selection-color-sage')).not.toBeFocused()
 
     await a.click({ button: 'right' })
     await window.getByTestId('menu-color').hover()
@@ -236,10 +249,13 @@ test.describe('notes on the canvas', () => {
     await window.keyboard.press('Control+BracketRight')
     await expect.poll(async () => (await canvas.stored()).map((i) => i.id)).toEqual(['c-b', 'c-a'])
 
-    // The selection toolbar restacks too.
-    await window.getByTestId('selection-back').click()
+    // The context menu restacks too.
+    await a.click({ button: 'right' })
+    await window.getByTestId('menu-back').click()
     await expect.poll(async () => (await canvas.stored()).map((i) => i.id)).toEqual(['c-a', 'c-b'])
-    await window.getByTestId('selection-front').click()
+    await expect(window.getByTestId('canvas-menu')).toBeHidden()
+    await a.click({ button: 'right' })
+    await window.getByTestId('menu-front').click()
     await expect.poll(async () => (await canvas.stored()).map((i) => i.id)).toEqual(['c-b', 'c-a'])
 
     await window.keyboard.press('ArrowRight')
