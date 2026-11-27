@@ -35,6 +35,9 @@
   color-scheme: dark;
   --radius: 0.5rem;
 
+  /* the app text size's zoom factor, set by the renderer (DESIGN_SYSTEM §3) */
+  --app-zoom: 1;
+
   /* shadcn core (dark only) */
   --background: #09090b;
   --foreground: #fafafa;
@@ -197,6 +200,9 @@
   --radius-card: 12px;
   --radius-menu: 12px;
   --radius-capture: 14px;
+
+  /* the 140px the native caption buttons take (UI_SPEC §1): they don't zoom with the page */
+  --spacing-caption: calc(140px / var(--app-zoom));
 
   /* the daily log's one-time row highlight (DESIGN_SYSTEM §6) */
   --animate-row-highlight: row-highlight 600ms var(--ease-out);

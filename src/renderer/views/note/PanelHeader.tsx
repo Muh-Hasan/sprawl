@@ -60,7 +60,7 @@ export function PanelHeader() {
   }
 
   return (
-    <header className="flex h-11 shrink-0 items-center justify-between gap-2 pr-[140px] pl-6 [-webkit-app-region:drag]">
+    <header className="flex h-11 shrink-0 items-center justify-between gap-2 pr-caption pl-6 [-webkit-app-region:drag]">
       <div className="flex min-w-0 items-center gap-2 [&>*]:[-webkit-app-region:no-drag]">
         <Popover open={colorOpen} onOpenChange={setColorOpen}>
           <HintTooltip label="Color">

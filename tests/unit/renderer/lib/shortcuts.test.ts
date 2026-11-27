@@ -4,6 +4,7 @@ import {
   matchesShortcut,
   NAV_SHORTCUTS,
   shortcutLabel,
+  TEXT_SIZE_SHORTCUTS,
 } from '../../../../src/renderer/lib/shortcuts'
 
 const key = (
@@ -75,5 +76,25 @@ describe('canvas shortcuts', () => {
     expect(shortcutLabel(CANVAS_SHORTCUTS.zoomOut)).toBe('Ctrl+-')
     expect(shortcutLabel(CANVAS_SHORTCUTS.zoomReset)).toBe('Ctrl+0')
     expect(shortcutLabel(CANVAS_SHORTCUTS.toolHand)).toBe('H')
+  })
+})
+
+describe('text size shortcuts', () => {
+  it('are the canvas zoom keys with Shift, and never clash with them', () => {
+    const bigger = key('Equal', { ctrl: true, shift: true })
+    expect(matchesShortcut(bigger, TEXT_SIZE_SHORTCUTS.bigger)).toBe(true)
+    expect(matchesShortcut(bigger, CANVAS_SHORTCUTS.zoomIn)).toBe(false)
+    expect(
+      matchesShortcut(key('Minus', { ctrl: true, shift: true }), TEXT_SIZE_SHORTCUTS.smaller),
+    ).toBe(true)
+    expect(
+      matchesShortcut(key('Digit0', { ctrl: true, shift: true }), TEXT_SIZE_SHORTCUTS.reset),
+    ).toBe(true)
+    expect(matchesShortcut(key('Equal', { ctrl: true }), TEXT_SIZE_SHORTCUTS.bigger)).toBe(false)
+  })
+
+  it('labels them for tooltips', () => {
+    expect(shortcutLabel(TEXT_SIZE_SHORTCUTS.bigger)).toBe('Ctrl+Shift+=')
+    expect(shortcutLabel(TEXT_SIZE_SHORTCUTS.reset)).toBe('Ctrl+Shift+0')
   })
 })

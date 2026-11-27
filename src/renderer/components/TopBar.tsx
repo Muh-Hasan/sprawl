@@ -19,7 +19,7 @@ export function TopBar({ left, right, transparent = false }: TopBarProps) {
     <header
       data-testid="top-bar"
       className={cn(
-        'flex h-11 shrink-0 items-center justify-between pr-[140px] pl-4 [-webkit-app-region:drag]',
+        'flex h-11 shrink-0 items-center justify-between pr-caption pl-4 [-webkit-app-region:drag]',
         !transparent && 'border-b border-border',
       )}
     >
