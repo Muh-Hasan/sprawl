@@ -122,9 +122,19 @@ export class CanvasPage {
     return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
   }
 
-  /** Drags from the center by (dx, dy) with the given mouse button, in a few steps. */
+  /**
+   * A spot on the bare background, up and to the left of the middle: clear of the top bar, the
+   * toolbars and the empty canvas's start tiles (which sit across the middle).
+   */
+  async background(): Promise<{ x: number; y: number }> {
+    const box = await this.root.boundingBox()
+    if (!box) throw new Error('The canvas is not visible')
+    return { x: box.x + box.width / 4, y: box.y + 120 }
+  }
+
+  /** Drags across the background by (dx, dy) with the given mouse button, in a few steps. */
   async drag(dx: number, dy: number, button: 'left' | 'middle' = 'left'): Promise<void> {
-    const c = await this.center()
+    const c = await this.background()
     await this.page.mouse.move(c.x, c.y)
     await this.page.mouse.down({ button })
     await this.page.mouse.move(c.x + dx, c.y + dy, { steps: 8 })
