@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useUiStore } from '../../../../src/renderer/stores/uiStore'
+import { panelCover, useUiStore } from '../../../../src/renderer/stores/uiStore'
 
 const ui = () => useUiStore.getState()
 
@@ -20,5 +20,25 @@ describe('uiStore focus request', () => {
     ui().openNote('b')
     expect(ui().focusRequest).toBeNull()
     expect(ui().takeFocusRequest('a', 'title')).toBe(false)
+  })
+})
+
+describe('panelCover', () => {
+  beforeEach(() => {
+    ui().closeNote()
+    ui().setPanelWidth(440)
+  })
+
+  it('is the side panel width plus its 12px gap while a note is open', () => {
+    expect(panelCover(1200)).toBe(0)
+    ui().openNote('a')
+    expect(panelCover(1200)).toBe(452)
+  })
+
+  it('is 0 on the full page, and never more than a narrow view leaves', () => {
+    ui().openNote('a')
+    expect(panelCover(400)).toBe(400 - 24 + 12)
+    ui().setPanelMode('full')
+    expect(panelCover(1200)).toBe(0)
   })
 })

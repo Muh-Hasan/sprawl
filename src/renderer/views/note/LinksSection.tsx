@@ -23,42 +23,44 @@ export function LinksSection({ links }: { links: NoteLink[] }) {
   }
 
   return (
-    <div data-testid="note-links">
-      {links.map((link, i) => (
-        <div
-          key={link.id}
-          draggable
-          onDragStart={(e) => {
-            setDragging(i)
-            e.dataTransfer.effectAllowed = 'move'
-          }}
-          onDragEnd={() => setDragging(null)}
-          onDragOver={(e) => dragging !== null && e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault()
-            drop(i)
-          }}
-          className={cn(dragging === i && 'opacity-50')}
-        >
-          <LinkRow link={link} />
-        </div>
-      ))}
-      {adding ? (
-        <AddLinkInput onDone={() => setAdding(false)} />
-      ) : (
-        <MetaRow icon={IconLink} label={links.length === 0 ? 'Links' : undefined}>
-          <button
-            type="button"
-            data-testid="note-add-link"
-            onClick={() => setAdding(true)}
-            className="-mx-1.5 flex h-7 items-center gap-1.5 rounded-md px-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+    <MetaRow icon={IconLink} label="Links" data-testid="note-links">
+      <div className="flex min-w-0 flex-1 flex-col">
+        {links.map((link, i) => (
+          <div
+            key={link.id}
+            draggable
+            onDragStart={(e) => {
+              setDragging(i)
+              e.dataTransfer.effectAllowed = 'move'
+            }}
+            onDragEnd={() => setDragging(null)}
+            onDragOver={(e) => dragging !== null && e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault()
+              drop(i)
+            }}
+            className={cn(dragging === i && 'opacity-50')}
           >
-            <IconPlus className="size-3.5" stroke={1.75} />
-            Add link
-          </button>
-        </MetaRow>
-      )}
-    </div>
+            <LinkRow link={link} />
+          </div>
+        ))}
+        {adding ? (
+          <AddLinkInput onDone={() => setAdding(false)} />
+        ) : (
+          <div className="flex h-8 items-center">
+            <button
+              type="button"
+              data-testid="note-add-link"
+              onClick={() => setAdding(true)}
+              className="-mx-2 flex h-7 items-center gap-1.5 rounded-lg px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <IconPlus className="size-3.5" stroke={1.75} />
+              Add link
+            </button>
+          </div>
+        )}
+      </div>
+    </MetaRow>
   )
 }
 
@@ -68,7 +70,7 @@ function LinkRow({ link }: { link: NoteLink }) {
 
   if (editing) {
     return (
-      <MetaRow icon={IconLink}>
+      <div className="flex h-8 items-center">
         <LinkInput
           testId="note-link-label-input"
           initial={link.label ?? ''}
@@ -80,7 +82,7 @@ function LinkRow({ link }: { link: NoteLink }) {
           }}
           onDone={() => setEditing(false)}
         />
-      </MetaRow>
+      </div>
     )
   }
 
@@ -151,7 +153,7 @@ function RowAction({
 function AddLinkInput({ onDone }: { onDone(): void }) {
   const [invalid, setInvalid] = useState(false)
   return (
-    <MetaRow icon={IconLink}>
+    <div className="flex h-8 items-center">
       <LinkInput
         testId="note-link-input"
         initial=""
@@ -169,7 +171,7 @@ function AddLinkInput({ onDone }: { onDone(): void }) {
         }}
         onDone={onDone}
       />
-    </MetaRow>
+    </div>
   )
 }
 

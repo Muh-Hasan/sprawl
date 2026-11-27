@@ -11,8 +11,9 @@ import { LinksSection } from './LinksSection'
 import { MetaRow } from './MetaRow'
 
 /**
- * The meta section under the body (UI_SPEC §5): links, the due date (with time and reminder),
- * the reminder line and the color. later: phase-9 adds "Linked from".
+ * The meta rows under the title (UI_SPEC §5): the due date (with time and reminder), the
+ * reminder line, the links and the color, then a divider before the body.
+ * later: phase-9 adds "Linked from" under the body.
  */
 export function MetaSection() {
   const note = useNoteStore((s) => s.note)
@@ -20,15 +21,15 @@ export function MetaSection() {
   return (
     <section
       data-testid="note-meta"
-      className="mt-8 flex flex-col gap-0.5 border-t border-border pt-4 pb-6"
+      className="mt-4 mb-5 flex flex-col gap-1.5 border-b border-border pb-5 group-data-[mode=full]/panel:mt-5 group-data-[mode=full]/panel:mb-7"
     >
-      <LinksSection links={note.links} />
       <DueRow />
       {note.remind !== 'none' && note.remindAt !== null && (
-        <MetaRow data-testid="note-reminder" icon={IconBell}>
+        <MetaRow icon={IconBell} label="Remind">
           <ReminderText remindAt={note.remindAt} fired={note.remindedAt !== null} />
         </MetaRow>
       )}
+      <LinksSection links={note.links} />
       <MetaRow icon={IconPalette} label="Color">
         <ColorSwatches
           value={note.color}
@@ -42,8 +43,17 @@ export function MetaSection() {
 
 function ReminderText({ remindAt, fired }: { remindAt: number; fired: boolean }) {
   const now = useClockStore((s) => s.now)
-  if (fired) return <span className="text-subtle-foreground">Reminded</span>
-  return <span className="text-muted-foreground">Reminds you {reminderLabel(remindAt, now)}</span>
+  if (fired)
+    return (
+      <span data-testid="note-reminder" className="text-subtle-foreground">
+        Reminded
+      </span>
+    )
+  return (
+    <span data-testid="note-reminder" className="text-muted-foreground">
+      Reminds you {reminderLabel(remindAt, now)}
+    </span>
+  )
 }
 
 function DueRow() {
@@ -72,7 +82,7 @@ function DueRow() {
           <button
             type="button"
             data-testid="note-due"
-            className="-mx-1.5 flex h-7 items-center rounded-md px-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="-mx-2 flex h-7 items-center rounded-lg px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             Add due date
           </button>
@@ -80,13 +90,13 @@ function DueRow() {
           <button
             type="button"
             data-testid="note-due"
-            className="rounded-[5px] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Chip
               data-testid="note-due-chip"
               icon={IconCalendarDue}
               due={dueState(dueDay, dueTime, now)}
-              className="h-6 text-xs"
+              className="h-7 rounded-lg px-2.5 text-sm"
             >
               {dueLongLabel(dueDay, dueTime)}
             </Chip>

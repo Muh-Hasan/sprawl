@@ -8,8 +8,8 @@ interface NoteTitleProps {
 }
 
 /**
- * The note title (UI_SPEC §5): a borderless textarea in `text-title` that grows with the text,
- * "Untitled" as the placeholder. It's one line of text, so Enter doesn't insert a newline.
+ * The note title (UI_SPEC §5): a borderless textarea in `text-title` (`text-page-title` on the
+ * full page) that grows with the text, "Untitled" as the placeholder. It's one line of text, so Enter doesn't insert a newline.
  */
 export function NoteTitle({ onEnter }: NoteTitleProps) {
   const title = useNoteStore((s) => s.note?.title ?? '')
@@ -43,7 +43,7 @@ export function NoteTitle({ onEnter }: NoteTitleProps) {
           onEnter()
         }
       }}
-      className="mt-2 block w-full resize-none bg-transparent p-0 text-title text-foreground outline-none field-sizing-content placeholder:text-subtle-foreground"
+      className="block w-full resize-none overflow-hidden bg-transparent p-0 text-title text-foreground outline-none field-sizing-content placeholder:text-subtle-foreground group-data-[mode=full]/panel:text-page-title"
     />
   )
 }

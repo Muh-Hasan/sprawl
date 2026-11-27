@@ -5,6 +5,7 @@ import { HintTooltip } from './HintTooltip'
 
 const SIZES = {
   default: "size-9 [&_svg:not([class*='size-'])]:size-[18px]",
+  md: "size-8 [&_svg:not([class*='size-'])]:size-[17px]",
   sm: "size-7 [&_svg:not([class*='size-'])]:size-4",
 } as const
 
@@ -16,7 +17,10 @@ interface IconButtonProps extends Omit<React.ComponentProps<typeof Button>, 'chi
   tooltipSide?: 'top' | 'right' | 'bottom' | 'left'
   /** Pressed / active state: `--muted` background and a `--foreground` icon. */
   active?: boolean
-  /** `default` is 36×36 with an 18px icon; `sm` is 28×28 with a 16px icon, for buttons inside rows. */
+  /**
+   * `default` is 36×36 with an 18px icon; `md` is 32×32 with a 17px icon, for panel headers;
+   * `sm` is 28×28 with a 16px icon, for buttons inside rows.
+   */
   size?: keyof typeof SIZES
 }
 

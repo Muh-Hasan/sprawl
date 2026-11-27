@@ -8,6 +8,8 @@ import { showUndoToast } from '@/components/UndoToast'
 import { LOG_SHORTCUTS, matchesShortcut } from '@/lib/shortcuts'
 import { useClockStore } from '@/stores/clockStore'
 import { useLogStore } from '@/stores/logStore'
+import { PANEL_INSET } from '@/lib/panelInset'
+import { cn } from '@/lib/utils'
 import { useUiStore } from '@/stores/uiStore'
 import { CarriedOver } from './CarriedOver'
 import { Composer } from './Composer'
@@ -71,7 +73,7 @@ export function LogView() {
   return (
     <div className="flex h-full flex-col bg-surface">
       <TopBar left="Daily log" />
-      <div className="relative min-h-0 flex-1">
+      <div className={cn('relative min-h-0 flex-1', PANEL_INSET)}>
         <div className="h-full overflow-y-auto">
           <div
             data-testid="log-page"
@@ -115,7 +117,7 @@ export function LogView() {
             {data.day === day && <CarriedOver notes={data.carried} onOpen={actions.openNote} />}
           </div>
         </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-3">
+        <div className="pointer-events-none absolute bottom-3 left-0 right-[var(--canvas-inset-right,0px)] transition-[right] duration-240 ease-(--ease-out)">
           <div className="pointer-events-auto mx-auto w-full max-w-[680px] px-6">
             <Composer
               onSubmit={async (text) => {

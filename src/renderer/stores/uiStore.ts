@@ -4,7 +4,7 @@ import { create } from 'zustand'
 export const VIEWS = ['canvas', 'list', 'log', 'settings'] as const
 export type View = (typeof VIEWS)[number]
 
-/** The note panel: a side panel next to the view, or a full page over it (UI_SPEC §5). */
+/** The note panel: a side panel floating over the view, or a full page over it (UI_SPEC §5). */
 export type PanelMode = 'side' | 'full'
 
 /** Where the panel can put the cursor when it opens a note. */
@@ -16,6 +16,9 @@ interface UiState {
   /** The note open in the panel, or null when the panel is closed. */
   openNoteId: string | null
   panelMode: PanelMode
+  /** The side panel's width in px (the `panelWidth` setting), or null until it's loaded. */
+  panelWidth: number | null
+  setPanelWidth(px: number): void
   /** The panel should show its due-date picker (the canvas menu's Due date…). */
   duePickerRequested: boolean
   /** The panel showed the picker it was asked for. */
@@ -46,6 +49,8 @@ export const useUiStore = create<UiState>()((set, get) => ({
   setView: (view) => set({ view }),
   openNoteId: null,
   panelMode: 'side',
+  panelWidth: null,
+  setPanelWidth: (panelWidth) => set({ panelWidth }),
   duePickerRequested: false,
   takeDuePickerRequest: () => {
     if (!get().duePickerRequested) return false
@@ -75,3 +80,16 @@ export const useUiStore = create<UiState>()((set, get) => ({
   paletteOpen: false,
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
 }))
+
+/** The gap between the floating panel and the main area's edges (UI_SPEC §5). */
+export const PANEL_INSET_PX = 12
+
+/**
+ * How much of the view's right side the open side panel covers (its width plus the 12px gap),
+ * within a view `viewWidth` wide; 0 while it's closed or full page.
+ */
+export function panelCover(viewWidth: number): number {
+  const { openNoteId, panelMode, panelWidth } = useUiStore.getState()
+  if (openNoteId === null || panelMode !== 'side' || panelWidth === null) return 0
+  return Math.max(0, Math.min(panelWidth, viewWidth - 2 * PANEL_INSET_PX) + PANEL_INSET_PX)
+}

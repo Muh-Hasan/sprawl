@@ -46,7 +46,7 @@ export const REMIND_NEEDS_TIME: ReadonlySet<RemindOption> = new Set(['at', '15m'
 export const MORNING_REMINDER_TIME = '09:00'
 
 /** Note panel width in px (UI_SPEC §5): the default and the resize limits. */
-export const PANEL_WIDTH = { default: 420, min: 320, max: 720 } as const
+export const PANEL_WIDTH = { default: 440, min: 320, max: 720 } as const
 
 /** Autosave waits this long after the last change (PRODUCT §3.2). */
 export const AUTOSAVE_MS = 500

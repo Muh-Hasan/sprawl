@@ -90,10 +90,10 @@ function useOpenNote(id: string | null): void {
 }
 
 /**
- * The note panel (UI_SPEC §5): header, title, the BlockNote body and the meta section, with
- * the save status in the footer. In full-page mode it covers the main area (everything but the
- * rail) with the content in a centered 720px column; it stays the same element, so the editor
- * keeps its place.
+ * The note panel (UI_SPEC §5): the header, the title with the meta rows under it, the BlockNote
+ * body and the save status in the footer. Side mode is a card floating over the view; full page
+ * covers the main area with the content in a centered 720px column. It stays the same element
+ * either way, so the editor keeps its place.
  */
 export function NotePanel() {
   const id = useUiStore((s) => s.openNoteId)
@@ -121,23 +121,24 @@ export function NotePanel() {
           useNoteStore.getState().flush()
       }}
       className={cn(
-        // The resize handle is the panel's left border (UI_SPEC §5).
-        'flex flex-col bg-surface',
-        full ? 'fixed inset-y-0 right-0 left-[52px] z-30 animate-in fade-in-0' : 'h-full',
+        'group/panel flex h-full flex-col overflow-hidden',
+        full ? 'bg-surface' : 'rounded-2xl border border-border bg-card shadow-(--shadow-panel)',
       )}
     >
       {ready && (
         <>
           <PanelHeader />
           <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className={cn('px-6', full && 'mx-auto w-full max-w-[720px]')}>
+            <div
+              className={full ? 'mx-auto w-full max-w-[720px] px-10 pt-12 pb-20' : 'px-8 pt-7 pb-8'}
+            >
               <NoteTitle onEnter={focusBody} />
-              <div ref={body} className="mt-4 min-h-24">
+              <MetaSection />
+              <div ref={body} className="min-h-24">
                 <Suspense fallback={<div data-testid="note-editor-loading" className="h-24" />}>
                   <Editor key={note.id} bodyJson={note.bodyJson} noteId={note.id} />
                 </Suspense>
               </div>
-              <MetaSection />
             </div>
           </div>
           <PanelFooter />
