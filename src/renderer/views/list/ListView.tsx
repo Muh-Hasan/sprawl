@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { IconListCheck, IconPlus } from '@tabler/icons-react'
+import { IconListCheck } from '@tabler/icons-react'
 import type { NoteListRow } from '@shared/types'
 import { EmptyState } from '@/components/EmptyState'
 import { TopBar } from '@/components/TopBar'
-import { Button } from '@/components/ui/button'
 import { DONE_EXIT_MS } from '@/stores/canvasStore'
 import { useClockStore } from '@/stores/clockStore'
 import { useListStore } from '@/stores/listStore'
@@ -11,19 +10,15 @@ import { PANEL_INSET } from '@/lib/panelInset'
 import { cn } from '@/lib/utils'
 import { useUiStore } from '@/stores/uiStore'
 import { showNoteOnCanvas } from '@/views/canvas/actions'
-import {
-  createListNote,
-  deleteNote,
-  duplicateNote,
-  placeOnCanvas,
-  setNoteDone,
-} from './listActions'
+import { deleteNote, duplicateNote, placeOnCanvas, setNoteDone } from './listActions'
 import { ListFilters } from './ListFilters'
-import { countLabel, DUE_GROUP_LABELS, groupByDue, leavesTab } from './listLogic'
+import { ListGroup } from './ListGroup'
+import { ListHeader } from './ListHeader'
+import { groupByDue, groupsTab, leavesTab } from './listLogic'
 import { NoteRow, type RowActions } from './NoteRow'
 import { setNotePinned } from '../note/pinActions'
 import { useListKeys } from './useListKeys'
-import { useListRows } from './useListRows'
+import { useListCounts, useListRows } from './useListRows'
 
 const EMPTY: Record<string, string> = {
   open: 'All clear. Nothing open right now.',
@@ -33,21 +28,27 @@ const EMPTY: Record<string, string> = {
 }
 
 /**
- * The List view (PRODUCT §3.3, UI_SPEC §5b): every note in one dense list, filtered by tab, color
- * and title. Rows ticked done fade out of the Open and Due tabs; the Due tab groups its rows.
+ * The List view (PRODUCT §3.3, UI_SPEC §5b): every note in one list, filtered by tab, color and
+ * title. Rows ticked done fade out of the Open and Due tabs, which group their rows by due date.
  */
 export function ListView() {
   const filter = useListStore((s) => s.filter)
   const filtering = useListStore((s) => s.text.trim() !== '' || s.filter.colors.length > 0)
   const now = useClockStore((s) => s.now)
   const rows = useListRows()
+  const counts = useListCounts()
   const [leaving, setLeaving] = useState<ReadonlySet<string>>(new Set())
   /** The keyboard-selected row, and where it was (so a row that leaves passes it on). */
   const [picked, setPicked] = useState<{ id: string; index: number } | null>(null)
 
   useEffect(() => void useListStore.getState().load(), [])
 
-  const shown = useMemo(() => rows ?? [], [rows])
+  const groups = useMemo(
+    () => (rows && groupsTab(filter.tab) ? groupByDue(rows, now) : null),
+    [rows, filter.tab, now],
+  )
+  // The rows in the order they show, so the arrows follow the groups.
+  const shown = useMemo(() => groups?.flatMap((g) => g.rows) ?? rows ?? [], [groups, rows])
   // A selected row that left the list (done, deleted) hands the selection to the one in its place.
   const cursor = useMemo(() => {
     if (!picked || shown.length === 0) return null
@@ -144,32 +145,16 @@ export function ListView() {
     <div data-testid="list-view" className="flex h-full flex-col bg-background">
       <TopBar />
       <div className={cn('flex min-h-0 flex-1 flex-col', PANEL_INSET)}>
-        <div className="mx-auto w-full max-w-[960px] shrink-0 px-6">
-          <div className="flex h-14 items-center justify-between">
-            <div className="flex items-baseline gap-2">
-              <h1 className="text-lg font-semibold">Notes</h1>
-              <span data-testid="list-count" className="text-sm text-muted-foreground">
-                {rows && countLabel(filter.tab, rows.length)}
-              </span>
-            </div>
-            <Button
-              data-testid="list-new-note"
-              variant="secondary"
-              size="sm"
-              onClick={() => void createListNote()}
-            >
-              <IconPlus stroke={2} aria-hidden />
-              New note
-            </Button>
-          </div>
-          <ListFilters onFilterKey={onFilterKey} />
+        <div className="mx-auto w-full max-w-[880px] shrink-0 px-10 pt-9">
+          <ListHeader count={rows?.length ?? null} />
+          <ListFilters counts={counts} onFilterKey={onFilterKey} />
         </div>
-        <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
+        <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
           <div
             role="listbox"
             aria-label="Notes"
             data-testid="list-rows"
-            className="mx-auto w-full max-w-[960px] px-6 pb-6"
+            className="mx-auto w-full max-w-[880px] px-10 pb-16"
           >
             {rows !== null && rows.length === 0 && (
               <div className="h-64">
@@ -178,20 +163,11 @@ export function ListView() {
                 </EmptyState>
               </div>
             )}
-            {filter.tab === 'due'
-              ? groupByDue(shown, now).map(({ group, rows: groupRows }) => (
-                  <section key={group} data-testid={`list-group-${group}`}>
-                    <h2
-                      className={
-                        group === 'overdue'
-                          ? 'sticky top-0 z-10 flex h-8 items-center bg-background px-3 text-2xs font-semibold text-due-overdue'
-                          : 'sticky top-0 z-10 flex h-8 items-center bg-background px-3 text-2xs font-semibold text-subtle-foreground'
-                      }
-                    >
-                      {DUE_GROUP_LABELS[group]}
-                    </h2>
+            {groups
+              ? groups.map(({ group, rows: groupRows }) => (
+                  <ListGroup key={group} group={group} count={groupRows.length}>
                     {groupRows.map(renderRow)}
-                  </section>
+                  </ListGroup>
                 ))
               : shown.map(renderRow)}
           </div>

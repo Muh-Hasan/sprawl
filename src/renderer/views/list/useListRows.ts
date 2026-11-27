@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Note, NoteListRow } from '@shared/types'
+import type { Note, NoteListCounts, NoteListRow } from '@shared/types'
 import { useListStore } from '@/stores/listStore'
 import { useNoteStore } from '@/stores/noteStore'
 import { useUiStore } from '@/stores/uiStore'
@@ -69,4 +69,30 @@ export function useListRows(): NoteListRow[] | null {
   )
 
   return rows
+}
+
+/**
+ * How many notes each tab holds for the current colors and title filter, refetched whenever the
+ * rows would be. Null until the first answer.
+ */
+export function useListCounts(): NoteListCounts | null {
+  const colors = useListStore((s) => s.filter.colors)
+  const loaded = useListStore((s) => s.loaded)
+  const text = useListStore((s) => s.text)
+  const rev = useListStore((s) => s.rev)
+  const [counts, setCounts] = useState<NoteListCounts | null>(null)
+
+  useEffect(() => {
+    if (!loaded) return
+    let live = true
+    void window.sprawl.notes
+      .listCounts({ colors, text })
+      .then((next) => live && setCounts(next))
+      .catch((err: unknown) => console.error('[list] counts failed', err))
+    return () => {
+      live = false
+    }
+  }, [colors, loaded, text, rev])
+
+  return counts
 }
