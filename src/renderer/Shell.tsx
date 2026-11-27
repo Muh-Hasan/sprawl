@@ -4,11 +4,12 @@ import { Rail } from '@/components/Rail'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { debounce } from '@/lib/debounce'
 import { registerFlush } from '@/lib/flushes'
-import { matchesShortcut, NAV_SHORTCUTS } from '@/lib/shortcuts'
+import { matchesShortcut, NAV_SHORTCUTS, PALETTE_SHORTCUT } from '@/lib/shortcuts'
 import { useUiStore, type View } from '@/stores/uiStore'
 import { Canvas } from '@/views/canvas/Canvas'
 import { DrawingsGrid } from '@/views/drawings/DrawingsGrid'
 import { ListView } from '@/views/list/ListView'
+import { CommandPalette } from '@/views/search/CommandPalette'
 import { SettingsView } from '@/views/settings/SettingsView'
 
 /**
@@ -30,7 +31,7 @@ const VIEW_COMPONENTS: Record<View, React.ComponentType> = {
   settings: SettingsView,
 }
 
-/** Ctrl+1/2/3/4 switch views (PRODUCT §4). They aren't typed characters, so they work anywhere. */
+/** Ctrl+1/2/3/4 and Ctrl+, switch views (PRODUCT §4). They aren't typed characters, so they work anywhere. */
 function useNavShortcuts(): void {
   const setView = useUiStore((s) => s.setView)
   useEffect(() => {
@@ -46,6 +47,25 @@ function useNavShortcuts(): void {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [setView])
+}
+
+/**
+ * Ctrl+K opens the palette, or closes it again, from anywhere. It's caught on the way down to the
+ * note editor, on `document` so the shortcut recorder (on `window`) can still take it.
+ */
+function usePaletteShortcut(): void {
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!matchesShortcut(e, PALETTE_SHORTCUT)) return
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.repeat) return
+      const { paletteOpen, setPaletteOpen } = useUiStore.getState()
+      setPaletteOpen(!paletteOpen)
+    }
+    document.addEventListener('keydown', onKeyDown, true)
+    return () => document.removeEventListener('keydown', onKeyDown, true)
+  }, [])
 }
 
 /** The saved panel width (the `panelWidth` setting), and a debounced save for drags. */
@@ -76,6 +96,7 @@ export function Shell() {
   const panelOpen = useUiStore((s) => s.openNoteId !== null)
   const { width, save } = usePanelWidth()
   useNavShortcuts()
+  usePaletteShortcut()
   const ViewComponent = VIEW_COMPONENTS[view]
   return (
     <div data-testid="shell" className="flex h-full">
@@ -114,6 +135,7 @@ export function Shell() {
           </>
         )}
       </ResizablePanelGroup>
+      <CommandPalette />
     </div>
   )
 }
