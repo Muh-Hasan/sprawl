@@ -132,7 +132,7 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
 - [x] **R12 · `feat/onboarding-capture-redesign`**: onboarding and quick capture.
   - `Onboarding` and `QuickCapture` artboards. Copy and behavior stay; sizes, type and the saved state change.
   - Specs: UI_SPEC §5c, §10. Tests: update `vault.spec.ts` and `capture.spec.ts`.
-- [ ] **R13 · `feat/menus-and-shortcuts-sheet`**: menus, dialogs, toasts and the `?` sheet.
+- [x] **R13 · `feat/menus-and-shortcuts-sheet`**: menus, dialogs, toasts and the `?` sheet.
   - `MenusToasts` and `Shortcuts` artboards. Context menu with icons and keys, the confirm dialog, toasts with Undo, tooltips everywhere, empty states with a next step. `?` opens the sheet, and R13 adds the Help and shortcuts row to the bottom of the sidebar (and its collapsed rail), which opens it too.
   - Specs: UI_SPEC §4.10, §11, new §12 (shortcuts sheet). Tests: `shortcuts-sheet.spec.ts`.
 - [ ] **R14 · `feat/motion`**: motion and reduced motion.

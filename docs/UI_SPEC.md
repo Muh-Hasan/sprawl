@@ -44,13 +44,13 @@ Artboards: `Sidebar`, `Main` (open and collapsed). `--surface` background with a
 - **Pinned** (20px above): a "Pinned" heading in `text-2xs` 500 `--subtle-foreground` (12px side padding, 6px below), then every note pinned from a note menu (§4.10, §5, §5b), in the order they were pinned. Rows are 32px, radius 8: a 10px swatch (3px radius) in the note's bright hue, and the title in `text-sm` at 85% `--foreground`, truncated ("Untitled" muted when empty). A done note stays pinned, its title muted and struck through. A click opens the note in the panel and glides the canvas to its card, as the palette does. The open note's row is `--muted`. Hidden while nothing is pinned. testids `sidebar-pinned`, `sidebar-pinned-note` (with `data-note-id`). Drag to reorder isn't in v1.
 - **Recent** (20px above, or 14px below Pinned): the same heading and rows for the five open notes edited last that aren't pinned, newest first. Hidden while there are none. testids `sidebar-recent`, `sidebar-recent-note` (with `data-note-id`). Both lists follow every saved edit, so a renamed or finished note updates straight away.
 - The views, Pinned and Recent scroll together if the window is short.
-- **Bottom** (a 1px `--border` above, 8px padding): Settings, a view row with "Ctrl ,". testid `sidebar-settings`. *Help and shortcuts (`?`) joins it when the shortcuts sheet lands (R13).*
+- **Bottom** (a 1px `--border` above, 8px padding, 2px apart): Settings, a view row with "Ctrl ,", then **Help and shortcuts** (`IconHelpCircle`, the same row with "?" on the right), which opens the shortcuts sheet (§12). testids `sidebar-settings`, `sidebar-help`.
 
 **Collapsed (60px)**, a centered column of 40px icon buttons (radius 10, 20px icons, 4px apart), each with a tooltip on the right naming it and its shortcut:
 - The toggle (`IconLayoutSidebar`, "Expand sidebar" with `Ctrl+\`) in a 52px drag strip.
 - New note (primary, `IconPlus`), then Search.
 - A 24px × 1px `--border` divider, then Canvas, List and Daily log. Active is `--muted` with a `--foreground` icon. The List badge is a 16px pill at the icon's top right.
-- Settings at the bottom, 8px up. Pinned and Recent aren't shown, so pinning or unpinning there says so in a toast ("Pinned to the sidebar").
+- Settings and Help and shortcuts at the bottom, 8px up and 4px apart. Pinned and Recent aren't shown, so pinning or unpinning there says so in a toast ("Pinned to the sidebar").
 
 ---
 
@@ -105,7 +105,6 @@ When the canvas has no cards at all, a start screen floats in the middle of the 
 
 ### 4.4 Bottom-right zoom control
 - The same pill (16px from the edges, height 36, radius 10): `−`, the percentage in mono `text-2xs` (48px wide, clicking resets it), `+`, a 1px × 18px divider, then Zoom to fit (Shift+1). The buttons are 32×30 with 16px icons, each with a tooltip above it.
-- A `?` button (Help and shortcuts) joins it once the shortcuts sheet exists (R13).
 
 ### 4.5 Note card
 ```
@@ -160,15 +159,18 @@ When the canvas has no cards at all, a start screen floats in the middle of the 
   - The six color swatches (20px, the card color in a ring of the bright hue); the current color has a white ring.
   - A divider, then **Open** (`IconArrowsDiagonal`, one note only; Enter) and **Mark done** (`IconCheck`, every selected note; Ctrl+Enter). When they're all done (only with "Show done") it reads **Mark not done** and shows pressed.
   - A divider, then **Duplicate** (Ctrl+D) and **Delete** (Del). Bring to front and Send to back stay in the context menu and on Ctrl+] / Ctrl+[.
+  - **Several notes** (`MenusToasts`): an "N selected" count (`text-xs` muted, testid `selection-count`) and a divider come first, Open drops out, and the actions turn into 32px ghost text buttons at `text-xs`: **Done** (**Not done** when they're all done), **Duplicate** and **Delete** (in `--destructive`), with no divider between them. Their tooltips still name the action and its key.
   - A click doesn't take focus (mousedown is cancelled on the toolbar), so keys keep going to the canvas; Tab still reaches the buttons.
-  - testids `selection-toolbar`, `selection-color-<color>`, `selection-open`, `selection-done`, `selection-duplicate`, `selection-delete`.
+  - testids `selection-toolbar`, `selection-count`, `selection-color-<color>`, `selection-open`, `selection-done`, `selection-duplicate`, `selection-delete`.
 
 ### 4.10 Context menu
-Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatches inline in the submenu, 16px circles) · Due date… · Pin to sidebar (Unpin from sidebar when pinned) · ─ · Duplicate (Ctrl+D) · Bring to front (Ctrl+]) · Send to back (Ctrl+[) · ─ · Delete (Del, destructive text).
+Artboard: `MenusToasts`. 260px wide, in the shared menu style (DESIGN_SYSTEM §7). Every item has a 16px Tabler icon on the left and, where it has one, its shortcut on the right with spaces between the keys ("Ctrl Enter") in Geist Mono `text-kbd` `--subtle-foreground`.
+
+Items in order: Open (`IconArrowsDiagonal`, Enter) · Mark done (`IconCheck`, Ctrl Enter) · Due date… (`IconCalendar`) · Pin to sidebar (`IconPin`; Unpin from sidebar with `IconPinnedOff`) · Color (`IconPalette`; a label, not an item) with the six swatches inline under it: 18px circles in 26px items, indented to the labels, the selection's own color ringed in `--foreground` · ─ · Duplicate (`IconCopy`, Ctrl D) · Bring to front (`IconArrowUp`, Ctrl ]) · Send to back (`IconArrowDown`, Ctrl [) · ─ · Delete (`IconTrash`, Del, destructive text and icon). testids `menu-open`, `menu-done`, `menu-due`, `menu-pin`, `menu-color` (the label), `menu-color-<color>`, `menu-duplicate`, `menu-front`, `menu-back`, `menu-delete`.
 - Note-only items (Mark done, Color, Due date…, Pin) are hidden for other card kinds; Open, Due date… and Pin only show for a single note (testid `menu-pin`). With a multi-selection, the menu applies to every selected item. Right-clicking an unselected card selects just that card first.
 - Items appear in the phase that makes them work: phase 3 has Color, Duplicate, Bring to front, Send to back and Delete; Open and Due date… come in phase 4, Mark done in phase 5, New drawing here in phase 8. The selection toolbar repeats the quick actions; the menu stays as the full list.
 - **Mark done** applies to every selected note and reads **Mark not done** when they're all done (only possible with "Show done" on). Ctrl+Enter on the canvas does the same. Marking done shows "Marked done · Undo".
-- On empty canvas: New note here · New drawing here · Paste · ─ · Zoom to fit (Shift+1).
+- On empty canvas: New note here (`IconPlus`) · New drawing here · Paste (`IconClipboard`, Ctrl V) · ─ · Zoom to fit (`IconArrowsMaximize`, Shift 1). testids `menu-new-note`, `menu-paste`, `menu-fit`.
 
 ---
 
@@ -229,7 +231,13 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 - **Due groups** (Open and Due tabs): sticky section headings (36px, `text-xs` 600, `--background` background) with the group's row count after the name in subtle 500, 20px between groups. In order: Overdue (heading in `--due-overdue`) · Today · Tomorrow (both `--foreground`) · This week · Later (`--muted-foreground`) · No date (subtle; Open only). Within a group rows keep the tab's sort. Empty groups are hidden. ↑↓ follow the groups' order. Done and All are one flat list.
 - **Done tab:** rows show the done time instead of the edited time, and the checkbox is checked (unticking undoes done).
 - Ticking a row's checkbox fades the row out over 180ms in the Open and Due tabs.
-- **Empty states:** see PRODUCT §5. Done: "Nothing done yet. Tick a note and it shows up here." All: "No notes yet." With a color or title filter on: "No notes match these filters."
+- **Empty states** (DESIGN_SYSTEM §8, `IconListCheck`, 40px below the filters): each has a title, a line and a next step (PRODUCT §5).
+  - Open: "All clear" · "Nothing open right now." · **New note**.
+  - Due: "Nothing due" · "Add a due date to a note to see it here." · **Show open notes**.
+  - Done: "Nothing done yet" · "Tick a note and it shows up here." · **Show open notes**.
+  - All: "No notes yet" · "Write your first one." · **New note**.
+  - With a color or title filter on: "No matches" · "No notes match these filters." · **Clear filters** (it clears the title filter and the colors).
+  - testids `list-empty`, `list-empty-text`, and the buttons `list-empty-new`, `list-empty-open`, `list-empty-clear`.
 - **New note** opens the note in the panel with the cursor in the title; its breadcrumb reads "Not on canvas / …" until it's placed.
 
 ## 5c. Quick capture window
@@ -280,7 +288,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
   - On submit, the new row slides in at the right time position and gets the highlight from DESIGN_SYSTEM §6. Any entry new since the day last loaded (say, a note marked done on the canvas) gets the same one-time highlight.
 - **Keys:** Ctrl+[ and Ctrl+] step back and forward a day while the log is showing.
 - testids: `log-page`, `log-date` (with `data-day`), `log-today-tag`, `log-go-today`, `log-prev`, `log-next`, `log-calendar`, `log-month-picker`, `log-strip-day` (with `data-day`, `data-selected`, `data-today`, `data-has-entries`), `log-summary` (tiles `log-summary-done`, `log-summary-logged`, `log-summary-streak`), `log-entry` (with `data-kind`), `log-entry-time`, `log-entry-text`, `log-entry-color`, `log-entry-open`, `log-entry-edit`, `log-entry-delete`, `log-carried-row`, `log-carried-open`, `log-composer`, `log-empty`.
-- **Empty day:** the `IconNotebook` icon with "Nothing logged yet. Mark a note done or write what you just did."
+- **Empty day** (DESIGN_SYSTEM §8, 28px below the tiles): `IconNotebook`, "Nothing logged yet", "Mark a note done, or write what you just did below." and a **Log something** button that puts the cursor in the composer (testid `log-empty-write`).
 
 ---
 
@@ -315,7 +323,7 @@ Opened with Ctrl+K from anywhere (the note editor too; Ctrl+K again closes it) o
   - **Note:** a 12px swatch (4px radius) in the note's bright hue, the title in 500 (muted "Untitled" when empty), the first line of the body in `text-xs` subtle, truncated, and on the right in `text-2xs` subtle: "Overdue", "Due Fri", "Done", or where it lives ("Canvas", or "List" for a note with no card).
   - **Command:** a 28px `--muted` tile (8px radius) with a 16px icon, the label, and its keys as `kbd`s on the right.
 - **What it finds:** with no query, the three open notes edited last, then every command. A query matches note titles (any part, up to eight notes, most recently edited first, done notes included) and commands (every word must start a word of the label or its keywords). `>` lists commands only. *later: phase-10 adds bodies, drawings and log entries, grouped, with highlighted snippets.*
-- **Commands:** New note (Ctrl+N), Go to canvas / list / daily log (Ctrl+1 / 2 / 3), Collapse sidebar or Expand sidebar (Ctrl+\, also found by "toggle"), Zoom to fit (Shift+1), Show done notes or Hide done notes, Make text bigger / smaller (Ctrl+Shift+= / -), Reset text size (Ctrl+Shift+0), Open settings (Ctrl+,).
+- **Commands:** New note (Ctrl+N), Go to canvas / list / daily log (Ctrl+1 / 2 / 3), Collapse sidebar or Expand sidebar (Ctrl+\, also found by "toggle"), Zoom to fit (Shift+1), Show done notes or Hide done notes, Make text bigger / smaller (Ctrl+Shift+= / -), Reset text size (Ctrl+Shift+0), Keyboard shortcuts (`?`, also found by "help"; it opens the sheet, §12), Open settings (Ctrl+,).
   - New note makes a card in the middle of the canvas view, ready to type in (switching to the canvas first), or a list-only note when the List is showing.
   - Zoom to fit switches to the canvas first.
 - **Enter on a note** opens it in the panel. If it has a card on show, the canvas (switching to it if need be) selects the card and glides to center it in the space the panel leaves.
@@ -338,7 +346,7 @@ Opened with Ctrl+K from anywhere (the note editor too; Ctrl+K again closes it) o
   - **Notifications** ("Reminders arrive as Windows notifications."): Due reminders (Switch); Morning summary (a time `Select` in 30-minute steps plus a Switch); Test notification ("Send a test"). If Windows blocks Sprawl's notifications, the card starts with a row in `--due-overdue` text, "Windows is blocking Sprawl's notifications", with an "Open Windows settings" button.
   - **Quick capture** ("Jot something down from any app."): Shortcut (a `ShortcutRecorder` showing the current combo as `kbd` keys; click "Change", press the new combo, and conflicts show "Already used by another app" in destructive text); Default mode (Note | Log, "What the window opens in.").
   - **Backup and export** ("Your data stays yours, in plain files."): Daily backup (Switch, "Keeps the last 7 as zip files in your vault."), Back up now, Export as markdown ("Export…"). All Coming soon until backup and export are built.
-  - **Shortcuts** ("The ones that work everywhere in Sprawl."): read-only rows with the keys as 26px `kbd`s: Search and commands, New note, Go to Canvas / List / Daily log, Settings, Toggle sidebar, Bigger text, Smaller text, Default text size, and Quick capture (its current combo, "Works from any app. Change it under Quick capture."). The `?` shortcuts sheet lists every shortcut once it lands.
+  - **Shortcuts** ("The ones that work everywhere in Sprawl."): read-only rows with the keys as 26px `kbd`s: Search and commands, New note, Go to Canvas / List / Daily log, Settings, Toggle sidebar, Bigger text, Smaller text, Default text size, and Quick capture (its current combo, "Works from any app. Change it under Quick capture."). A last row, "Every shortcut", has a Show all button that opens the shortcuts sheet (§12; testid `settings-shortcuts-sheet`).
   - **About** ("License and source."): one card with `sprawl-mark-gradient` at 40px, "Sprawl" in `font-brand` `text-lg` 600, and "Open source under the MIT license · GitHub" (the link opens the repo). The version number joins the name later.
 
 ---
@@ -364,7 +372,27 @@ Opened with Ctrl+K from anywhere (the note editor too; Ctrl+K again closes it) o
 
 ## 11. Dialogs and toasts
 
-- **Confirm dialog** (AlertDialog): 400px wide, title `text-base` 600, description `text-sm` muted, with Cancel (ghost) and confirm buttons. The confirm button is destructive for deletes: `--destructive` text on `--muted`, and solid only on hover.
+Artboard: `MenusToasts`.
+
+- **Confirm dialog** (AlertDialog): 420px wide, 24px padding, radius 16, `--card` with a `--border` hairline and `--shadow-palette`. A `text-lg` 600 title, the description in `text-sm` muted 8px below, then 22px further down Cancel (outlined: `--popover` with a `--border` hairline) and the confirm button, both 36px with a 10px radius. For deletes the confirm button is solid `--destructive` with `--background` text; otherwise it's white.
   - It's used only for: changing the vault and deleting a drawing.
   - Note deletes don't confirm, because the "Deleted · Undo" toast covers them.
-- **Toasts:** "Marked done · Undo", "Deleted · Undo", "Duplicated", "Saved backup", and "Couldn't save. Retrying…" (shown with `--destructive` icon only).
+- **Toasts** (Sonner, bottom center 88px up so they clear the canvas toolbar and the log composer, 4 seconds): 380px wide and 48px tall, `--popover` with a `--border` hairline, radius 12, `--shadow-popover`, 14px left and 8px right padding, 10px gaps. Each has an 18px icon, the message in `text-sm`, and an **Undo** button (32px ghost, 600) where it applies (testid `toast-undo`).
+  - "Marked done · Undo" (`IconCheck` in `--foreground`), "Deleted · Undo" (`IconTrash`), "Duplicated" (`IconCopy`), "Pinned to the sidebar" / "Unpinned from the sidebar" (`IconPin` / `IconPinnedOff`), "Copy some text first, then paste it here" (`IconClipboardText`), "Test notification sent" (`IconBell`). Icons are `--muted-foreground` unless noted.
+  - "Couldn't save. Retrying…" is an error toast with `IconAlertTriangle` in `--destructive`, the only color a toast uses.
+  - *later: phase-11 adds "Saved backup".*
+- **Tooltips** name the action and its key on every icon button (DESIGN_SYSTEM §7).
+
+---
+
+## 12. Shortcuts sheet (`?`)
+
+Artboard: `Shortcuts`. It opens with `?` (Shift+/), but only while nothing is being typed; `?` again closes it. It also opens from Help and shortcuts in the sidebar (§2), the palette's Keyboard shortcuts (§8), and Settings → Shortcuts → Show all (§9). Esc or the close button closes it. testid `shortcuts-sheet`.
+
+- A dialog 900px wide (at most the window less 32px), 80px from the top, radius 18, `--card` with a `--border` hairline and `--shadow-palette`, over `--overlay` with a 2px blur. It opens like the palette (fade and 98% scale) and scrolls if the window is short.
+- **Header** (22px top, 18px bottom, 28px side padding, a 1px `--border` below): "Keyboard shortcuts" in `text-lg` 600. On the right: "Everything also works with the mouse. Ctrl K finds any action." in `text-xs` subtle, then a 32px close button (`IconX`, tooltip "Close" with Esc; testid `shortcuts-sheet-close`).
+- **Body:** three columns 32px apart (24px top, 28px sides and bottom). Each group has a `text-xs` 600 muted heading 10px above its rows. Rows are 36px with a hairline below: the label in `text-sm`, then each key as a 24px `kbd` (at least 24px wide, 6px radius, `--muted` with a `--border` hairline, Geist Mono `text-kbd`). testid `shortcut-<id>` per row.
+  - **Everywhere:** Search and commands (Ctrl K) · New note (Ctrl N) · Quick capture (its current combo, read when the sheet opens) · Canvas · List · Log (Ctrl, 1 2 3) · Toggle sidebar (Ctrl \) · Text size (Ctrl, Shift, + − 0) · Settings (Ctrl ,) · This sheet (?).
+  - **Canvas:** Select · Hand (V, H) · Sticky note (N) · Pan (Space, drag) · Zoom in · out · reset (Ctrl, + − 0) · Zoom to fit (Shift 1) · Select all (Ctrl A) · Duplicate (Ctrl D) · Front · back (Ctrl, ] [) · Undo (Ctrl Z) · Redo (Ctrl Shift Z) · Delete (Del).
+  - **Notes and log:** Open selected note (Enter) · Mark done (Ctrl Enter) · Full page (Ctrl Shift Enter) · Close · step back (Esc) · Block menu (/) · Checklist item ([ ]) · Previous · next day (Ctrl, [ ]).
+  - *later: phase-7 adds the Image and Link tools (I, L), phase-8 New drawing (Ctrl Shift D) and the Drawing tool (D), and phase-9 linking with `[[`.*
