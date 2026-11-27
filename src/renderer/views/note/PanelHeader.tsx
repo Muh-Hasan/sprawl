@@ -4,6 +4,8 @@ import {
   IconArrowsDiagonalMinimize2,
   IconCopy,
   IconDots,
+  IconPin,
+  IconPinnedOff,
   IconTrash,
   IconX,
 } from '@tabler/icons-react'
@@ -22,6 +24,7 @@ import { useSelectionStore } from '@/stores/selectionStore'
 import { useUiStore } from '@/stores/uiStore'
 import { deleteSelection, duplicateSelection, openSelectedNote } from '../canvas/actions'
 import { deleteNote, duplicateNote } from '../list/listActions'
+import { pinLabel, setNotePinned } from './pinActions'
 
 /**
  * Selects the note's card, so the canvas commands (with their toasts and undo) act on it. Only
@@ -48,6 +51,7 @@ export function PanelHeader() {
   const [colorOpen, setColorOpen] = useState(false)
   if (!note) return null
   const full = mode === 'full'
+  const pinned = note.pinnedAt !== null
 
   const duplicate = (): void => {
     if (!selectCard(note.id)) return void duplicateNote(note.id)
@@ -105,6 +109,13 @@ export function PanelHeader() {
             <IconButton data-testid="note-panel-menu" icon={IconDots} label="More" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-44">
+            <DropdownMenuItem
+              data-testid="note-panel-pin"
+              onSelect={() => void setNotePinned(note.id, !pinned)}
+            >
+              {pinned ? <IconPinnedOff stroke={1.75} /> : <IconPin stroke={1.75} />}
+              {pinLabel(pinned)}
+            </DropdownMenuItem>
             <DropdownMenuItem data-testid="note-panel-duplicate" onSelect={duplicate}>
               <IconCopy stroke={1.75} />
               Duplicate

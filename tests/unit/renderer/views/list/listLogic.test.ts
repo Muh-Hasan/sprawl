@@ -25,6 +25,7 @@ function row(id: string, dueDay: string | null, dueTime: string | null = null): 
     dueDay,
     dueTime,
     doneAt: null,
+    pinnedAt: null,
     createdAt: 0,
     updatedAt: 0,
     onCanvas: true,

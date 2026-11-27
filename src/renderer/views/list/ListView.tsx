@@ -19,6 +19,7 @@ import {
 import { ListFilters } from './ListFilters'
 import { countLabel, DUE_GROUP_LABELS, groupByDue, leavesTab } from './listLogic'
 import { NoteRow, type RowActions } from './NoteRow'
+import { setNotePinned } from '../note/pinActions'
 import { useListKeys } from './useListKeys'
 import { useListRows } from './useListRows'
 
@@ -95,6 +96,7 @@ export function ListView() {
       toggleDone,
       showOnCanvas: showNoteOnCanvas,
       place: (id) => void placeOnCanvas(id),
+      setPinned: (id, pinned) => void setNotePinned(id, pinned),
       duplicate: (id) => void duplicateNote(id),
       remove: (id) => void deleteNote(id),
     }),

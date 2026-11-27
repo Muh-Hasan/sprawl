@@ -15,7 +15,7 @@ import type { DbHandle } from '../db/client'
 import { deriveBody, textToBody } from '../db/derive'
 import { noteLinks, notes } from '../db/schema'
 import { setNoteDone } from './log'
-import { countOverdue, listNotes } from './noteList'
+import { countOverdue, listNotes, listPinned } from './noteList'
 
 /** Soft-deleted notes and drawings are purged for good this long after deletion. */
 export const PURGE_AFTER_MS = 30 * 24 * 60 * 60 * 1000
@@ -62,6 +62,11 @@ export class NotesService {
   /** The List view's rows (PRODUCT §3.3). */
   list(query: NoteListQuery): NoteListRow[] {
     return listNotes(this.handle(), query)
+  }
+
+  /** The notes pinned to the sidebar, in the order they were pinned. */
+  pinned(): NoteListRow[] {
+    return listPinned(this.handle())
   }
 
   /** How many open notes are overdue now. */
@@ -115,6 +120,23 @@ export class NotesService {
       db.update(notes).set(set).where(eq(notes.id, id)).run()
       this.touchActivity(id, now)
     })()
+    return this.get(id)
+  }
+
+  /**
+   * Pins a live note to the sidebar (at the end of the list) or unpins it. Pinning isn't an edit,
+   * so `updated_at` stays and the note keeps its place in Recent and the List. Pinning a pinned
+   * note keeps its place.
+   */
+  setPinned(id: string, pinned: boolean): Note {
+    const current = this.liveRow(id)
+    if (pinned !== (current.pinnedAt !== null)) {
+      this.handle()
+        .db.update(notes)
+        .set({ pinnedAt: pinned ? this.now() : null })
+        .where(eq(notes.id, id))
+        .run()
+    }
     return this.get(id)
   }
 

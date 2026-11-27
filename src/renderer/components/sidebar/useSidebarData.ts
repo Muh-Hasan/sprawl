@@ -42,15 +42,23 @@ export function useOverdueCount(): number {
   return useRefetched(() => window.sprawl.notes.overdueCount(), 0, [now, ...signal])
 }
 
-/** The open notes edited last, newest first, for the Recent section. */
+/**
+ * The open notes edited last, newest first, for the Recent section. Pinned notes already show
+ * above it, so they're left out.
+ */
 export function useRecentNotes(): NoteListRow[] {
   const signal = useNotesSignal()
   return useRefetched(
     () =>
       window.sprawl.notes
         .list({ tab: 'open', colors: [], text: '', sort: 'edited' })
-        .then((rows) => rows.slice(0, SIDEBAR_RECENT_NOTES)),
+        .then((rows) => rows.filter((r) => r.pinnedAt === null).slice(0, SIDEBAR_RECENT_NOTES)),
     [],
     signal,
   )
+}
+
+/** The notes pinned to the sidebar, in the order they were pinned. */
+export function usePinnedNotes(): NoteListRow[] {
+  return useRefetched(() => window.sprawl.notes.pinned(), [], useNotesSignal())
 }

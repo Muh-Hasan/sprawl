@@ -302,6 +302,7 @@ export const noteIdInput = idSchema
 export const notesCreateInput = newNoteSchema
 export const notesUpdateInput = z.object({ id: idSchema, patch: notePatchSchema }).strict()
 export const notesSetDoneInput = z.object({ id: idSchema, done: z.boolean() }).strict()
+export const notesSetPinnedInput = z.object({ id: idSchema, pinned: z.boolean() }).strict()
 
 // note links -------------------------------------------------------------------------------
 

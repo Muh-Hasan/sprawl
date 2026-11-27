@@ -104,8 +104,8 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
   - **Pinned** needs a `pinned` column and a Pin / Unpin item in the note menus. It ships as its own PR (R5b) right after this one.
   - Specs: UI_SPEC §2 (rewrite as Sidebar), §3. Artboard: `Sidebar`, `Main`. Tests: update `shell.spec.ts`; add collapse and persistence.
   - The Drawings placeholder view and Ctrl+4 are gone (decision 4). Help and shortcuts waits for the sheet (R13).
-- [ ] **R5b · `feat/pin-notes`**: pin notes to the sidebar.
-  - Migration adding `notes.pinned`, the IPC and zod schema, Pin / Unpin in the context menu and panel menu, and the Pinned list in the sidebar (drag to reorder is not in scope).
+- [x] **R5b · `feat/pin-notes`**: pin notes to the sidebar.
+  - Migration adding `notes.pinned_at` (the pin time, which orders the list), the IPC and zod schema, Pin / Unpin in the context menu and panel menu, and the Pinned list in the sidebar (drag to reorder is not in scope).
   - Tests: unit for the migration; e2e that a pinned note shows in the sidebar and opens.
 - [x] **R6 · `feat/canvas-toolbar`**: bottom toolbar, empty state and welcome board.
   - The toolbar moves to the bottom center: 44px buttons, 22px icons, tooltips with names and keys, the sticky-note tool's color dot. It centers on the uncovered canvas (`--canvas-inset-right`), so it shifts left once the panel floats (R8).

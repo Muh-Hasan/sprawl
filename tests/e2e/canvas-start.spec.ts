@@ -86,7 +86,9 @@ test.describe('the canvas toolbar', () => {
     const bar = (await toolbar.boundingBox())!
     expect(Math.abs(bar.x + bar.width / 2 - (box.x + box.width / 2))).toBeLessThan(2)
     expect(Math.round(box.y + box.height - (bar.y + bar.height))).toBe(20)
-    expect(Math.round(bar.height)).toBe(58) // 44px buttons, 6px padding, 1px border
+    // 44px buttons and 6px padding inside the border. The border is left out: CI runs at a 0.5
+    // device scale, where a 1px border is drawn a whole device pixel (2px) thick.
+    expect(await toolbar.evaluate((el) => el.clientHeight)).toBe(56)
 
     await expect(window.getByTestId('tool-note-dot')).toBeVisible()
     await expect(window.getByTestId('tool-image')).toHaveAttribute('aria-disabled', 'true')

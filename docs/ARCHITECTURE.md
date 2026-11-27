@@ -138,6 +138,7 @@ CREATE TABLE notes (
   remind_at    INTEGER,                      -- ms UTC, derived from due_day/due_time + remind in the current timezone; null if none
   reminded_at  INTEGER,                      -- set when the reminder fires (never fire twice)
   done_at      INTEGER,                      -- nullable
+  pinned_at    INTEGER,                      -- nullable; when it was pinned to the sidebar (the Pinned order)
   check_total  INTEGER NOT NULL DEFAULT 0,   -- derived on save
   check_done   INTEGER NOT NULL DEFAULT 0,   -- derived on save
   attach_count INTEGER NOT NULL DEFAULT 0,   -- derived on save: image and file blocks in the body
@@ -199,6 +200,7 @@ CREATE TABLE canvas_items (
 CREATE UNIQUE INDEX canvas_items_ref ON canvas_items(kind, ref_id) WHERE ref_id IS NOT NULL; -- at most one card per note/drawing/attachment
 CREATE INDEX notes_remind ON notes(remind_at) WHERE reminded_at IS NULL AND done_at IS NULL AND deleted_at IS NULL;
 CREATE INDEX notes_due ON notes(due_day, due_time) WHERE done_at IS NULL AND deleted_at IS NULL;
+CREATE INDEX notes_pinned ON notes(pinned_at) WHERE pinned_at IS NOT NULL AND deleted_at IS NULL;
 
 -- daily log --------------------------------------------------------
 CREATE TABLE log_entries (
@@ -272,6 +274,7 @@ interface SprawlAPI {
               get(id): Note; create(p: NewNote): Note; update(id, patch: NotePatch): Note;
               duplicate(id): Note;                              // list/panel duplicate (not placed on the canvas)
               setDone(id, done: boolean): Note; remove(id): void; restore(id): void;
+              pinned(): NoteListRow[]; setPinned(id, pinned: boolean): Note;   // the sidebar's Pinned list
               backlinks(id): NoteSummary[]; links: { add, update, remove, reorder } };
   canvas:   { load(): CanvasItem[]; apply(ops: CanvasOp[]): CanvasApplyResult; };   // batched, one transaction
   drawings: { list(): DrawingSummary[]; get(id): Drawing; create(title?): Drawing; duplicate(id): Drawing;
@@ -317,7 +320,8 @@ interface SprawlAPI {
 - **Close handshake:** the window's first `close` is held (`main/closeGuard.ts`). Main sends `app:before-close`; the renderer runs every registered flush (`lib/flushes.ts`: the note autosave, the canvas batch, the viewport and the panel width) and answers `app.readyToClose()`. IPC from one window is handled in order, so the writes land before the window closes. A renderer that doesn't answer gets 2s. (The `beforeunload` flushes alone also passed the autosave test; the handshake makes the order explicit rather than relying on Chromium's timing.)
 
 - **List, capture and system API (phase 6):**
-  - `notes.list(query)`: `{ tab, colors, text, sort }` → `NoteListRow[]` (`services/noteList.ts`; the SQL builder is pure and unit-tested). Deleted notes never show. Open = not done; Due = not done with a due date, soonest first (a time before "sometime that day"); Done = by done time, newest first; All. The sort applies to Open and All. Colors are an `IN` list (none = all), the title filter a `LIKE` with `%` and `_` escaped. Ties go to the most recently created. Each row has `firstLine` (of `body_text`), the chip counts, the due fields, `doneAt`, the times and `onCanvas`.
+  - `notes.list(query)`: `{ tab, colors, text, sort }` → `NoteListRow[]` (`services/noteList.ts`; the SQL builder is pure and unit-tested). Deleted notes never show. Open = not done; Due = not done with a due date, soonest first (a time before "sometime that day"); Done = by done time, newest first; All. The sort applies to Open and All. Colors are an `IN` list (none = all), the title filter a `LIKE` with `%` and `_` escaped. Ties go to the most recently created. Each row has `firstLine` (of `body_text`), the chip counts, the due fields, `doneAt`, `pinnedAt`, the times and `onCanvas`.
+  - `notes.pinned()` and `notes.setPinned(id, pinned)` (design refresh, migration `0001_pinned_notes`): pinning sets `pinned_at = now`, unpinning clears it, and pinning a pinned note keeps its place. `pinned()` lists the live pinned notes, done or not, oldest pin first, as `NoteListRow`s. Pinning isn't an edit: `updated_at` and `note_activity` stay, and it doesn't re-check reminders. A deleted note can't be pinned, keeps its pin while deleted and shows again when restored; a duplicate isn't pinned. `Note`, `NoteListRow` and `CardNote` carry `pinnedAt`, so every note menu can say Pin or Unpin.
   - `notes.overdueCount()` (the List badge and the tray tooltip) and `notes.placeOnCanvas(id, at?)`: a default-size card centered on `at` (snapped, on top), or on the middle of the last view (the saved viewport and the main window's size) when the renderer doesn't know it. A note that has a card keeps it. `Note` carries `onCanvas`.
   - `capture.submit({ mode, text })`, `capture.hide()`, `capture.setHeight(px)`: only the capture window may call them. A note capture runs in one transaction: the note (first line the title, the rest the body), its `!date` (with a time it also gets an "At due time" reminder, so "Pay rent !fri 10:00" reminds on Friday at 10:00), and its card in the middle of the last view, or 40px down and right of a card already there (`cascadeSpot` in `shared/placement.ts`, also used by paste). A log capture joins its lines into one manual entry. Then main sends `data:changed`.
   - `system.testNotification()`, `notificationStatus()`, `openNotificationSettings()`, `setShortcut(accel)` (registers, then saves; `{ ok: false, conflict: true }` when another app holds it), `pauseShortcut(paused)` and `pauseNotifications(minutes)` (0 resumes).
@@ -373,7 +377,7 @@ src/
     components/
       ui/          shadcn components: generated by the CLI, NEVER edited by hand
                    ── Sprawl components below wrap ui/ ──
-                   sidebar/ (Sidebar, CollapsedSidebar, RecentNotes, OverdueBadge), TopBar.tsx, IconButton.tsx, HintTooltip.tsx, ShortcutKbd.tsx, EmptyState.tsx, Chip.tsx, DuePicker.tsx (Popover + Calendar + time + remind select),
+                   sidebar/ (Sidebar, CollapsedSidebar, SidebarNotes, OverdueBadge), TopBar.tsx, IconButton.tsx, HintTooltip.tsx, ShortcutKbd.tsx, EmptyState.tsx, Chip.tsx, DuePicker.tsx (Popover + Calendar + time + remind select),
                    Toaster.tsx (Sonner, dark, bottom center), UndoToast.tsx (showUndoToast),
                    ShortcutRecorder.tsx, SegmentedControl.tsx (ToggleGroup, one of N),
                    ColorSwatches.tsx, ConfirmDialog.tsx (AlertDialog), InlineMarkdown.tsx (manual log entries)
@@ -502,6 +506,7 @@ vitest.config.ts
 | `launch.spec.ts` | The app opens, a vault is created, the window has no console errors |
 | `vault.spec.ts` | Onboarding on first run; relaunch skips it; deleting `config.json` (or the vault folder) brings it back; Settings → Change… |
 | `shell.spec.ts` | Sidebar and Ctrl+1–3 navigation, collapsing with Ctrl+\ (remembered), Recent notes; the window state is remembered |
+| `pin-notes.spec.ts` | Pin from the card menu and the List, open from the sidebar's Pinned list, unpin from the panel; the order survives a relaunch |
 | `instance.spec.ts` | A second launch focuses the first window and exits |
 | `settings.spec.ts` | Settings persist across a relaunch; main rejects invalid IPC input |
 | `text-size.spec.ts` | Ctrl+Shift+= / - / 0 zoom the main and capture windows; the size survives a relaunch; the Settings row and the shortcut stay in step |
