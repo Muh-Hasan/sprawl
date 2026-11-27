@@ -33,11 +33,11 @@ Exact layout and anatomy for every screen. Behavior lives in `PRODUCT.md`, and t
 - `--surface` background with a 1px right border.
 - **Top:** a 44px drag area.
 - **Logo:** `sprawl-mark-light` at 18px, centered, 12px below the drag area. Not clickable.
-- **Nav buttons** (36×36, radius 8, 4px gap): Canvas, List, Log, Drawings, Search.
+- **Nav buttons** (36×36, radius 8, 4px gap): Canvas, List, Log, Drawings, Search. Search opens the command palette (§8).
   - **Active:** `--muted` background, `--foreground` icon, plus a 2px × 16px white bar on the rail's left edge (radius 0 1px 1px 0).
   - **Hover:** `--muted` background.
   - **Tooltip** on the right, with the label and shortcut (for example "Canvas Ctrl+1").
-- **Bottom:** the Settings button, 12px from the bottom.
+- **Bottom:** the Settings button (Ctrl+,), 12px from the bottom.
 - **List badge:** when anything is overdue, a small count (for example "2") in `text-2xs` 600 shows at the top-right of the List icon: `--due-overdue` text on `--due-overdue-bg`, as a 16px-tall pill. Nothing shows when nothing is overdue.
 
 ---
@@ -274,15 +274,23 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 
 ## 8. Command palette (Ctrl+K)
 
-- shadcn `CommandDialog`, 560px wide, positioned 18vh from the top, with an `rgb(0 0 0 / .6)` overlay and no blur.
-- **Input row:** 48px tall with a `IconSearch` 16px icon and the placeholder "Search notes, drawings, log… or type > for commands".
-- **Groups:** headings in `text-2xs` 500 subtle, 8px 12px padding.
-- **Items:** 36px tall, 8px 12px padding.
-  - Left: the icon (the color dot for notes, `IconScribble` for drawings, `IconNotebook` for log entries).
-  - Then the title, followed by a snippet in `text-xs` muted on the same line, truncated. Matches are highlighted with `--foreground` and 600 weight, with no background color.
-  - Right: the context, such as "Today", "3 days ago" or "in Portfolio", in `text-2xs` subtle.
-- **Footer:** 32px tall, 1px top border, `text-2xs` subtle hints: `↑↓ navigate · ↵ open · esc close`.
-- **Empty:** "No matches for “q”."
+Opened with Ctrl+K from anywhere (the note editor too; Ctrl+K again closes it) or the rail's Search button. Artboard: `CommandPalette`.
+
+- A shadcn `Dialog` holding the `Command` (cmdk) list: 640px wide (at most the window less 32px), 13vh from the top, 16px radius, `--card` with a `--border` hairline and `--shadow-palette`. The overlay is `--overlay` with a 2px backdrop blur.
+- **Opens** with a 200ms fade, a 98% scale and a 6px drop (ease-out); with reduce motion it just appears.
+- **Input row:** 60px tall, 20px side padding, 1px bottom border. `IconSearch` 20px muted, the input at 17px with the placeholder "Search notes, or type > for commands" in `--subtle-foreground`, and an `Esc` kbd on the right.
+- **List:** up to 460px (or 60vh) tall, scrolling, 8px padding. Groups **Notes**, then **Commands**, with headings in `text-2xs` 500 `--subtle-foreground` (12px side padding, 10px above, 6px below).
+- **Rows:** 44px, 12px side padding, 10px radius, 12px gap, `text-base`. The selected row (keyboard or hover) gets `--muted`. The first result is selected after every keystroke.
+  - **Note:** a 12px swatch (4px radius) in the note's bright hue, the title in 500 (muted "Untitled" when empty), the first line of the body in `text-xs` subtle, truncated, and on the right in `text-2xs` subtle: "Overdue", "Due Fri", "Done", or where it lives ("Canvas", or "List" for a note with no card).
+  - **Command:** a 28px `--muted` tile (8px radius) with a 16px icon, the label, and its keys as `kbd`s on the right.
+- **What it finds:** with no query, the three open notes edited last, then every command. A query matches note titles (any part, up to eight notes, most recently edited first, done notes included) and commands (every word must start a word of the label or its keywords). `>` lists commands only. *later: phase-10 adds bodies, drawings and log entries, grouped, with highlighted snippets.*
+- **Commands:** New note (Ctrl+N), Go to canvas / list / daily log (Ctrl+1 / 2 / 3), Zoom to fit (Shift+1), Show done notes or Hide done notes, Make text bigger / smaller (Ctrl+Shift+= / -), Reset text size (Ctrl+Shift+0), Open settings (Ctrl+,).
+  - New note makes a card in the middle of the canvas view, ready to type in (switching to the canvas first), or a list-only note when the List is showing.
+  - Zoom to fit switches to the canvas first.
+- **Enter on a note** opens it in the panel. If it has a card on show, the canvas (switching to it if need be) selects the card and glides to center it in the space the panel leaves.
+- **Empty:** "No notes or commands match. Press Enter to create a note called “q”." (Enter does it, as New note does, with that title.) With `>`: "No commands match."
+- **Footer:** 40px, 1px top border, `text-2xs` subtle hints: `↑↓ move`, `Enter open`, `Esc close`, and "Type > for commands only" on the right.
+- **Focus:** after a result runs, focus stays where it put it (a new card's title). Esc gives focus back to what had it before.
 
 ---
 

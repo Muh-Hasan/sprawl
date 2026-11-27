@@ -36,7 +36,11 @@ export const NAV_SHORTCUTS = {
   list: digit(2),
   log: digit(3),
   drawings: digit(4),
-} as const
+  settings: { codes: ['Comma'], ctrl: true },
+} as const satisfies Record<string, Shortcut>
+
+/** The command palette (PRODUCT §3.6). It works everywhere, even in the note editor. */
+export const PALETTE_SHORTCUT: Shortcut = { codes: ['KeyK'], ctrl: true }
 
 /** App text size (PRODUCT §4): the canvas zoom keys with Shift. They work in every view. */
 export const TEXT_SIZE_SHORTCUTS = {
@@ -45,16 +49,24 @@ export const TEXT_SIZE_SHORTCUTS = {
   reset: { codes: ['Digit0', 'Numpad0'], ctrl: true, shift: true },
 } as const satisfies Record<string, Shortcut>
 
-/** The label shown in tooltips, e.g. "Ctrl+1". */
-export function shortcutLabel(s: Shortcut): string {
+/** The keys one by one, e.g. ['Ctrl', 'Shift', '='], for a row of `kbd`s. */
+export function shortcutKeys(s: Shortcut): string[] {
   const code = s.codes[0] ?? ''
   const name = CODE_LABELS[code] ?? code.replace(/^(Digit|Numpad|Key)/, '')
-  return [s.ctrl && 'Ctrl', s.shift && 'Shift', s.alt && 'Alt', name].filter(Boolean).join('+')
+  return [s.ctrl && 'Ctrl', s.shift && 'Shift', s.alt && 'Alt', name].filter(
+    (k): k is string => typeof k === 'string',
+  )
+}
+
+/** The label shown in tooltips, e.g. "Ctrl+1". */
+export function shortcutLabel(s: Shortcut): string {
+  return shortcutKeys(s).join('+')
 }
 
 const CODE_LABELS: Record<string, string> = {
   Equal: '=',
   Minus: '-',
+  Comma: ',',
   BracketLeft: '[',
   BracketRight: ']',
   Delete: 'Del',

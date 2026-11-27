@@ -29,6 +29,9 @@ interface UiState {
   setPanelMode(mode: PanelMode): void
   /** Esc in the panel: full page → side panel → closed (PRODUCT §3.2). */
   stepBack(): void
+  /** The command palette (Ctrl+K) is showing. */
+  paletteOpen: boolean
+  setPaletteOpen(open: boolean): void
 }
 
 export const useUiStore = create<UiState>()((set, get) => ({
@@ -61,4 +64,6 @@ export const useUiStore = create<UiState>()((set, get) => ({
     if (get().panelMode === 'full') set({ panelMode: 'side' })
     else get().closeNote()
   },
+  paletteOpen: false,
+  setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
 }))

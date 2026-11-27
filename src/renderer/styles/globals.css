@@ -115,10 +115,14 @@
   /* canvas marquee (UI_SPEC §4.9) */
   --marquee-fill: rgb(250 250 250 / 0.04);
 
+  /* behind the command palette (UI_SPEC §8) */
+  --overlay: rgb(0 0 0 / 0.55);
+
   /* elevation & motion */
   --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-lift: 0 12px 32px -8px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06);
   --shadow-popover: 0 16px 48px -12px rgb(0 0 0 / 0.8), 0 0 0 1px #27272a;
+  --shadow-palette: 0 32px 80px -20px rgb(0 0 0 / 0.9);
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
 }
@@ -153,6 +157,7 @@
   --color-canvas-dot: var(--canvas-dot);
   --color-inset: var(--inset);
   --color-marquee-fill: var(--marquee-fill);
+  --color-overlay: var(--overlay);
   --color-note-text-selection: var(--note-text-selection);
   --color-note-chip: var(--note-chip);
   --color-due-overdue: var(--due-overdue);

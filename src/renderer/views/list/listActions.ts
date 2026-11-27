@@ -61,10 +61,13 @@ export async function placeOnCanvas(id: string): Promise<void> {
   changed()
 }
 
-/** A new note with no card (PRODUCT §3.3), opened in the panel with the title ready to type. */
-export async function createListNote(): Promise<void> {
+/**
+ * A new note with no card (PRODUCT §3.3), opened in the panel. Without a title, the cursor waits
+ * in the title.
+ */
+export async function createListNote(title = ''): Promise<void> {
   const id = nanoid()
-  await window.sprawl.notes.create({ id, title: '', color: 'stone' })
+  await window.sprawl.notes.create({ id, title, color: 'stone' })
   changed()
-  useUiStore.getState().openNote(id, { focusTitle: true })
+  useUiStore.getState().openNote(id, { focusTitle: title === '' })
 }

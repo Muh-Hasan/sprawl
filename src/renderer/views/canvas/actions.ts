@@ -246,24 +246,28 @@ export function endNudge() {
   if (selection().gesture === 'nudge') selection().commitGesture()
 }
 
+/** Switches to the canvas if need be, and runs `fn` once it has loaded. */
+export function whenCanvasReady(fn: () => void): void {
+  const ui = useUiStore.getState()
+  if (ui.view === 'canvas' && canvas().ready) return fn()
+  ui.setView('canvas')
+  const stop = useCanvasStore.subscribe((s) => {
+    if (!s.ready) return
+    stop()
+    fn()
+  })
+}
+
 /**
  * "Show on canvas" (the list, PRODUCT §3.3): switches to the canvas, then selects the note's
  * card and glides to it once the canvas has loaded.
  */
 export function showNoteOnCanvas(noteId: string): void {
-  const go = (): void => {
+  whenCanvasReady(() => {
     const id = canvas().cardOf(noteId)
     const item = id === null ? undefined : canvas().items.get(id)
     if (!item) return
     selection().select([item.id])
     centerOnRect(renderedRect(item))
-  }
-  const ui = useUiStore.getState()
-  if (ui.view === 'canvas' && canvas().ready) return go()
-  ui.setView('canvas')
-  const stop = useCanvasStore.subscribe((s) => {
-    if (!s.ready) return
-    stop()
-    go()
   })
 }

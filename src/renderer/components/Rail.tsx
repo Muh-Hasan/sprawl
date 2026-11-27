@@ -9,7 +9,7 @@ import {
 } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import markLight from '@/assets/brand/sprawl-mark-light.svg'
-import { NAV_SHORTCUTS, shortcutLabel } from '@/lib/shortcuts'
+import { NAV_SHORTCUTS, PALETTE_SHORTCUT, shortcutLabel } from '@/lib/shortcuts'
 import { useClockStore } from '@/stores/clockStore'
 import { useListStore } from '@/stores/listStore'
 import { useUiStore, type View } from '@/stores/uiStore'
@@ -39,7 +39,12 @@ const NAV: readonly NavItem[] = [
   },
 ]
 
-const SETTINGS_ITEM: NavItem = { view: 'settings', label: 'Settings', icon: IconSettings }
+const SETTINGS_ITEM: NavItem = {
+  view: 'settings',
+  label: 'Settings',
+  icon: IconSettings,
+  shortcut: shortcutLabel(NAV_SHORTCUTS.settings),
+}
 
 /**
  * How many open notes are overdue, for the List badge. Asked again as the clock ticks, when notes
@@ -120,15 +125,14 @@ export function Rail() {
         {NAV.map((item) => (
           <RailButton key={item.view} item={item} />
         ))}
-        {/* later: phase-10 opens the command palette (Ctrl+K). */}
         <div className="flex w-full justify-center">
           <IconButton
             data-testid="rail-search"
             icon={IconSearch}
             label="Search"
-            shortcut="Ctrl+K"
+            shortcut={shortcutLabel(PALETTE_SHORTCUT)}
             tooltipSide="right"
-            disabled
+            onClick={() => useUiStore.getState().setPaletteOpen(true)}
             className="size-9 rounded-lg [&_svg:not([class*='size-'])]:size-[18px]"
           />
         </div>
