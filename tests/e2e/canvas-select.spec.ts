@@ -23,7 +23,7 @@ test.describe('canvas selection', () => {
 
     await window.keyboard.press('Control+KeyD')
     await expect(canvas.cards).toHaveCount(7)
-    await expect(window.getByText('Duplicated')).toBeVisible()
+    await expect(window.getByText('Duplicated', { exact: true })).toBeVisible()
     // The copies are selected, 24px down and right, each with a note of its own.
     await expect(canvas.selected).toHaveCount(3)
     await expect(canvas.card('Card a')).toHaveCount(2)

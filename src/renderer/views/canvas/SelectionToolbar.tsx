@@ -1,8 +1,15 @@
 import { useSyncExternalStore } from 'react'
-import { IconArrowsDiagonal, IconCheck, IconCopy, IconTrash } from '@tabler/icons-react'
+import {
+  IconArrowsDiagonal,
+  IconCheck,
+  IconCopy,
+  IconTrash,
+  type TablerIcon,
+} from '@tabler/icons-react'
 import { NOTE_COLORS, type NoteColor } from '@shared/constants'
 import { HintTooltip } from '@/components/HintTooltip'
 import { IconButton } from '@/components/IconButton'
+import { Button } from '@/components/ui/button'
 import { COLOR_NAMES, NOTE_COLOR_CLASSES } from '@/lib/noteColors'
 import { CANVAS_SHORTCUTS, shortcutLabel } from '@/lib/shortcuts'
 import { cn } from '@/lib/utils'
@@ -24,7 +31,7 @@ const GAP = 14
 const MIN_TOP = 56
 const TOOLBAR_H = 44
 /** Half the toolbar's widest width plus a margin: its center stays this far inside the canvas. */
-const HALF_W = 190
+const HALF_W = 250
 
 interface SelectionState {
   box: Rect
@@ -64,11 +71,74 @@ function Divider() {
   return <div aria-hidden className="mx-1 h-4 w-px bg-border" />
 }
 
+interface ActionProps {
+  testId: string
+  icon: TablerIcon
+  label: string
+  /** The short text it shows for several notes ("Done"); the icon alone for one. */
+  text: string
+  shortcut: string
+  /** Several notes: the text button. One note: the icon button. */
+  wide: boolean
+  pressed?: boolean
+  destructive?: boolean
+  onClick(): void
+}
+
+/**
+ * One of the toolbar's actions: a 36px icon button for one note; for several, a 32px text button
+ * ("Done", "Duplicate", "Delete") so the bar reads as acting on all of them (MenusToasts).
+ */
+function Action({
+  testId,
+  icon,
+  label,
+  text,
+  shortcut,
+  wide,
+  pressed,
+  destructive,
+  onClick,
+}: ActionProps) {
+  if (!wide) {
+    return (
+      <IconButton
+        data-testid={testId}
+        icon={icon}
+        label={label}
+        shortcut={shortcut}
+        aria-pressed={pressed}
+        active={pressed}
+        onClick={onClick}
+      />
+    )
+  }
+  return (
+    <HintTooltip label={label} shortcut={shortcut}>
+      <Button
+        variant="ghost"
+        size="sm"
+        data-testid={testId}
+        aria-label={label}
+        aria-pressed={pressed}
+        onClick={onClick}
+        className={cn(
+          'rounded-lg px-2.5 text-xs font-normal text-foreground/85 hover:bg-muted dark:hover:bg-muted',
+          pressed && 'bg-muted text-foreground',
+          destructive && 'text-destructive hover:text-destructive',
+        )}
+      >
+        {text}
+      </Button>
+    </HintTooltip>
+  )
+}
+
 /**
  * The floating toolbar over selected notes (UI_SPEC §4.9, FigJam-style): the six colors, then
- * Open (one note) and Mark done, then Duplicate and Delete. It sits centered above the
- * selection, or below it when there's no room above, and hides while a move, resize or marquee
- * is under way.
+ * Open (one note) and Mark done, then Duplicate and Delete. Several notes add an "N selected"
+ * count in front and turn the actions into text buttons. It sits centered above the selection,
+ * or below it when there's no room above, and hides while a move, resize or marquee is under way.
  */
 export function SelectionToolbar() {
   const state = useSelectionScreenBox()
@@ -80,6 +150,7 @@ export function SelectionToolbar() {
   const left = Math.min(Math.max(box.x + box.w / 2, HALF_W), Math.max(HALF_W, width - HALF_W))
   const current = colors.size === 1 ? [...colors][0] : undefined
   const doneLabel = allDone ? 'Mark not done' : 'Mark done'
+  const many = count > 1
 
   return (
     <div
@@ -94,6 +165,17 @@ export function SelectionToolbar() {
       // Tab still reaches the buttons.
       onMouseDown={(e) => e.preventDefault()}
     >
+      {many && (
+        <>
+          <span
+            data-testid="selection-count"
+            className="pr-2.5 pl-1.5 text-xs text-muted-foreground"
+          >
+            {count} selected
+          </span>
+          <Divider />
+        </>
+      )}
       {NOTE_COLORS.map((color) => (
         <HintTooltip key={color} label={COLOR_NAMES[color]}>
           <button
@@ -124,28 +206,34 @@ export function SelectionToolbar() {
           onClick={() => openSelectedNote()}
         />
       )}
-      <IconButton
-        data-testid="selection-done"
+      <Action
+        testId="selection-done"
         icon={IconCheck}
         label={doneLabel}
+        text={allDone ? 'Not done' : 'Done'}
         shortcut={shortcutLabel(CANVAS_SHORTCUTS.markDone)}
-        aria-pressed={allDone}
-        active={allDone}
+        wide={many}
+        pressed={allDone}
         onClick={toggleSelectionDone}
       />
-      <Divider />
-      <IconButton
-        data-testid="selection-duplicate"
+      {!many && <Divider />}
+      <Action
+        testId="selection-duplicate"
         icon={IconCopy}
         label="Duplicate"
+        text="Duplicate"
         shortcut={shortcutLabel(CANVAS_SHORTCUTS.duplicate)}
+        wide={many}
         onClick={duplicateSelection}
       />
-      <IconButton
-        data-testid="selection-delete"
+      <Action
+        testId="selection-delete"
         icon={IconTrash}
         label="Delete"
+        text="Delete"
         shortcut={shortcutLabel(CANVAS_SHORTCUTS.delete)}
+        wide={many}
+        destructive
         onClick={deleteSelection}
       />
     </div>
