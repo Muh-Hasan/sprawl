@@ -14,6 +14,7 @@ import {
   logUpdateInput,
   noteIdInput,
   notesCreateInput,
+  notesCountsInput,
   notesListInput,
   notesPlaceInput,
   notesSetDoneInput,
@@ -168,6 +169,7 @@ export function registerIpc({
 
   // notes --------------------------------------------------------------------------------
   handle(IPC.notes.list, notesListInput, (query) => notes.list(query))
+  handle(IPC.notes.listCounts, notesCountsInput, (query) => notes.listCounts(query))
   handle(IPC.notes.overdueCount, noInput, () => notes.overdueCount())
   handle(IPC.notes.pinned, noInput, () => notes.pinned())
   write(IPC.notes.placeOnCanvas, notesPlaceInput, ({ id, at }) =>

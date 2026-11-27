@@ -3,11 +3,11 @@ import { dayStart, dueState } from '@shared/due'
 import type { ListTab, NoteListRow } from '@shared/types'
 
 /**
- * The List view's pure logic (PRODUCT §3.3, UI_SPEC §5b): the Due tab's groups, the time each row
- * shows, and the header count.
+ * The List view's pure logic (PRODUCT §3.3, UI_SPEC §5b): the due groups, the time each row shows,
+ * and the header count.
  */
 
-export const DUE_GROUPS = ['overdue', 'today', 'tomorrow', 'week', 'later'] as const
+export const DUE_GROUPS = ['overdue', 'today', 'tomorrow', 'week', 'later', 'none'] as const
 export type DueGroup = (typeof DUE_GROUPS)[number]
 
 export const DUE_GROUP_LABELS: Record<DueGroup, string> = {
@@ -16,6 +16,12 @@ export const DUE_GROUP_LABELS: Record<DueGroup, string> = {
   tomorrow: 'Tomorrow',
   week: 'This week',
   later: 'Later',
+  none: 'No date',
+}
+
+/** Open and Due show their rows in due groups; Done and All are one flat list. */
+export function groupsTab(tab: ListTab): boolean {
+  return tab === 'open' || tab === 'due'
 }
 
 /**
@@ -36,12 +42,15 @@ export interface RowGroup {
   rows: NoteListRow[]
 }
 
-/** The Due tab's rows in their groups, in order, leaving out empty groups. Rows keep their order. */
+/**
+ * Rows in their due groups, in order, with notes without a date last ("No date"), leaving out
+ * empty groups. Within a group, rows keep their order (the tab's sort).
+ */
 export function groupByDue(rows: readonly NoteListRow[], now: number): RowGroup[] {
   const groups = new Map<DueGroup, NoteListRow[]>(DUE_GROUPS.map((g) => [g, []]))
   for (const row of rows) {
-    if (row.dueDay === null) continue
-    groups.get(dueGroupOf(row.dueDay, row.dueTime, now))!.push(row)
+    const group = row.dueDay === null ? 'none' : dueGroupOf(row.dueDay, row.dueTime, now)
+    groups.get(group)!.push(row)
   }
   return DUE_GROUPS.flatMap((group) => {
     const list = groups.get(group)!

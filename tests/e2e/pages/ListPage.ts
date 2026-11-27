@@ -41,6 +41,11 @@ export class ListPage {
     return this.page.getByTestId(`list-tab-${name}`)
   }
 
+  /** How many notes a tab holds, as its label shows. */
+  tabCount(name: NoteListQuery['tab']): Locator {
+    return this.page.getByTestId(`list-tab-${name}-count`)
+  }
+
   color(name: NoteColor): Locator {
     return this.page.getByTestId(`list-color-${name}`)
   }

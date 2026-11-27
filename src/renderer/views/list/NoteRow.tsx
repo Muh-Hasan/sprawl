@@ -44,7 +44,7 @@ interface NoteRowProps {
 }
 
 /**
- * One row of the List view (UI_SPEC §5b), 44px: the done checkbox, color dot, title, first body
+ * One row of the List view (UI_SPEC §5b), 52px: the done checkbox, color swatch, title, first body
  * line (from 1100px wide), the card chips, "Not on canvas", and the edited (or done) time, which
  * the hover actions replace.
  */
@@ -68,28 +68,32 @@ export const NoteRow = memo(function NoteRow({
       data-leaving={leaving || undefined}
       onClick={() => actions.open(row.id)}
       className={cn(
-        'group relative flex h-11 cursor-default items-center gap-3 border-b border-border px-3 transition-opacity duration-[180ms] ease-(--ease-in) hover:bg-muted',
-        selected && 'bg-muted',
+        'group relative flex h-13 cursor-default items-center gap-3.5 rounded-[10px] px-3 transition-[opacity,background-color] duration-[180ms] ease-(--ease-in) hover:bg-surface',
+        selected && 'bg-muted hover:bg-muted',
         leaving && 'pointer-events-none opacity-0',
       )}
     >
-      {selected && <span aria-hidden className="absolute inset-y-0 left-0 w-0.5 bg-foreground" />}
+      {selected && (
+        <span aria-hidden className="absolute inset-y-3 left-0 w-0.5 rounded-full bg-foreground" />
+      )}
       <Checkbox
         data-testid="list-row-check"
         aria-label={done ? 'Mark not done' : 'Mark done'}
         checked={done}
+        className="size-5 rounded-md border-[1.5px] border-border-strong [&_svg]:size-[13px]"
         onClick={(e) => e.stopPropagation()}
         onCheckedChange={() => actions.toggleDone(row)}
       />
       <span
         aria-hidden
-        className={cn('size-2 shrink-0 rounded-full', NOTE_COLOR_CLASSES[row.color].swatch)}
+        className={cn('size-2.5 shrink-0 rounded-[3px]', NOTE_COLOR_CLASSES[row.color].swatch)}
       />
       <span
         data-testid="list-row-title"
         className={cn(
-          'min-w-0 truncate text-sm font-medium',
+          'min-w-0 truncate text-base font-medium',
           row.title === '' && 'text-subtle-foreground',
+          done && 'text-muted-foreground line-through',
         )}
       >
         {row.title || 'Untitled'}

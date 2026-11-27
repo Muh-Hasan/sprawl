@@ -14,7 +14,7 @@ test.describe('list view', () => {
     await setNow(app, page, local(25, 10))
   })
 
-  test('tabs, the due groups, colors, the title filter and sort; the overdue badge', async ({
+  test('tabs and their counts, the due groups, colors, the title filter and sort; the overdue badge', async ({
     window: page,
   }) => {
     const list = new ListPage(page)
@@ -29,12 +29,23 @@ test.describe('list view', () => {
     ])
     await list.open()
 
-    // Open (the default): everything not done, most recently edited first.
+    // Open (the default): everything not done, in due groups with "No date" last. Each tab shows
+    // how many notes it holds.
     await expect(list.tab('open')).toHaveAttribute('data-state', 'on')
     await expect(list.count).toHaveText('6 open')
+    for (const [tab, n] of [
+      ['open', '6'],
+      ['due', '5'],
+      ['done', '1'],
+      ['all', '7'],
+    ] as const) {
+      await expect(list.tabCount(tab)).toHaveText(n)
+    }
     await expect
       .poll(() => list.titles())
-      .toEqual(['an idea', 'Dentist', 'Pay rent', 'Buy milk', 'Call Ali', 'Overdue report'])
+      .toEqual(['Overdue report', 'Call Ali', 'Buy milk', 'Pay rent', 'Dentist', 'an idea'])
+    expect(await list.titles(list.group('none'))).toEqual(['an idea'])
+    await expect(list.group('none').getByRole('heading')).toContainText('No date')
     await expect(list.row('Overdue report').getByTestId('list-row-due')).toHaveAttribute(
       'data-due',
       'overdue',
@@ -49,7 +60,9 @@ test.describe('list view', () => {
     expect(await list.titles(list.group('tomorrow'))).toEqual(['Buy milk'])
     expect(await list.titles(list.group('week'))).toEqual(['Pay rent'])
     expect(await list.titles(list.group('later'))).toEqual(['Dentist'])
-    await expect(list.group('overdue').getByRole('heading')).toHaveText('Overdue')
+    await expect(list.group('none')).toHaveCount(0)
+    await expect(list.group('overdue').getByRole('heading')).toContainText('Overdue')
+    await expect(list.group('overdue').getByTestId('list-group-count')).toHaveText('1')
 
     // Done shows the done note, checked; All shows the seven.
     await list.tab('done').click()
@@ -64,6 +77,8 @@ test.describe('list view', () => {
     // Colors (several at once) and the title filter.
     await list.color('sage').click()
     await expect.poll(() => list.titles()).toEqual(['an idea', 'Buy milk'])
+    await expect(list.tabCount('all')).toHaveText('2')
+    await expect(list.tabCount('open')).toHaveText('2')
     await list.color('sky').click()
     await expect(list.rows).toHaveCount(3)
     await list.filter.fill('ALI')

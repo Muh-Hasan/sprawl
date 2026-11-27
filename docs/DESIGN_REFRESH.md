@@ -120,7 +120,7 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
   - The panel floats over the canvas (12px inset, radius 16, slide-in), keeps the resizable width (320 to 720, default 440) and the breadcrumb header; the meta rows sit under the title. Full page uses the `NotePage` layout (720px column, 36px title).
   - While it's open, set `--canvas-inset-right` on the canvas to the panel's width plus its 12px inset. The toolbar, zoom control and empty state already center on what's left (R6), so that's all the shift needs.
   - Specs: UI_SPEC §5, §5.1. Tests: update `note-panel.spec.ts`.
-- [ ] **R9 · `feat/list-redesign`**: List view.
+- [x] **R9 · `feat/list-redesign`**: List view.
   - `List` artboard: 52px rows, larger filters, due groups (Overdue, Today, This week, Later, No date) in the Open tab too, hover actions. The Notes / Drawings switch shows only Notes until phase 8.
   - Specs: UI_SPEC §5b. Tests: update `list.spec.ts`.
 - [ ] **R10 · `feat/log-redesign`**: Daily log.

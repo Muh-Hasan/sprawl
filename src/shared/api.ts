@@ -10,6 +10,8 @@ import type {
   Note,
   NoteLink,
   NoteLinkPatch,
+  NoteCountQuery,
+  NoteListCounts,
   NoteListQuery,
   NoteListRow,
   NotePatch,
@@ -52,6 +54,8 @@ export interface SettingsAPI {
 export interface NotesAPI {
   /** The List view's rows for a tab, its colors, a title filter and a sort (PRODUCT §3.3). */
   list(query: NoteListQuery): Promise<NoteListRow[]>
+  /** How many notes each tab holds for a color and title filter (the List's tab counts). */
+  listCounts(query: NoteCountQuery): Promise<NoteListCounts>
   /** How many open notes are overdue (the List badge and the tray tooltip). */
   overdueCount(): Promise<number>
   /** The sidebar's Pinned notes (live ones, done or not), in the order they were pinned. */
@@ -185,6 +189,7 @@ export const IPC = {
   },
   notes: {
     list: 'notes:list',
+    listCounts: 'notes:listCounts',
     overdueCount: 'notes:overdueCount',
     pinned: 'notes:pinned',
     placeOnCanvas: 'notes:placeOnCanvas',

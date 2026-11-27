@@ -7,6 +7,7 @@ import {
   dueGroupOf,
   editedLabel,
   groupByDue,
+  groupsTab,
   leavesTab,
 } from '../../../../../src/renderer/views/list/listLogic'
 
@@ -64,6 +65,22 @@ describe('groupByDue', () => {
       ['today', ['c']],
       ['later', ['d']],
     ])
+  })
+
+  it('puts notes without a date last, under "No date", in the order given (the Open tab)', () => {
+    const rows = [row('x', null), row('a', '2026-12-10'), row('y', null), row('b', '2026-11-26')]
+    expect(groupByDue(rows, WED()).map((g) => [g.group, g.rows.map((r) => r.id)])).toEqual([
+      ['tomorrow', ['b']],
+      ['later', ['a']],
+      ['none', ['x', 'y']],
+    ])
+  })
+
+  it('groups the Open and Due tabs only', () => {
+    expect(groupsTab('open')).toBe(true)
+    expect(groupsTab('due')).toBe(true)
+    expect(groupsTab('done')).toBe(false)
+    expect(groupsTab('all')).toBe(false)
   })
 })
 

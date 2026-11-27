@@ -362,6 +362,9 @@ export const logUpdateInput = z
 
 export const notesListInput = listFilterSchema.extend({ text: z.string().max(200) }).strict()
 
+/** `listCounts`: the colors and title filter, without a tab or sort. */
+export const notesCountsInput = notesListInput.pick({ colors: true, text: true }).strict()
+
 /** `placeOnCanvas`: the note, and the world point to center its card on (default: the view center). */
 export const notesPlaceInput = z
   .object({ id: idSchema, at: z.object({ x: coordSchema, y: coordSchema }).strict().optional() })

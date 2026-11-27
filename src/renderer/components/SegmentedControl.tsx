@@ -3,11 +3,15 @@ import { cn } from '@/lib/utils'
 
 interface SegmentedControlProps<T extends string> {
   value: T
-  options: readonly { value: T; label: string }[]
+  /** A `count` shows after the label, smaller and muted (the List's tabs). */
+  options: readonly { value: T; label: string; count?: number }[]
   onChange(value: T): void
   label: string
-  /** `sm` for the list filter, `xs` (24px) for the capture window. */
-  size?: 'sm' | 'xs'
+  /**
+   * `md` (32px, in a bordered track) for the List's tabs, `sm` for settings, `xs` (24px) for the
+   * capture window.
+   */
+  size?: 'md' | 'sm' | 'xs'
   testIdPrefix: string
   className?: string
 }
@@ -32,7 +36,11 @@ export function SegmentedControl<T extends string>({
       aria-label={label}
       value={value}
       onValueChange={(v) => v && onChange(v as T)}
-      className={cn('gap-0.5', className)}
+      className={cn(
+        'gap-0.5',
+        size === 'md' && 'rounded-[11px] border border-border bg-card p-[3px]',
+        className,
+      )}
     >
       {options.map((o) => (
         <ToggleGroupItem
@@ -40,11 +48,21 @@ export function SegmentedControl<T extends string>({
           value={o.value}
           data-testid={`${testIdPrefix}-${o.value}`}
           className={cn(
-            'rounded-md px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground',
-            size === 'xs' ? 'h-6 min-w-0 px-2' : 'h-7',
+            'group/seg rounded-md px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground',
+            size === 'xs' && 'h-6 min-w-0 px-2',
+            size === 'sm' && 'h-7',
+            size === 'md' && 'h-8 gap-1.5 rounded-lg px-3.5 text-sm',
           )}
         >
           {o.label}
+          {o.count !== undefined && (
+            <span
+              data-testid={`${testIdPrefix}-${o.value}-count`}
+              className="text-2xs text-subtle-foreground tabular-nums group-data-[state=on]/seg:text-muted-foreground"
+            >
+              {o.count}
+            </span>
+          )}
         </ToggleGroupItem>
       ))}
     </ToggleGroup>

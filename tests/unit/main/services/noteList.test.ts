@@ -157,6 +157,49 @@ describe('notes.list', () => {
   })
 })
 
+describe('notes.listCounts', () => {
+  it('counts each tab, after the color and title filter, matching what the tab lists', () => {
+    note('a', 0, { title: 'Buy milk', color: 'sage', due: ['2026-11-27', null] })
+    note('b', 1, { title: 'call Ali', color: 'sky', due: ['2026-11-25', '08:00'] })
+    note('c', 2, { title: 'Zebra', color: 'sage' })
+    note('d', 3, { title: 'Gone', color: 'sage' })
+    notes.setDone('c', true)
+    notes.remove('d')
+    expect(notes.listCounts({ colors: [], text: '' })).toEqual({
+      open: 2,
+      due: 2,
+      done: 1,
+      all: 3,
+    })
+    expect(notes.listCounts({ colors: ['sage'], text: '' })).toEqual({
+      open: 1,
+      due: 1,
+      done: 1,
+      all: 2,
+    })
+    expect(notes.listCounts({ colors: [], text: 'ALI' })).toEqual({
+      open: 1,
+      due: 1,
+      done: 0,
+      all: 1,
+    })
+    for (const tab of ['open', 'due', 'done', 'all'] as const) {
+      expect(ids({ tab, colors: ['sage'] })).toHaveLength(
+        notes.listCounts({ colors: ['sage'], text: '' })[tab],
+      )
+    }
+  })
+
+  it('is all zeros with no notes', () => {
+    expect(notes.listCounts({ colors: ['rose'], text: '' })).toEqual({
+      open: 0,
+      due: 0,
+      done: 0,
+      all: 0,
+    })
+  })
+})
+
 describe('countOverdue', () => {
   it('counts open notes past their time, or past the end of a day without one', () => {
     note('a', 0, { due: ['2026-11-25', '08:00'] })

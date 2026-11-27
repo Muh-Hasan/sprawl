@@ -20,6 +20,7 @@ const api: SprawlAPI = {
   },
   notes: {
     list: (query) => ipcRenderer.invoke(IPC.notes.list, query),
+    listCounts: (query) => ipcRenderer.invoke(IPC.notes.listCounts, query),
     overdueCount: () => ipcRenderer.invoke(IPC.notes.overdueCount),
     pinned: () => ipcRenderer.invoke(IPC.notes.pinned),
     placeOnCanvas: (id, at) => ipcRenderer.invoke(IPC.notes.placeOnCanvas, { id, at }),

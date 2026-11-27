@@ -5,6 +5,7 @@ import {
   canvasApplyInput,
   captureHeightInput,
   captureSubmitInput,
+  notesCountsInput,
   notesListInput,
   notesPlaceInput,
   pauseNotificationsInput,
@@ -326,6 +327,19 @@ describe('phase 6 schemas: list, capture and system', () => {
       { tab: 'open', colors: [], sort: 'edited' },
     ]) {
       expect(notesListInput.safeParse(bad).success, JSON.stringify(bad)).toBe(false)
+    }
+  })
+
+  it('notes.listCounts takes only the colors and the title filter', () => {
+    const ok = { colors: ['sage'], text: 'rent' }
+    expect(notesCountsInput.parse(ok)).toEqual(ok)
+    for (const bad of [
+      { ...ok, tab: 'open' },
+      { ...ok, colors: ['red'] },
+      { ...ok, text: 'x'.repeat(201) },
+      { colors: [] },
+    ]) {
+      expect(notesCountsInput.safeParse(bad).success, JSON.stringify(bad)).toBe(false)
     }
   })
 
