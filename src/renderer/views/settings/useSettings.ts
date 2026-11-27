@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import type { SettingKey, Settings } from '@shared/schemas'
 import { useVaultStore } from '@/stores/vaultStore'
 
+/** What each settings section gets from `useSettings`. */
+export type SectionProps = ReturnType<typeof useSettings>
+
 /**
  * All settings for the Settings view, read again when the vault changes. `update` shows the new
  * value at once and saves it; main follows the keys it acts on (reminders, tray, login item).

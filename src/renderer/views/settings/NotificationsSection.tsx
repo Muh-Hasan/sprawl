@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import type { NotificationStatus } from '@shared/api'
-import type { SettingKey, Settings } from '@shared/schemas'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -12,6 +11,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { SettingsRow, SettingsSection } from './SettingsLayout'
+import type { SectionProps } from './useSettings'
 
 /** 00:00 to 23:30 in 30-minute steps (UI_SPEC §9). */
 const HALF_HOURS = Array.from({ length: 48 }, (_, i) => {
@@ -36,11 +36,6 @@ function useNotificationStatus(): NotificationStatus | null {
   return status
 }
 
-interface SectionProps {
-  settings: Settings | null
-  update<K extends SettingKey>(key: K, value: Settings[K]): void
-}
-
 /**
  * Notifications (UI_SPEC §9, PRODUCT §3.8): due reminders, the morning summary and its time, a
  * test toast, and the warning when Windows blocks Sprawl's notifications.
@@ -49,11 +44,15 @@ export function NotificationsSection({ settings, update }: SectionProps) {
   const status = useNotificationStatus()
   const morning = settings?.morningSummary
   return (
-    <SettingsSection title="Notifications" testId="settings-notifications">
+    <SettingsSection
+      title="Notifications"
+      blurb="Reminders arrive as Windows notifications."
+      testId="settings-notifications"
+    >
       {status === 'blocked' && (
         <div
           data-testid="settings-notifications-blocked"
-          className="flex min-h-12 items-center justify-between gap-6 py-1.5"
+          className="flex min-h-16 items-center justify-between gap-4 px-[18px] py-3"
         >
           <span className="text-sm text-due-overdue">
             Windows is blocking Sprawl's notifications
@@ -61,7 +60,6 @@ export function NotificationsSection({ settings, update }: SectionProps) {
           <Button
             data-testid="settings-open-notification-settings"
             variant="secondary"
-            size="sm"
             onClick={() => void window.sprawl.system.openNotificationSettings()}
           >
             Open Windows settings
@@ -89,8 +87,7 @@ export function NotificationsSection({ settings, update }: SectionProps) {
           <SelectTrigger
             data-testid="settings-morning-time"
             aria-label="Morning summary time"
-            size="sm"
-            className="h-7 w-24 font-mono text-xs"
+            className="w-24 font-mono text-xs"
           >
             <SelectValue />
           </SelectTrigger>
@@ -110,17 +107,19 @@ export function NotificationsSection({ settings, update }: SectionProps) {
           onCheckedChange={(on) => morning && update('morningSummary', { ...morning, on })}
         />
       </SettingsRow>
-      <SettingsRow label="Test notification">
+      <SettingsRow
+        label="Test notification"
+        description="Check that Windows shows Sprawl's notifications."
+      >
         <Button
           data-testid="settings-test-notification"
           variant="secondary"
-          size="sm"
           onClick={() => {
             void window.sprawl.system.testNotification()
             toast('Test notification sent')
           }}
         >
-          Send a test notification
+          Send a test
         </Button>
       </SettingsRow>
     </SettingsSection>

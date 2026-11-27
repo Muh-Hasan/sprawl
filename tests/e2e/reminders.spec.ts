@@ -2,6 +2,7 @@ import { expect, notifications, openLink, relaunch, setNow, test, trayState } fr
 import { CanvasPage } from './pages/CanvasPage'
 import { ListPage } from './pages/ListPage'
 import { NotePanel } from './pages/NotePanel'
+import { SettingsPage } from './pages/SettingsPage'
 
 /** A local wall-clock instant in November 2026. */
 const local = (d: number, h: number, m = 0) => new Date(2026, 10, d, h, m).getTime()
@@ -129,7 +130,7 @@ test.describe('reminders (fixed clock, recorded toasts)', () => {
       { id: 'b', title: 'Held', due: [TODAY, '11:00'], remind: 'at' },
     ])
     // Turned off in Settings: the 09:30 one is skipped for good.
-    await page.getByTestId('sidebar-settings').click()
+    await new SettingsPage(page).open('notifications')
     await page.getByTestId('settings-reminders').click()
     await expect(page.getByTestId('settings-reminders')).toHaveAttribute('data-state', 'unchecked')
     await setNow(app, page, local(25, 9, 30))
@@ -149,7 +150,7 @@ test.describe('reminders (fixed clock, recorded toasts)', () => {
   })
 
   test('Settings sends a test notification', async ({ app, window: page }) => {
-    await page.getByTestId('sidebar-settings').click()
+    await new SettingsPage(page).open('notifications')
     await expect(page.getByTestId('settings-notifications-blocked')).toHaveCount(0)
     await page.getByTestId('settings-test-notification').click()
     await expect

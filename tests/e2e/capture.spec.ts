@@ -2,6 +2,7 @@ import { captureVisible, expect, openCapture, setNow, test } from './fixtures'
 import { CanvasPage } from './pages/CanvasPage'
 import { ListPage } from './pages/ListPage'
 import { LogPage } from './pages/LogPage'
+import { SettingsPage } from './pages/SettingsPage'
 
 /** A local wall-clock instant in November 2026. */
 const local = (d: number, h: number, m = 0) => new Date(2026, 10, d, h, m).getTime()
@@ -142,7 +143,7 @@ test.describe('quick capture', () => {
   })
 
   test('the default mode comes from Settings', async ({ app, window: page, consoleProblems }) => {
-    await page.getByTestId('sidebar-settings').click()
+    await new SettingsPage(page).open('capture')
     await page.getByTestId('settings-capture-mode-log').click()
     await expect(page.getByTestId('settings-capture-mode-log')).toHaveAttribute('data-state', 'on')
     await expect
