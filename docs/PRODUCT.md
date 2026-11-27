@@ -192,6 +192,7 @@ Native Windows notifications (toasts), and only for things the user asked for.
 - **Marking done** or clearing the due date cancels any pending reminder for that note.
 
 ### 3.9 Settings
+Settings has a section menu: General, Appearance, Canvas, Notifications, Quick capture, Backup and export, Shortcuts and About (UI_SPEC §9). Rows for features that aren't built yet show "Coming soon" and are disabled.
 - **Vault folder:** shows the path and a "Change…" button (moves or reopens). It defaults to `Documents\Sprawl`.
 - **Export:** "Export everything as markdown…" writes a folder of `.md` notes, `.excalidraw` drawings, `attachments/` and `log/YYYY-MM-DD.md`.
 - **Backup:** "Back up now" makes a zipped copy of the vault, and there's an option for an automatic daily backup (keeping the last 7).
@@ -199,7 +200,9 @@ Native Windows notifications (toasts), and only for things the user asked for.
 - Settings that belong to this PC rather than to the data (quick capture shortcut and default mode, background and start-at-login, window position) are kept outside the vault, so switching vaults doesn't change them.
 - **Notifications:** due reminders on/off, morning summary on/off plus its time, and a "Send a test notification" button.
 - **Quick capture:** the shortcut (click to record a new one; conflicts are shown) and the default mode (Note or Log).
-- **System:** keep running in the background (tray), start when Windows starts.
+- **System** (under General): keep running in the background (tray), start when Windows starts.
+- **Appearance:** text size, the sidebar (labels or icons only) and reduce motion.
+- **Shortcuts:** the app-wide shortcuts and their keys.
 - **About:** version, license and repo link.
 
 ---

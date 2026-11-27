@@ -126,7 +126,7 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
 - [x] **R10 · `feat/log-redesign`**: Daily log.
   - `DailyLog` artboard: larger week strip, the three summary tiles (done, logged, days in a row), roomier entries, the floating composer.
   - Specs: UI_SPEC §6. Tests: update `log-days.spec.ts` and `done-and-log.spec.ts`; unit for the streak count.
-- [ ] **R11 · `feat/settings-redesign`**: Settings.
+- [x] **R11 · `feat/settings-redesign`**: Settings.
   - `Settings` artboard: section menu (General, Appearance, Canvas, Notifications, Quick capture, Backup and export, Shortcuts, About), grouped rows in cards, Appearance with text size, sidebar and reduce motion. Rows that only work after phase 11 (backup, export) are shown disabled with "Coming soon" until then.
   - Specs: UI_SPEC §9. Tests: update `settings.spec.ts`.
 - [ ] **R12 · `feat/onboarding-capture-redesign`**: onboarding and quick capture.
@@ -137,6 +137,7 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
   - Specs: UI_SPEC §4.10, §11, new §12 (shortcuts sheet). Tests: `shortcuts-sheet.spec.ts`.
 - [ ] **R14 · `feat/motion`**: motion and reduced motion.
   - DESIGN_SYSTEM §6 rewritten: durations, easings and what moves (panel slide, menu and popover scale-in, card lift, view cross-fade, toolbar shift). The reduce motion switch and the Windows setting both turn it off.
+  - R11 shows the Reduce motion row in Settings → Appearance, disabled with "Coming soon". R14 adds its setting and turns the switch on.
   - Tests: e2e that reduce motion sets the attribute the CSS keys off.
 
 When all of these are ticked, the refresh is done and phase 7 starts.
