@@ -61,10 +61,10 @@ export const NOTE_CARD = { w: 240, h: 64 } as const
 export const SNAP_GRID = 8
 
 /**
- * The quick-capture window (UI_SPEC §5c): 520px wide, its height fitted to the card, its top at
+ * The quick-capture window (UI_SPEC §5c): 560px wide, its height fitted to the card, its top at
  * 22% of the monitor.
  */
-export const CAPTURE_WINDOW = { width: 520, minHeight: 112, maxHeight: 320, top: 0.22 } as const
+export const CAPTURE_WINDOW = { width: 560, minHeight: 150, maxHeight: 380, top: 0.22 } as const
 
 /** How long the "Saved to canvas" / "Logged" flash shows before the capture window hides. */
 export const CAPTURE_FLASH_MS = 600

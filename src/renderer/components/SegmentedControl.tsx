@@ -8,8 +8,8 @@ interface SegmentedControlProps<T extends string> {
   onChange(value: T): void
   label: string
   /**
-   * `md` (32px, in a bordered track) for the List's tabs, `sm` for settings, `xs` (24px) for the
-   * capture window.
+   * `md` (32px, in a bordered track) for the List's tabs, `sm` for settings, `xs` (26px, in a
+   * small bordered track) for the capture window.
    */
   size?: 'md' | 'sm' | 'xs'
   testIdPrefix: string
@@ -39,6 +39,7 @@ export function SegmentedControl<T extends string>({
       className={cn(
         'gap-0.5',
         size === 'md' && 'rounded-[11px] border border-border bg-card p-[3px]',
+        size === 'xs' && 'rounded-lg border border-border bg-background p-0.5',
         className,
       )}
     >
@@ -49,7 +50,7 @@ export function SegmentedControl<T extends string>({
           data-testid={`${testIdPrefix}-${o.value}`}
           className={cn(
             'group/seg rounded-md px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground',
-            size === 'xs' && 'h-6 min-w-0 px-2',
+            size === 'xs' && 'h-[26px] min-w-0 rounded-md px-2.5',
             size === 'sm' && 'h-7',
             size === 'md' && 'h-8 gap-1.5 rounded-lg px-3.5 text-sm',
           )}

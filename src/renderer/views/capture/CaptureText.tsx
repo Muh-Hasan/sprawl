@@ -1,8 +1,8 @@
 import { forwardRef, useLayoutEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
-/** 8 lines of `text-base` (14/22). */
-const MAX_HEIGHT = 8 * 22
+/** 8 lines of 17/26 text. */
+const MAX_HEIGHT = 8 * 26
 
 interface CaptureTextProps {
   value: string
@@ -14,7 +14,7 @@ interface CaptureTextProps {
 }
 
 /** The textarea's text metrics, shared by the highlight layer behind it so they line up. */
-const TEXT = 'm-0 w-full border-0 p-0 text-base leading-[22px] whitespace-pre-wrap break-words'
+const TEXT = 'm-0 w-full border-0 p-0 text-[17px] leading-[26px] whitespace-pre-wrap break-words'
 
 /**
  * The capture text box (UI_SPEC §5c): borderless, growing to 8 lines. A layer behind the text,

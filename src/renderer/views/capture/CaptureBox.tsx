@@ -5,6 +5,7 @@ import type { CaptureMode } from '@shared/api'
 import { dueChipLabel } from '@shared/due'
 import { parseCapture } from '@shared/parseCapture'
 import markLight from '@/assets/brand/sprawl-mark-light.svg'
+import { Button } from '@/components/ui/button'
 import { SegmentedControl } from '@/components/SegmentedControl'
 import { ShortcutKbd } from '@/components/ShortcutKbd'
 import { clockNow, useClockStore } from '@/stores/clockStore'
@@ -16,8 +17,13 @@ const MODES = [
   { value: 'log', label: 'Log' },
 ] as const
 
+const SAVE_LABEL: Record<CaptureMode, string> = {
+  note: 'Save to canvas',
+  log: 'Add to today’s log',
+}
+
 const PLACEHOLDER: Record<CaptureMode, string> = {
-  note: 'Write a note… first line is the title. Try !tomorrow 15:00',
+  note: 'Write a note. The first line is the title. Try !tomorrow 15:00',
   log: 'What did you just do?',
 }
 
@@ -37,8 +43,8 @@ function useFitWindow(ref: React.RefObject<HTMLElement | null>): void {
 /**
  * The quick-capture card (PRODUCT §3.7, UI_SPEC §5c). Note mode: the first line is the title and
  * a `!date` token sets the due date (highlighted, with a preview chip). Log mode: a line in
- * today's log. Enter saves, Shift+Enter adds a line, Tab switches the mode, Esc clears the text
- * or closes. After saving, "Saved to canvas" or "Logged" shows for 600ms, then the window hides.
+ * today's log. Enter (or the save button, which names the destination) saves, Shift+Enter adds a
+ * line, Tab switches the mode, Esc clears the text or closes. After saving, "Saved to canvas" or "Logged" shows for 600ms, then the window hides.
  */
 export function CaptureBox() {
   const showRev = useShowStore((s) => s.rev)
@@ -116,23 +122,26 @@ export function CaptureBox() {
       ref={card}
       data-testid="capture-root"
       data-mode={mode}
-      className="flex flex-col overflow-hidden rounded-[14px] border border-border-strong bg-card shadow-(--shadow-popover)"
+      className="flex flex-col overflow-hidden rounded-2xl border border-border-strong bg-card shadow-(--shadow-popover)"
     >
       {saved !== null ? (
         <div
+          role="status"
           data-testid="capture-saved"
-          className="flex h-[110px] items-center justify-center gap-2 text-sm animate-in fade-in-0 motion-safe:zoom-in-95"
+          className="flex h-[148px] flex-col items-center justify-center gap-2.5 text-base font-medium animate-in fade-in-0 motion-safe:zoom-in-95"
         >
-          <IconCheck className="size-4" stroke={2} aria-hidden />
+          <span className="flex size-10 items-center justify-center rounded-full bg-foreground text-background">
+            <IconCheck className="size-[22px]" stroke={2.5} aria-hidden />
+          </span>
           {saved}
         </div>
       ) : (
         <div
           key={showRev}
-          className="flex flex-col gap-2.5 p-3.5 animate-in duration-[120ms] fade-in-0 motion-safe:slide-in-from-bottom-1.5"
+          className="flex flex-col p-4 animate-in duration-[120ms] fade-in-0 motion-safe:slide-in-from-bottom-1.5"
         >
-          <div className="flex items-center gap-2">
-            <img src={markLight} alt="" aria-hidden className="size-3.5" draggable={false} />
+          <div className="flex items-center gap-2.5">
+            <img src={markLight} alt="" aria-hidden className="size-4" draggable={false} />
             <SegmentedControl
               label="Capture as"
               size="xs"
@@ -144,42 +153,60 @@ export function CaptureBox() {
               }}
               testIdPrefix="capture-mode"
             />
-            <span className="ml-auto flex items-center gap-1 text-2xs text-subtle-foreground">
-              <ShortcutKbd>Tab</ShortcutKbd>
+            <span className="ml-auto flex items-center gap-1.5 text-2xs text-subtle-foreground">
+              <ShortcutKbd>Tab</ShortcutKbd> switches
             </span>
           </div>
-          <CaptureText
-            ref={input}
-            value={text}
-            placeholder={PLACEHOLDER[mode]}
-            token={parsed?.token ?? null}
-            onChange={(v) => {
-              setText(v)
-              setError(false)
-            }}
-            onKeyDown={onKeyDown}
-          />
+          <div className="mt-3">
+            <CaptureText
+              ref={input}
+              value={text}
+              placeholder={PLACEHOLDER[mode]}
+              token={parsed?.token ?? null}
+              onChange={(v) => {
+                setText(v)
+                setError(false)
+              }}
+              onKeyDown={onKeyDown}
+            />
+          </div>
           {due && (
             <span
               data-testid="capture-due-chip"
-              className="inline-flex h-5 w-fit items-center gap-1 rounded-[5px] bg-muted px-1.5 text-2xs font-medium"
+              className="mt-1.5 inline-flex h-[26px] w-fit items-center gap-1.5 rounded-[7px] bg-muted px-2.5 text-xs font-medium"
             >
-              <IconCalendarDue className="size-3" stroke={2} aria-hidden />
+              <IconCalendarDue className="size-3.5" stroke={2} aria-hidden />
               Due {dueChipLabel(due.day, clockNow())}
               {due.time !== null && ` · ${due.time}`}
             </span>
           )}
-          <div className="flex items-center justify-between text-2xs text-subtle-foreground">
+          <div className="mt-3.5 flex items-center gap-3.5 border-t border-muted pt-3 text-2xs text-subtle-foreground">
             {error ? (
               <span data-testid="capture-error" className="text-destructive">
                 Couldn't save. Try again.
               </span>
             ) : (
-              <span>↵ save · shift ↵ new line · esc close</span>
+              <>
+                <span>
+                  <ShortcutKbd>Enter</ShortcutKbd> save
+                </span>
+                <span>
+                  <ShortcutKbd>Shift Enter</ShortcutKbd> new line
+                </span>
+                <span>
+                  <ShortcutKbd>Esc</ShortcutKbd> close
+                </span>
+              </>
             )}
-            <span data-testid="capture-destination">
-              {mode === 'note' ? '→ Canvas' : '→ Today’s log'}
-            </span>
+            <Button
+              data-testid="capture-destination"
+              className="ml-auto h-[30px] rounded-lg px-3 text-xs font-semibold"
+              disabled={text.trim() === ''}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => void submit()}
+            >
+              {SAVE_LABEL[mode]}
+            </Button>
           </div>
         </div>
       )}
