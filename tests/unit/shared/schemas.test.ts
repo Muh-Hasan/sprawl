@@ -47,6 +47,7 @@ describe('settings schema', () => {
       'captureShortcut',
       'keepInTray',
       'openAtLogin',
+      'sidebarCollapsed',
       'textSize',
     ])
   })

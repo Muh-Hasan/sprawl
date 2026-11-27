@@ -142,7 +142,7 @@ test.describe('quick capture', () => {
   })
 
   test('the default mode comes from Settings', async ({ app, window: page, consoleProblems }) => {
-    await page.getByTestId('rail-settings').click()
+    await page.getByTestId('sidebar-settings').click()
     await page.getByTestId('settings-capture-mode-log').click()
     await expect(page.getByTestId('settings-capture-mode-log')).toHaveAttribute('data-state', 'on')
     await expect

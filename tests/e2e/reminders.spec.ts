@@ -129,7 +129,7 @@ test.describe('reminders (fixed clock, recorded toasts)', () => {
       { id: 'b', title: 'Held', due: [TODAY, '11:00'], remind: 'at' },
     ])
     // Turned off in Settings: the 09:30 one is skipped for good.
-    await page.getByTestId('rail-settings').click()
+    await page.getByTestId('sidebar-settings').click()
     await page.getByTestId('settings-reminders').click()
     await expect(page.getByTestId('settings-reminders')).toHaveAttribute('data-state', 'unchecked')
     await setNow(app, page, local(25, 9, 30))
@@ -149,7 +149,7 @@ test.describe('reminders (fixed clock, recorded toasts)', () => {
   })
 
   test('Settings sends a test notification', async ({ app, window: page }) => {
-    await page.getByTestId('rail-settings').click()
+    await page.getByTestId('sidebar-settings').click()
     await expect(page.getByTestId('settings-notifications-blocked')).toHaveCount(0)
     await page.getByTestId('settings-test-notification').click()
     await expect

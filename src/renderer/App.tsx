@@ -4,6 +4,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { handleBeforeClose } from '@/lib/flushes'
 import { matchesShortcut, TEXT_SIZE_SHORTCUTS } from '@/lib/shortcuts'
 import { startClock } from '@/stores/clockStore'
+import { useSidebarStore } from '@/stores/sidebarStore'
 import { useTextSizeStore } from '@/stores/textSizeStore'
 import { useVaultStore } from '@/stores/vaultStore'
 import { ChooseVault } from '@/views/onboarding/ChooseVault'
@@ -34,6 +35,8 @@ export function App() {
 
   useEffect(() => {
     void load()
+    // Read alongside the vault, so the shell rarely waits for it.
+    void useSidebarStore.getState().load()
     return subscribe()
   }, [load, subscribe])
   useEffect(() => startClock(), [])

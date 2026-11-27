@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useCanvasStore } from '@/stores/canvasStore'
+import { useSidebarStore } from '@/stores/sidebarStore'
 import { useUiStore } from '@/stores/uiStore'
 import { matchCommands, newNote, openNoteResult, paletteCommands } from './commands'
 import { CommandResult, NoteResult } from './PaletteRows'
@@ -42,9 +43,10 @@ function PaletteBody({ onRun }: { onRun(fn: () => void): void }) {
   const { commandsOnly, term } = parseQuery(query)
   const notes = useNoteResults(term, !commandsOnly)
   const showDone = useCanvasStore((s) => s.showDone)
+  const sidebarCollapsed = useSidebarStore((s) => s.collapsed)
   const commands = useMemo(
-    () => matchCommands(paletteCommands({ showDone }), term),
-    [showDone, term],
+    () => matchCommands(paletteCommands({ showDone, sidebarCollapsed }), term),
+    [showDone, sidebarCollapsed, term],
   )
   const values = [...notes.map((n) => `note:${n.id}`), ...commands.map((c) => `command:${c.id}`)]
   // A new query (or results that no longer hold the selection) selects the first result.

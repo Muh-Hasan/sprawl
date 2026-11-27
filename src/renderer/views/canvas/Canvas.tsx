@@ -5,6 +5,7 @@ import { TopBar } from '@/components/TopBar'
 import { registerFlush } from '@/lib/flushes'
 import { cn } from '@/lib/utils'
 import { useCanvasStore } from '@/stores/canvasStore'
+import { useSelectionStore } from '@/stores/selectionStore'
 import { CanvasContextMenu } from './ContextMenu'
 import { ItemLayer } from './ItemLayer'
 import { Marquee } from './Marquee'
@@ -106,7 +107,11 @@ function useCanvasSize(ref: React.RefObject<HTMLDivElement | null>): void {
   }, [ref])
 }
 
-/** Loads the canvas on mount, and sends pending writes on blur, close and unmount. */
+/**
+ * Loads the canvas on mount, and sends pending writes on blur, close and unmount. Leaving the
+ * canvas also ends writing in a card: its editor is gone without a blur, and a stale edit would
+ * reopen it (and take the note store from the panel) when the canvas comes back.
+ */
 function useCanvasLifecycle(): void {
   useEffect(() => {
     const { load, flush, unload } = useCanvasStore.getState()
@@ -119,6 +124,9 @@ function useCanvasLifecycle(): void {
       window.removeEventListener('blur', flush)
       window.removeEventListener('beforeunload', flush)
       unload()
+      const selection = useSelectionStore.getState()
+      selection.setEditing(null)
+      selection.setBodyEditing(null)
     }
   }, [])
 }

@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { app, Menu, powerMonitor, shell, type BrowserWindow } from 'electron'
-import { APP_USER_MODEL_ID, RAIL_WIDTH, WINDOW_DEFAULT } from '@shared/constants'
+import { APP_USER_MODEL_ID, SIDEBAR_WIDTH, WINDOW_DEFAULT } from '@shared/constants'
 import { parseDeepLink } from '@shared/deepLink'
 import { TEXT_SIZE_ZOOM } from '@shared/textSize'
 import { CaptureShortcut, CaptureWindow } from './captureWindow'
@@ -137,8 +137,9 @@ function start(): void {
       const [width, height] = win?.getContentSize() ?? [WINDOW_DEFAULT.width, WINDOW_DEFAULT.height]
       // The content size is in device-independent px; the canvas works in zoomed CSS px.
       const zoom = TEXT_SIZE_ZOOM[settings.get('textSize')]
+      const sidebar = SIDEBAR_WIDTH[settings.get('sidebarCollapsed') ? 'collapsed' : 'open']
       return viewCenterOf(settings.get('viewport'), {
-        width: Math.max(0, (width ?? 0) / zoom - RAIL_WIDTH),
+        width: Math.max(0, (width ?? 0) / zoom - sidebar),
         height: (height ?? 0) / zoom,
       })
     }

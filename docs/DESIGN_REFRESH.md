@@ -98,11 +98,12 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
   - The shadcn `Command` dialog, styled like the `CommandPalette` artboard. Searches note titles (and drawing titles once they exist). Commands: New note, Go to Canvas / List / Log, Zoom to fit, Text size, Settings (Ctrl+,), Toggle show done. Toggle sidebar comes with the sidebar (R5).
   - `>` shows commands only. Enter on a note opens its panel and glides the canvas to its card.
   - Specs: UI_SPEC §8. Tests: `palette.spec.ts`.
-- [ ] **R5 · `feat/sidebar`**: the labelled sidebar.
+- [x] **R5 · `feat/sidebar`** (#17): the labelled sidebar.
   - Replaces `Rail.tsx`. New note, search (opens the palette), Canvas / List / Daily log with shortcuts, the overdue badge on List, Recent (the five most recently edited notes), Settings and Help at the bottom.
   - Ctrl+\ collapses to the 60px rail; the choice is saved in config. Add "Toggle sidebar" to the palette's commands.
   - **Pinned** needs a `pinned` column and a Pin / Unpin item in the note menus. It ships as its own PR (R5b) right after this one.
   - Specs: UI_SPEC §2 (rewrite as Sidebar), §3. Artboard: `Sidebar`, `Main`. Tests: update `shell.spec.ts`; add collapse and persistence.
+  - The Drawings placeholder view and Ctrl+4 are gone (decision 4). Help and shortcuts waits for the sheet (R13).
 - [ ] **R5b · `feat/pin-notes`**: pin notes to the sidebar.
   - Migration adding `notes.pinned`, the IPC and zod schema, Pin / Unpin in the context menu and panel menu, and the Pinned list in the sidebar (drag to reorder is not in scope).
   - Tests: unit for the migration; e2e that a pinned note shows in the sidebar and opens.
@@ -131,7 +132,7 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
   - `Onboarding` and `QuickCapture` artboards. Copy and behavior stay; sizes, type and the saved state change.
   - Specs: UI_SPEC §5c, §10. Tests: update `vault.spec.ts` and `capture.spec.ts`.
 - [ ] **R13 · `feat/menus-and-shortcuts-sheet`**: menus, dialogs, toasts and the `?` sheet.
-  - `MenusToasts` and `Shortcuts` artboards. Context menu with icons and keys, the confirm dialog, toasts with Undo, tooltips everywhere, empty states with a next step. `?` (and Help in the sidebar) opens the sheet.
+  - `MenusToasts` and `Shortcuts` artboards. Context menu with icons and keys, the confirm dialog, toasts with Undo, tooltips everywhere, empty states with a next step. `?` opens the sheet, and R13 adds the Help and shortcuts row to the bottom of the sidebar (and its collapsed rail), which opens it too.
   - Specs: UI_SPEC §4.10, §11, new §12 (shortcuts sheet). Tests: `shortcuts-sheet.spec.ts`.
 - [ ] **R14 · `feat/motion`**: motion and reduced motion.
   - DESIGN_SYSTEM §6 rewritten: durations, easings and what moves (panel slide, menu and popover scale-in, card lift, view cross-fade, toolbar shift). The reduce motion switch and the Windows setting both turn it off.

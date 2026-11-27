@@ -1,13 +1,13 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { PANEL_WIDTH } from '@shared/constants'
-import { Rail } from '@/components/Rail'
+import { Sidebar } from '@/components/sidebar/Sidebar'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { debounce } from '@/lib/debounce'
 import { registerFlush } from '@/lib/flushes'
-import { matchesShortcut, NAV_SHORTCUTS, PALETTE_SHORTCUT } from '@/lib/shortcuts'
+import { matchesShortcut, NAV_SHORTCUTS, PALETTE_SHORTCUT, SIDEBAR_SHORTCUT } from '@/lib/shortcuts'
+import { useSidebarStore } from '@/stores/sidebarStore'
 import { useUiStore, type View } from '@/stores/uiStore'
 import { Canvas } from '@/views/canvas/Canvas'
-import { DrawingsGrid } from '@/views/drawings/DrawingsGrid'
 import { ListView } from '@/views/list/ListView'
 import { CommandPalette } from '@/views/search/CommandPalette'
 import { SettingsView } from '@/views/settings/SettingsView'
@@ -27,15 +27,22 @@ const VIEW_COMPONENTS: Record<View, React.ComponentType> = {
   canvas: Canvas,
   list: ListView,
   log: LogView,
-  drawings: DrawingsGrid,
   settings: SettingsView,
 }
 
-/** Ctrl+1/2/3/4 and Ctrl+, switch views (PRODUCT §4). They aren't typed characters, so they work anywhere. */
+/**
+ * Ctrl+1/2/3 and Ctrl+, switch views, and Ctrl+\ collapses or expands the sidebar (PRODUCT §4).
+ * They aren't typed characters, so they work anywhere.
+ */
 function useNavShortcuts(): void {
   const setView = useUiStore((s) => s.setView)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (matchesShortcut(e, SIDEBAR_SHORTCUT)) {
+        e.preventDefault()
+        if (!e.repeat) useSidebarStore.getState().toggle()
+        return
+      }
       for (const [view, shortcut] of Object.entries(NAV_SHORTCUTS)) {
         if (matchesShortcut(e, shortcut)) {
           e.preventDefault()
@@ -88,19 +95,22 @@ function usePanelWidth(): { width: number | null; save: (px: number) => void } {
 }
 
 /**
- * The app frame (UI_SPEC §1): the rail on the left, the current view, and the note panel on
- * the right when a note is open (resizable from 320 to 720px through the shadcn handle).
+ * The app frame (UI_SPEC §1): the sidebar on the left, the current view, and the note panel on
+ * the right when a note is open (resizable from 320 to 720px through the shadcn handle). It waits
+ * for the saved sidebar width, so the canvas never lays out at the wrong size first.
  */
 export function Shell() {
   const view = useUiStore((s) => s.view)
   const panelOpen = useUiStore((s) => s.openNoteId !== null)
+  const sidebarLoaded = useSidebarStore((s) => s.loaded)
   const { width, save } = usePanelWidth()
   useNavShortcuts()
   usePaletteShortcut()
   const ViewComponent = VIEW_COMPONENTS[view]
+  if (!sidebarLoaded) return <div className="h-11 [-webkit-app-region:drag]" />
   return (
     <div data-testid="shell" className="flex h-full">
-      <Rail />
+      <Sidebar />
       <ResizablePanelGroup orientation="horizontal" className="min-w-0 flex-1">
         <ResizablePanel id="view-slot" minSize={320} className="h-full">
           <main

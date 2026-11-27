@@ -23,7 +23,7 @@ test('loads the bundled fonts', async ({ window }) => {
 })
 
 test('renders UI text in Geist and paths and keys in Geist Mono', async ({ window }) => {
-  await window.getByTestId('rail-settings').click()
+  await window.getByTestId('sidebar-settings').click()
   await expect(window.getByTestId('settings-vault-path')).toBeVisible()
   expect(await renderedFonts(window, '[data-testid="top-bar"] > div')).toEqual(['Geist'])
   expect(await renderedFonts(window, '[data-testid="settings-vault-path"]')).toEqual(['Geist Mono'])

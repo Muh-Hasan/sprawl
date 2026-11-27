@@ -28,11 +28,11 @@ export class ListPage {
     this.count = page.getByTestId('list-count')
     this.empty = page.getByTestId('list-empty')
     this.filter = page.getByTestId('list-filter')
-    this.badge = page.getByTestId('rail-list-badge')
+    this.badge = page.getByTestId('sidebar-list-badge')
   }
 
   async open(): Promise<void> {
-    await this.page.getByTestId('rail-list').click()
+    await this.page.getByTestId('sidebar-list').click()
     await expect(this.root).toBeVisible()
     await expect(this.count).not.toBeEmpty()
   }

@@ -1,6 +1,7 @@
 import {
   IconEye,
   IconEyeOff,
+  IconLayoutSidebar,
   IconLayoutDashboard,
   IconListCheck,
   IconMaximize,
@@ -13,8 +14,15 @@ import {
   type TablerIcon,
 } from '@tabler/icons-react'
 import type { NoteListRow } from '@shared/types'
-import { CANVAS_SHORTCUTS, NAV_SHORTCUTS, shortcutKeys, TEXT_SIZE_SHORTCUTS } from '@/lib/shortcuts'
+import {
+  CANVAS_SHORTCUTS,
+  NAV_SHORTCUTS,
+  shortcutKeys,
+  SIDEBAR_SHORTCUT,
+  TEXT_SIZE_SHORTCUTS,
+} from '@/lib/shortcuts'
 import { useCanvasStore } from '@/stores/canvasStore'
+import { useSidebarStore } from '@/stores/sidebarStore'
 import { useTextSizeStore } from '@/stores/textSizeStore'
 import { useUiStore, type View } from '@/stores/uiStore'
 import { createNoteAt, showNoteOnCanvas, viewCenter, whenCanvasReady } from '@/views/canvas/actions'
@@ -58,7 +66,13 @@ export function openNoteResult(row: NoteListRow): void {
 const goTo = (view: View) => () => ui().setView(view)
 
 /** The palette's commands (PRODUCT §3.6), in the order they're listed. */
-export function paletteCommands({ showDone }: { showDone: boolean }): PaletteCommand[] {
+export function paletteCommands({
+  showDone,
+  sidebarCollapsed,
+}: {
+  showDone: boolean
+  sidebarCollapsed: boolean
+}): PaletteCommand[] {
   const textSize = useTextSizeStore.getState()
   return [
     {
@@ -100,6 +114,14 @@ export function paletteCommands({ showDone }: { showDone: boolean }): PaletteCom
       keys: keys(CANVAS_SHORTCUTS.zoomFit),
       keywords: 'canvas all view',
       run: () => whenCanvasReady(zoomToFit),
+    },
+    {
+      id: 'toggle-sidebar',
+      label: sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar',
+      icon: IconLayoutSidebar,
+      keys: keys(SIDEBAR_SHORTCUT),
+      keywords: 'toggle sidebar hide show navigation rail',
+      run: () => useSidebarStore.getState().toggle(),
     },
     {
       id: 'show-done',

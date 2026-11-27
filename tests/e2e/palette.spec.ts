@@ -120,7 +120,7 @@ test.describe('command palette', () => {
     await new CanvasPage(page).ready()
   })
 
-  test('New note, a note named by the query, and the rail Search button', async ({
+  test('New note, a note named by the query, and the sidebar search box', async ({
     window: page,
   }) => {
     const palette = new Palette(page)
@@ -136,7 +136,7 @@ test.describe('command palette', () => {
     await expect(canvas.card('Typed straight away')).toBeVisible()
 
     // Nothing matches: Enter makes a note with that title.
-    await page.getByTestId('rail-search').click()
+    await page.getByTestId('sidebar-search').click()
     await expect(palette.input).toBeFocused()
     await palette.input.fill('Call the dentist')
     await expect(palette.empty).toContainText('create a note called “Call the dentist”')
@@ -145,10 +145,10 @@ test.describe('command palette', () => {
     await expect(canvas.card('Call the dentist')).toBeVisible()
 
     // Esc closes it and gives focus back to what opened it.
-    await page.getByTestId('rail-search').click()
+    await page.getByTestId('sidebar-search').click()
     await expect(palette.input).toBeFocused()
     await page.keyboard.press('Escape')
     await expect(palette.root).toBeHidden()
-    await expect(page.getByTestId('rail-search')).toBeFocused()
+    await expect(page.getByTestId('sidebar-search')).toBeFocused()
   })
 })

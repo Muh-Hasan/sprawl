@@ -233,7 +233,7 @@ test.describe('list view', () => {
 
     await list.menu('Plan the trip', 'place')
     await expect(list.row('Plan the trip').getByTestId('list-row-not-on-canvas')).toHaveCount(1)
-    await page.getByTestId('rail-canvas').click()
+    await page.getByTestId('sidebar-canvas').click()
     await canvas.ready()
     await expect(canvas.cards).toHaveCount(1)
 
@@ -261,7 +261,7 @@ test.describe('list view', () => {
     await list.open()
     await list.tab('all').click()
     await list.color('sage').click()
-    await page.getByTestId('rail-canvas').click()
+    await page.getByTestId('sidebar-canvas').click()
 
     await openLink(app, 'sprawl://list/due')
     await expect(list.root).toBeVisible()

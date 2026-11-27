@@ -6,6 +6,7 @@ import {
   PALETTE_SHORTCUT,
   shortcutKeys,
   shortcutLabel,
+  SIDEBAR_SHORTCUT,
   TEXT_SIZE_SHORTCUTS,
 } from '../../../../src/renderer/lib/shortcuts'
 
@@ -23,7 +24,8 @@ const key = (
 describe('matchesShortcut', () => {
   it('matches the physical key with exactly the given modifiers', () => {
     expect(matchesShortcut(key('Digit1', { ctrl: true }), NAV_SHORTCUTS.canvas)).toBe(true)
-    expect(matchesShortcut(key('Numpad4', { ctrl: true }), NAV_SHORTCUTS.drawings)).toBe(true)
+    expect(matchesShortcut(key('Numpad3', { ctrl: true }), NAV_SHORTCUTS.log)).toBe(true)
+    expect(matchesShortcut(key('Backslash', { ctrl: true }), SIDEBAR_SHORTCUT)).toBe(true)
   })
 
   it('rejects missing or extra modifiers and other keys', () => {
@@ -53,6 +55,7 @@ describe('shortcutLabel', () => {
     expect(shortcutLabel({ codes: ['KeyD'], ctrl: true, shift: true })).toBe('Ctrl+Shift+D')
     expect(shortcutLabel(PALETTE_SHORTCUT)).toBe('Ctrl+K')
     expect(shortcutLabel(NAV_SHORTCUTS.settings)).toBe('Ctrl+,')
+    expect(shortcutLabel(SIDEBAR_SHORTCUT)).toBe('Ctrl+\\')
   })
 })
 

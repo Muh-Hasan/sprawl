@@ -16,43 +16,52 @@ Exact layout and anatomy for every screen. Behavior lives in `PRODUCT.md`, and t
 - **Background** is `--background` on the BrowserWindow as well (`backgroundColor: '#09090B'`), so there's no white flash.
 
 ```
-┌────┬──────────────────────────────────────────────────────────┬───────────────┐
-│    │  top bar (44px, drag)                                    │               │
-│ R  ├──────────────────────────────────────────────────────────┤  Note panel   │
-│ a  │                                                          │  (420px,      │
-│ i  │           main view (canvas / list / log / drawings)     │   resizable)  │
-│ l  │                                                          │               │
-│52px│                                                          │               │
-└────┴──────────────────────────────────────────────────────────┴───────────────┘
+┌──────────┬────────────────────────────────────────────────┬───────────────┐
+│ Sidebar  │  top bar (44px, drag)                          │               │
+│ (248px,  ├────────────────────────────────────────────────┤  Note panel   │
+│  60px    │                                                │  (420px,      │
+│  when    │        main view (canvas / list / log)         │   resizable)  │
+│ collapsed│                                                │               │
+│  )       │                                                │               │
+└──────────┴────────────────────────────────────────────────┴───────────────┘
 ```
 
 ---
 
-## 2. Rail (left, 52px)
+## 2. Sidebar (left, 248px; 60px collapsed)
 
-- `--surface` background with a 1px right border.
-- **Top:** a 44px drag area.
-- **Logo:** `sprawl-mark-light` at 18px, centered, 12px below the drag area. Not clickable.
-- **Nav buttons** (36×36, radius 8, 4px gap): Canvas, List, Log, Drawings, Search. Search opens the command palette (§8).
-  - **Active:** `--muted` background, `--foreground` icon, plus a 2px × 16px white bar on the rail's left edge (radius 0 1px 1px 0).
-  - **Hover:** `--muted` background.
-  - **Tooltip** on the right, with the label and shortcut (for example "Canvas Ctrl+1").
-- **Bottom:** the Settings button (Ctrl+,), 12px from the bottom.
-- **List badge:** when anything is overdue, a small count (for example "2") in `text-2xs` 600 shows at the top-right of the List icon: `--due-overdue` text on `--due-overdue-bg`, as a 16px-tall pill. Nothing shows when nothing is overdue.
+Artboards: `Sidebar`, `Main` (open and collapsed). `--surface` background with a 1px `--border` right edge. Ctrl+\ or its toggle button collapses it to an icon rail and opens it again; the choice is the `sidebarCollapsed` machine setting, so it survives a relaunch. The shell waits for that setting before it lays out, so the canvas never starts at the wrong width. testid `sidebar`, with `data-collapsed`.
+
+**Open (248px)**, top to bottom:
+- **Header** (52px, a drag region): `sprawl-mark-light` at 22px, "Sprawl" in `--font-brand` 16px 600 (-0.01em), and on the right the toggle: a 32px ghost icon button with `IconLayoutSidebar`, tooltip "Collapse sidebar" with `Ctrl+\` (testid `sidebar-toggle`, `no-drag`). 16px left and 12px right padding, 10px gaps.
+- **Actions** (12px side padding, 4px above, 8px apart), both 38px tall with a 10px radius:
+  - **New note** (primary, 600): `IconPlus` 18px, the label, and "Ctrl N" in Geist Mono 12px on the right at 55% of the button text. It does what the palette's New note does (§8). testid `sidebar-new-note`.
+  - **Search**: `--background` with a `--border` hairline, `--muted-foreground` text: `IconSearch` 18px, "Search or jump to…", and a `Ctrl K` kbd. It opens the palette (§8). testid `sidebar-search`.
+- **Views** (8px side padding, 16px above, 2px apart): Canvas, List and Daily log. Each row is 36px, radius 8, 12px gap: the icon at 19px, the label (`text-sm` 500), and its shortcut on the right ("Ctrl 1", in Geist Mono `text-kbd`, `--subtle-foreground`). testids `sidebar-canvas`, `sidebar-list`, `sidebar-log`.
+  - **Rest:** `--muted-foreground`. **Hover:** the ghost hover and `--foreground`. **Active:** `--muted` background and `--foreground`, with `aria-current="page"`.
+  - **List badge:** while anything is overdue, a 20px pill takes the shortcut's place: the count in `text-2xs` 600, `--due-overdue` on `--due-overdue-bg`, "99+" past 99. testid `sidebar-list-badge`.
+- **Recent** (20px above): a "Recent" heading in `text-2xs` 500 `--subtle-foreground` (12px side padding, 6px below), then the five open notes edited last, newest first. Rows are 32px, radius 8: a 10px swatch (3px radius) in the note's bright hue, and the title in `text-sm` at 85% `--foreground`, truncated ("Untitled" muted when empty). A click opens the note in the panel and glides the canvas to its card, as the palette does. The open note's row is `--muted`. The section is hidden while there are no open notes. testids `sidebar-recent`, `sidebar-recent-note` (with `data-note-id`). It follows every saved edit, so a renamed or finished note updates straight away.
+  - *Pinned* notes go above Recent in the next PR (R5b).
+- The views and Recent scroll together if the window is short.
+- **Bottom** (a 1px `--border` above, 8px padding): Settings, a view row with "Ctrl ,". testid `sidebar-settings`. *Help and shortcuts (`?`) joins it when the shortcuts sheet lands (R13).*
+
+**Collapsed (60px)**, a centered column of 40px icon buttons (radius 10, 20px icons, 4px apart), each with a tooltip on the right naming it and its shortcut:
+- The toggle (`IconLayoutSidebar`, "Expand sidebar" with `Ctrl+\`) in a 52px drag strip.
+- New note (primary, `IconPlus`), then Search.
+- A 24px × 1px `--border` divider, then Canvas, List and Daily log. Active is `--muted` with a `--foreground` icon. The List badge is a 16px pill at the icon's top right.
+- Settings at the bottom, 8px up. Recent isn't shown.
 
 ---
 
 ## 3. Top bar (44px, inside the main area)
 
-A drag region with a 1px bottom border on every view **except the canvas**. On the canvas the top bar is transparent and has no border, so the canvas runs full-bleed and the floating toolbar sits over it. The toolbar and every button in the top bar are `no-drag`. Right-side content ends 140px from the window's right edge (§1).
+A drag region with a 1px bottom border on every view **except the canvas**. On the canvas the top bar is transparent and has no border, so the canvas runs full-bleed and the floating toolbar sits over it. The toolbar and every button in the top bar are `no-drag`. Right-side content ends 140px from the window's right edge (§1). The sidebar's own 52px header sits beside it, not under it.
 
 | View | Left (16px padding) | Right |
 |---|---|---|
 | Canvas | none | "Show done" toggle (ghost, `IconEye` when on / `IconEyeOff` when off, 28px, pressed state when on; testid `show-done-toggle`) |
 | List | none (the view has its own header row, §5b) | none |
 | Log | "Daily log" (`text-sm`, 500) | none |
-| Drawings | "Drawings" | "New drawing" button (secondary, sm) |
-| Drawing editor | ← back (ghost icon), editable title input (`text-sm`, 500, borderless) | "Saved" / "Saving…" (`text-xs`, subtle) |
 | Settings | "Settings" | none |
 
 ---
@@ -145,7 +154,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 
 - Default 420px wide, resizable from 320 to 720px through the shadcn `Resizable` handle, which is a 1px `--border` that turns `--border-strong` on hover with a wider 6px hit area. The handle is the panel's left border (the panel has none of its own). The width is saved (`panelWidth`) and stays in px when the window resizes.
 - `--surface` background with a 1px left border.
-- **Full-page mode** fills the main area minus the rail. The content column is centered with a max width of 720px.
+- **Full-page mode** fills the main area minus the sidebar. The content column is centered with a max width of 720px.
 - **Esc** steps back one level: full page → side panel → closed (PRODUCT §3.2). Esc inside the editor first leaves any open BlockNote menu.
 
 **Anatomy** (padding 24px horizontal):
@@ -274,7 +283,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 
 ## 8. Command palette (Ctrl+K)
 
-Opened with Ctrl+K from anywhere (the note editor too; Ctrl+K again closes it) or the rail's Search button. Artboard: `CommandPalette`.
+Opened with Ctrl+K from anywhere (the note editor too; Ctrl+K again closes it) or the sidebar's search box (§2). Artboard: `CommandPalette`.
 
 - A shadcn `Dialog` holding the `Command` (cmdk) list: 640px wide (at most the window less 32px), 13vh from the top, 16px radius, `--card` with a `--border` hairline and `--shadow-palette`. The overlay is `--overlay` with a 2px backdrop blur.
 - **Opens** with a 200ms fade, a 98% scale and a 6px drop (ease-out); with reduce motion it just appears.
@@ -284,7 +293,7 @@ Opened with Ctrl+K from anywhere (the note editor too; Ctrl+K again closes it) o
   - **Note:** a 12px swatch (4px radius) in the note's bright hue, the title in 500 (muted "Untitled" when empty), the first line of the body in `text-xs` subtle, truncated, and on the right in `text-2xs` subtle: "Overdue", "Due Fri", "Done", or where it lives ("Canvas", or "List" for a note with no card).
   - **Command:** a 28px `--muted` tile (8px radius) with a 16px icon, the label, and its keys as `kbd`s on the right.
 - **What it finds:** with no query, the three open notes edited last, then every command. A query matches note titles (any part, up to eight notes, most recently edited first, done notes included) and commands (every word must start a word of the label or its keywords). `>` lists commands only. *later: phase-10 adds bodies, drawings and log entries, grouped, with highlighted snippets.*
-- **Commands:** New note (Ctrl+N), Go to canvas / list / daily log (Ctrl+1 / 2 / 3), Zoom to fit (Shift+1), Show done notes or Hide done notes, Make text bigger / smaller (Ctrl+Shift+= / -), Reset text size (Ctrl+Shift+0), Open settings (Ctrl+,).
+- **Commands:** New note (Ctrl+N), Go to canvas / list / daily log (Ctrl+1 / 2 / 3), Collapse sidebar or Expand sidebar (Ctrl+\, also found by "toggle"), Zoom to fit (Shift+1), Show done notes or Hide done notes, Make text bigger / smaller (Ctrl+Shift+= / -), Reset text size (Ctrl+Shift+0), Open settings (Ctrl+,).
   - New note makes a card in the middle of the canvas view, ready to type in (switching to the canvas first), or a list-only note when the List is showing.
   - Zoom to fit switches to the canvas first.
 - **Enter on a note** opens it in the panel. If it has a card on show, the canvas (switching to it if need be) selects the card and glides to center it in the space the panel leaves.

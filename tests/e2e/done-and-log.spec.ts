@@ -62,7 +62,7 @@ test.describe('done and the daily log', () => {
     await expect(log.summary).toHaveText('1 done · 0 logged')
 
     // Undo on the canvas takes it all back: no entry, no done_at.
-    await page.getByTestId('rail-canvas').click()
+    await page.getByTestId('sidebar-canvas').click()
     await canvas.ready()
     await page.keyboard.press('Control+z')
     await expect(canvas.card('Call the bank')).toBeVisible()

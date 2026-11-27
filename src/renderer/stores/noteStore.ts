@@ -7,6 +7,7 @@ import { debounce } from '@/lib/debounce'
 import { registerFlush } from '@/lib/flushes'
 import { useCanvasStore } from './canvasStore'
 import { clockNow } from './clockStore'
+import { useListStore } from './listStore'
 import { useLogStore } from './logStore'
 import { useUiStore } from './uiStore'
 
@@ -149,6 +150,7 @@ export const useNoteStore = create<NoteState>()((set, get) => {
     window.sprawl.notes.update(note.id, patch).then(
       (saved) => {
         inFlight--
+        useListStore.getState().edited()
         const current = get().note
         if (current?.id === saved.id && patch.bodyJson !== undefined) savedBody = patch.bodyJson
         if (current?.id === saved.id) {
@@ -291,6 +293,7 @@ export const useNoteStore = create<NoteState>()((set, get) => {
           const current = get().note
           if (current?.id === saved.id) set({ note: { ...current, doneAt: saved.doneAt } })
           useLogStore.getState().changed()
+          useListStore.getState().edited()
         },
         (err: unknown) => {
           console.error('[note] mark done failed', err)
