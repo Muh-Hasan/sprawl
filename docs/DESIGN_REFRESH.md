@@ -94,13 +94,13 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
   - Small / Default / Large / Larger stored in config, applied with `webContents.setZoomFactor` in every window, including capture.
   - Ctrl+Shift+= / Ctrl+Shift+- / Ctrl+Shift+0, and a temporary row in the current Settings view (R11 moves it to Appearance).
   - Tests: unit for the zoom steps; e2e that the shortcut changes the zoom factor and that it's restored on relaunch.
-- [ ] **R4 · `feat/command-palette`**: Ctrl+K palette with note titles and commands.
-  - The shadcn `Command` dialog, styled like the `CommandPalette` artboard. Searches note titles (and drawing titles once they exist). Commands: New note, Go to Canvas / List / Log, Zoom to fit, Toggle sidebar, Text size, Settings, Toggle show done.
+- [x] **R4 · `feat/command-palette`**: Ctrl+K palette with note titles and commands.
+  - The shadcn `Command` dialog, styled like the `CommandPalette` artboard. Searches note titles (and drawing titles once they exist). Commands: New note, Go to Canvas / List / Log, Zoom to fit, Text size, Settings (Ctrl+,), Toggle show done. Toggle sidebar comes with the sidebar (R5).
   - `>` shows commands only. Enter on a note opens its panel and glides the canvas to its card.
   - Specs: UI_SPEC §8. Tests: `palette.spec.ts`.
 - [ ] **R5 · `feat/sidebar`**: the labelled sidebar.
   - Replaces `Rail.tsx`. New note, search (opens the palette), Canvas / List / Daily log with shortcuts, the overdue badge on List, Recent (the five most recently edited notes), Settings and Help at the bottom.
-  - Ctrl+\ collapses to the 60px rail; the choice is saved in config.
+  - Ctrl+\ collapses to the 60px rail; the choice is saved in config. Add "Toggle sidebar" to the palette's commands.
   - **Pinned** needs a `pinned` column and a Pin / Unpin item in the note menus. It ships as its own PR (R5b) right after this one.
   - Specs: UI_SPEC §2 (rewrite as Sidebar), §3. Artboard: `Sidebar`, `Main`. Tests: update `shell.spec.ts`; add collapse and persistence.
 - [ ] **R5b · `feat/pin-notes`**: pin notes to the sidebar.

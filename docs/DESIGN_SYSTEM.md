@@ -51,6 +51,7 @@ Short, plain and lowercase-friendly. Use sentence case everywhere, with no excla
 | `--selection` | `#FAFAFA` | Canvas selection outline and handles |
 | `--canvas-dot` | `#27272A` | Canvas dot grid |
 | `--inset` | `#0C0C0E` | Recessed areas: drawing thumbnails, code blocks |
+| `--overlay` | `rgb(0 0 0 / 0.55)` | Behind the command palette, with a 2px backdrop blur |
 
 ### 2.2 Functional (the only non-note colors)
 
@@ -125,7 +126,7 @@ Three fonts, all bundled locally as `.woff2` with `@font-face` in `globals.css` 
 - **Radius:** shadcn `--radius: 0.5rem` (8px).
   - Buttons, inputs and chips: 6px (`rounded-md`); chips can be 5px.
   - Note cards and canvas cards: 12px (`rounded-card`).
-  - Menus, popovers and the palette: 12px (`rounded-menu`).
+  - Menus and popovers: 12px (`rounded-menu`). The command palette: 16px (`rounded-2xl`).
   - Panels and dialogs: 12px (`rounded-xl`).
   - Quick capture window: 14px (`rounded-capture`).
 - **Borders:** 1px `--border` everywhere. No double borders, and panels separate from the canvas with one hairline.
@@ -133,6 +134,7 @@ Three fonts, all bundled locally as `.woff2` with `@font-face` in `globals.css` 
   - `--shadow-card`: `0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.4)`
   - `--shadow-lift` (hovered or dragged card): `0 12px 32px -8px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06)`
   - `--shadow-popover`: `0 16px 48px -12px rgb(0 0 0 / 0.8), 0 0 0 1px #27272A`
+  - `--shadow-palette` (the command palette): `0 32px 80px -20px rgb(0 0 0 / 0.9)`
 
 ---
 
@@ -203,7 +205,7 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 - **Input:** 36px, transparent background with a `--border` border; on focus the border is `--border-strong` plus a 2px `--ring` at 30% alpha.
 - **Kbd:** Geist Mono 11px (`text-kbd`), `--muted` background, 1px `--border`, 4px radius, 2px 5px padding.
 - **Tooltip:** `--popover` background, 13px text with the shortcut `kbd` on the right, 400ms delay.
-- **Command (palette):** 560px wide, 12px radius, `--card` background, `--shadow-popover`, input height 48px, and items 36px tall with a `--muted` selected background.
+- **Command (palette):** 640px wide, 16px radius, `--card` background with a `--border` hairline, `--shadow-palette`, over `--overlay`. Input row 60px, items 44px tall with a 10px radius and a `--muted` selected background. See UI_SPEC §8.
 - **Context menu and dropdown:** use the content and item wrappers in `components/Menu.tsx`: `--popover` background, 12px radius, 6px padding, `--shadow-popover`, items 34px tall at 14px with an 8px radius, separators in `--border`.
 - **Toast (Sonner):** bottom center, `--popover` background, 14px text, optional "Undo" action. Shown for 4s.
 - **Calendar:** today has a 1px `--foreground` ring, the selected day is white with black text, and days with log entries get a 3px `--muted-foreground` dot beneath.
@@ -260,6 +262,9 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 :root {
   color-scheme: dark;
   --radius: 0.5rem;
+
+  /* the app text size's zoom factor, set by the renderer (DESIGN_SYSTEM §3) */
+  --app-zoom: 1;
 
   /* shadcn core (dark only) */
   --background: #09090b;
@@ -338,10 +343,14 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   /* canvas marquee (UI_SPEC §4.9) */
   --marquee-fill: rgb(250 250 250 / 0.04);
 
+  /* behind the command palette (UI_SPEC §8) */
+  --overlay: rgb(0 0 0 / 0.55);
+
   /* elevation & motion */
   --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-lift: 0 12px 32px -8px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06);
   --shadow-popover: 0 16px 48px -12px rgb(0 0 0 / 0.8), 0 0 0 1px #27272a;
+  --shadow-palette: 0 32px 80px -20px rgb(0 0 0 / 0.9);
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
 }
@@ -376,6 +385,7 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   --color-canvas-dot: var(--canvas-dot);
   --color-inset: var(--inset);
   --color-marquee-fill: var(--marquee-fill);
+  --color-overlay: var(--overlay);
   --color-note-text-selection: var(--note-text-selection);
   --color-note-chip: var(--note-chip);
   --color-due-overdue: var(--due-overdue);
@@ -423,6 +433,9 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   --radius-card: 12px;
   --radius-menu: 12px;
   --radius-capture: 14px;
+
+  /* the 140px the native caption buttons take (UI_SPEC §1): they don't zoom with the page */
+  --spacing-caption: calc(140px / var(--app-zoom));
 
   /* the daily log's one-time row highlight (DESIGN_SYSTEM §6) */
   --animate-row-highlight: row-highlight 600ms var(--ease-out);
