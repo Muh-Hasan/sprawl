@@ -163,14 +163,14 @@ There's no separate Drawings page. A drawing is a canvas item, drawn and edited 
 A small always-on-top window for getting things out of your head fast, from any app.
 
 - **Global shortcut:** Ctrl+Shift+Space by default, and it can be changed in Settings. It works whenever Sprawl is running, including in the background (see §3.8).
-- **The window** is 520×auto, centered near the top of the screen, frameless, with rounded corners. It holds one multi-line text box and a mode switch:
+- **The window** is 560×auto, centered near the top of the screen, frameless, with rounded corners. It holds one multi-line text box and a mode switch:
   - **Note** (default): the first line becomes the title and the rest becomes the body. The note is placed in the middle of the last canvas view; if a card is already there, it goes 40px down and right of it, so a run of captures fans out instead of stacking.
   - **Log:** adds a manual entry to today's log at the current time.
   - Tab switches the mode.
 - Typing `!today`, `!tomorrow`, `!fri` or `!12dec` anywhere in a note capture sets the due date (and `!fri 15:00` also sets the time, with an "At due time" reminder). The token is removed from the text.
   - A weekday always means the next one, 1–7 days ahead and never today (use `!today` for today). So `!fri` typed on a Friday means next Friday.
   - A date without a year means this year, or next year if that date has already passed.
-- **Enter** saves and closes, **Shift+Enter** adds a new line, and **Esc** closes without saving (unless there's text, in which case Esc first clears it).
+- **Enter** (or the save button, which names the destination) saves and closes, **Shift+Enter** adds a new line, and **Esc** closes without saving (unless there's text, in which case Esc first clears it).
 - After saving, a tiny "Saved to canvas" or "Logged" flash shows for 600ms before the window hides.
 - The main window doesn't come to the front.
 

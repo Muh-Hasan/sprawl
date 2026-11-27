@@ -234,15 +234,15 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 
 ## 5c. Quick capture window
 
-- A separate frameless window, 520px wide with its height fitted to the content (min 112, max 320). It's centered horizontally at 22% of the active monitor's height (the monitor under the pointer). Transparent window background; the inner card has radius 14, a `--card` background, a 1px `--border-strong` border and `--shadow-popover`.
-- **Layout** (padding 14px):
-  - Top row: `sprawl-mark-light` at 14px, then a `ToggleGroup` (Note | Log, xs, 24px tall), and on the right a `kbd Tab` hint in `text-2xs` subtle.
-  - The text area: borderless and transparent, `text-base` (14/22), auto-growing up to 8 lines.
-    - Placeholder in Note mode: "Write a note… first line is the title. Try !tomorrow 15:00"
+- A separate frameless window, 560px wide with its height fitted to the content (min 150, max 380). It's centered horizontally at 22% of the active monitor's height (the monitor under the pointer). Transparent window background; the inner card has radius 16, a `--card` background, a 1px `--border-strong` border and `--shadow-popover`.
+- **Layout** (padding 16px):
+  - Top row (gap 10): `sprawl-mark-light` at 16px, then the Note | Log switch (a `ToggleGroup` in a small bordered track on `--background`: 2px padding, 26px items, `text-xs` 500, the selected one on `--muted`), and on the right `kbd Tab` "switches" in `text-2xs` subtle.
+  - The text area, 12px below: borderless and transparent, 17/26, auto-growing up to 8 lines.
+    - Placeholder in Note mode: "Write a note. The first line is the title. Try !tomorrow 15:00"
     - Placeholder in Log mode: "What did you just do?"
-  - **Date token preview:** when a `!date` is recognized, it gets a `--muted` background highlight in the text, and a chip appears under the text area: `IconCalendarDue` with "Due Tomorrow · 15:00".
-  - Footer row (`text-2xs` subtle): `↵ save · shift ↵ new line · esc close` on the left, and the destination on the right ("→ Canvas" or "→ Today's log").
-- **Saved flash:** the card's contents are replaced by a centered `IconCheck` icon and "Saved to canvas" or "Logged" (`text-sm`) for 600ms, then the window hides. Under reduced motion there's no scale animation, only a fade.
+  - **Date token preview:** when a `!date` is recognized, it gets a `--muted` background highlight in the text, and a chip appears 6px under the text area: 26px tall, radius 7, `--muted`, `text-xs` 500, `IconCalendarDue` at 14px and "Due Tomorrow · 15:00".
+  - Footer row, 14px below with a 1px `--muted` top border and 12px above its content (`text-2xs` subtle): `kbd Enter` save · `kbd Shift Enter` new line · `kbd Esc` close on the left, and on the right the save button, which names the destination: "Save to canvas" or "Add to today’s log" (default/white, 30px, radius 8, `text-xs` 600). It's disabled while the text is empty, and clicking it saves like Enter.
+- **Saved state:** the card's contents are replaced, at 150px tall, by a centered 40px white circle with a dark `IconCheck` (22px) and, 10px under it, "Saved to canvas" or "Logged" (`text-base` 500), for 600ms. Then the window hides. Under reduced motion there's no scale animation, only a fade.
 - **Open animation:** opacity 0→1 and translateY 6px→0 over 120ms.
 
 ## 5d. Tray and notifications
@@ -343,12 +343,13 @@ Opened with Ctrl+K from anywhere (the note editor too; Ctrl+K again closes it) o
 
 ## 10. Onboarding (first launch only)
 
-- A full window on `--background` with a centered stack 360px wide.
-  - `sprawl-mark-gradient` at 48px.
-  - "Welcome to sprawl" in `text-title` with `font-brand` (Sora 600).
-  - "Notes, to-dos, sketches and a daily log. All on one canvas, all on your machine." in `text-sm` muted.
-  - A vault picker row: a read-only input showing `Documents\Sprawl` with a "Choose…" button.
-  - A **Start** button (default/white, full width, 36px).
+- A full window on `--background` with the canvas dot grid (24px, 70% opacity) and four faded sticky notes (sand, sky, sage and rose, 50–55% opacity, tilted 4–7°) near the corners. They're decoration only.
+- In the middle, a card 440px wide: padding 40, radius 22, `--card` at 90% with a slight backdrop blur, a 1px `--border` and `--shadow-palette`. It rises in (fade and 12px up) when it appears. Its contents are centered:
+  - `sprawl-mark-gradient` at 56px.
+  - "Welcome to sprawl", 24px below, in Sora 600 (`font-brand`) at 30/38 with -0.02em tracking.
+  - "Notes, to-dos, sketches and a daily log. All on one canvas, all on your machine." at 16/24, muted.
+  - The vault picker, 28px below and left-aligned: the label "Keep your notes in" (`text-xs` 500), a read-only input showing `Documents\Sprawl` (42px, radius 10, `--background`, Geist Mono `text-xs`) and a "Choose…" button (secondary with a border, 42px, radius 10). Under them, in `text-xs` subtle: "A normal folder. Put it in OneDrive or Dropbox if you want it backed up." An error replaces that line, in `--destructive`.
+  - A **Start** button, 24px below (default/white, full width, 46px, radius 12, 15px 600).
 - After Start, the canvas loads empty and shows the start screen (§4.1a).
 - **Welcome board** ("Open the welcome board"): five notes centered on the view, slightly apart and in five colors, each teaching one thing. They're placed in one batch, so one Ctrl+Z takes them all away. The copy lives in `welcomeBoard.ts` and must match what the app really does.
   - Sand, "Drag me around": "Notes go anywhere. Hold Space and drag to pan, Ctrl + scroll to zoom."

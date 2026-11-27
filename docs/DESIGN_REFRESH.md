@@ -129,7 +129,7 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
 - [ ] **R11 · `feat/settings-redesign`**: Settings.
   - `Settings` artboard: section menu (General, Appearance, Canvas, Notifications, Quick capture, Backup and export, Shortcuts, About), grouped rows in cards, Appearance with text size, sidebar and reduce motion. Rows that only work after phase 11 (backup, export) are shown disabled with "Coming soon" until then.
   - Specs: UI_SPEC §9. Tests: update `settings.spec.ts`.
-- [ ] **R12 · `feat/onboarding-capture-redesign`**: onboarding and quick capture.
+- [x] **R12 · `feat/onboarding-capture-redesign`**: onboarding and quick capture.
   - `Onboarding` and `QuickCapture` artboards. Copy and behavior stay; sizes, type and the saved state change.
   - Specs: UI_SPEC §5c, §10. Tests: update `vault.spec.ts` and `capture.spec.ts`.
 - [ ] **R13 · `feat/menus-and-shortcuts-sheet`**: menus, dialogs, toasts and the `?` sheet.
