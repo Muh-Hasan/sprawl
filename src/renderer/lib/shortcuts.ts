@@ -38,6 +38,13 @@ export const NAV_SHORTCUTS = {
   drawings: digit(4),
 } as const
 
+/** App text size (PRODUCT §4): the canvas zoom keys with Shift. They work in every view. */
+export const TEXT_SIZE_SHORTCUTS = {
+  bigger: { codes: ['Equal', 'NumpadAdd'], ctrl: true, shift: true },
+  smaller: { codes: ['Minus', 'NumpadSubtract'], ctrl: true, shift: true },
+  reset: { codes: ['Digit0', 'Numpad0'], ctrl: true, shift: true },
+} as const satisfies Record<string, Shortcut>
+
 /** The label shown in tooltips, e.g. "Ctrl+1". */
 export function shortcutLabel(s: Shortcut): string {
   const code = s.codes[0] ?? ''

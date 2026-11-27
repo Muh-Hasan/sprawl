@@ -2,10 +2,29 @@ import { useEffect } from 'react'
 import { Toaster } from '@/components/Toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { handleBeforeClose } from '@/lib/flushes'
+import { matchesShortcut, TEXT_SIZE_SHORTCUTS } from '@/lib/shortcuts'
 import { startClock } from '@/stores/clockStore'
+import { useTextSizeStore } from '@/stores/textSizeStore'
 import { useVaultStore } from '@/stores/vaultStore'
 import { ChooseVault } from '@/views/onboarding/ChooseVault'
 import { Shell } from './Shell'
+
+/** The saved text size, and Ctrl+Shift+= / - / 0 to change it from anywhere (PRODUCT §4). */
+function useTextSize(): void {
+  useEffect(() => {
+    const { load, step, set } = useTextSizeStore.getState()
+    void load()
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (matchesShortcut(e, TEXT_SIZE_SHORTCUTS.bigger)) step(1)
+      else if (matchesShortcut(e, TEXT_SIZE_SHORTCUTS.smaller)) step(-1)
+      else if (matchesShortcut(e, TEXT_SIZE_SHORTCUTS.reset)) set('default')
+      else return
+      e.preventDefault()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+}
 
 /** Onboarding until a vault is open, then the app frame. */
 export function App() {
@@ -19,6 +38,7 @@ export function App() {
   }, [load, subscribe])
   useEffect(() => startClock(), [])
   useEffect(() => handleBeforeClose(), [])
+  useTextSize()
 
   return (
     <TooltipProvider delayDuration={400}>

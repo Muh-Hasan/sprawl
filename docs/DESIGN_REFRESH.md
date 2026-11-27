@@ -90,7 +90,7 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
   - shadcn button, input and menu sizes come from theme variables and wrapper components, never edits in `components/ui/`.
   - Specs: DESIGN_SYSTEM §3 (type), §5 (spacing and sizes), §7 (components). Artboard: `TypeScale`.
   - Tests: update the `renderedFonts` checks that expect Outfit.
-- [ ] **R3 · `feat/app-text-size`**: app text size.
+- [x] **R3 · `feat/app-text-size`**: app text size.
   - Small / Default / Large / Larger stored in config, applied with `webContents.setZoomFactor` in every window, including capture.
   - Ctrl+Shift+= / Ctrl+Shift+- / Ctrl+Shift+0, and a temporary row in the current Settings view (R11 moves it to Appearance).
   - Tests: unit for the zoom steps; e2e that the shortcut changes the zoom factor and that it's restored on relaunch.

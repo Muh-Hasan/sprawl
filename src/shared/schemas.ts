@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { NOTE_COLORS, PANEL_WIDTH, REMIND_OPTIONS } from './constants'
 import { isValidAccelerator } from './accelerator'
+import { DEFAULT_TEXT_SIZE, TEXT_SIZES } from './textSize'
 import { CANVAS_ITEM_KINDS, LIST_SORTS, LIST_TABS } from './types'
 
 /**
@@ -125,6 +126,7 @@ export const SETTINGS = {
   captureDefaultMode: def('machine', z.enum(['note', 'log']), 'note'),
   keepInTray: def('machine', z.boolean(), true),
   openAtLogin: def('machine', z.boolean(), false),
+  textSize: def('machine', z.enum(TEXT_SIZES), DEFAULT_TEXT_SIZE),
 }
 
 export type SettingKey = keyof typeof SETTINGS

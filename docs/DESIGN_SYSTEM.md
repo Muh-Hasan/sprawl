@@ -114,6 +114,7 @@ Three fonts, all bundled locally as `.woff2` with `@font-face` in `globals.css` 
 - **Tracking:** −0.01em at 20px, −0.02em at 28px and above, and 0 below.
 - **Smallest text:** 12px everywhere, except 11px `text-kbd` for shortcut keys.
 - **Numbers:** every time display (log entry times, reminder times, due chip times, the zoom %, the List edited time) uses `font-mono`, so times line up. Counts such as the checklist chip "3/5" stay in Geist. Don't add `tabular-nums` to Geist text.
+- **App text size:** Settings → Appearance and Ctrl+Shift+= / Ctrl+Shift+- / Ctrl+Shift+0 pick Small, Default, Large or Larger. Each is an Electron zoom factor (0.9 / 1 / 1.1 / 1.25) on every window, quick capture included, so the whole UI scales together and the tokens above never change. Design at Default. Nothing measures in device pixels except the caption-button band (`pr-caption`, UI_SPEC §1).
 - **Third-party surfaces:** the BlockNote editor must inherit Geist (override its font variable if it sets its own), and its code blocks use Geist Mono. Leave Excalidraw's hand-drawn font alone.
 
 ---

@@ -42,7 +42,13 @@ describe('settings schema', () => {
 
   it('puts each key in the store ARCHITECTURE §4 assigns it', () => {
     const machine = SETTING_KEYS.filter((k) => SETTINGS[k].store === 'machine').sort()
-    expect(machine).toEqual(['captureDefaultMode', 'captureShortcut', 'keepInTray', 'openAtLogin'])
+    expect(machine).toEqual([
+      'captureDefaultMode',
+      'captureShortcut',
+      'keepInTray',
+      'openAtLogin',
+      'textSize',
+    ])
   })
 
   it('parseSetting falls back to the default for bad values', () => {

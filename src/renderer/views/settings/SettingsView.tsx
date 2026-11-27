@@ -1,8 +1,11 @@
+import { TEXT_SIZE_LABELS, TEXT_SIZES } from '@shared/textSize'
+import { SegmentedControl } from '@/components/SegmentedControl'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import markGradient from '@/assets/brand/sprawl-mark-gradient.svg'
 import { TopBar } from '@/components/TopBar'
 import { useCanvasStore } from '@/stores/canvasStore'
+import { useTextSizeStore } from '@/stores/textSizeStore'
 import { CaptureSection, SystemSection } from './CaptureSection'
 import { NotificationsSection } from './NotificationsSection'
 import { SettingsRow, SettingsSection } from './SettingsLayout'
@@ -10,6 +13,8 @@ import { useSettings } from './useSettings'
 import { VaultSection } from './VaultSection'
 
 const REPO_URL = 'https://github.com/Muh-Hasan/sprawl'
+
+const TEXT_SIZE_OPTIONS = TEXT_SIZES.map((value) => ({ value, label: TEXT_SIZE_LABELS[value] }))
 
 /** A disabled switch showing the stored value, until the setting's phase wires it up. */
 function PlaceholderSwitch({ checked, label }: { checked: boolean | undefined; label: string }) {
@@ -23,6 +28,8 @@ function PlaceholderSwitch({ checked, label }: { checked: boolean | undefined; l
  */
 export function SettingsView() {
   const { settings, update, local } = useSettings()
+  const textSize = useTextSizeStore((s) => s.size)
+  const setTextSize = useTextSizeStore((s) => s.set)
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -33,6 +40,22 @@ export function SettingsView() {
           className="mx-auto flex max-w-[640px] flex-col gap-8 px-6 py-8"
         >
           <VaultSection />
+
+          {/* later: the settings redesign (DESIGN_REFRESH R11) folds this into Appearance. */}
+          <SettingsSection title="Appearance" testId="settings-appearance">
+            <SettingsRow
+              label="Text size"
+              description="Ctrl+Shift+= and Ctrl+Shift+- change it from anywhere."
+            >
+              <SegmentedControl
+                label="Text size"
+                value={textSize}
+                options={TEXT_SIZE_OPTIONS}
+                onChange={setTextSize}
+                testIdPrefix="settings-text-size"
+              />
+            </SettingsRow>
+          </SettingsSection>
 
           <SettingsSection title="Canvas">
             <SettingsRow label="Snap to grid">
