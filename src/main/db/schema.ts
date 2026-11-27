@@ -33,6 +33,8 @@ export const notes = sqliteTable(
     remindAt: integer('remind_at'),
     remindedAt: integer('reminded_at'),
     doneAt: integer('done_at'),
+    /** When the note was pinned to the sidebar, or null. Pinned notes list in this order. */
+    pinnedAt: integer('pinned_at'),
     checkTotal: integer('check_total').notNull().default(0),
     checkDone: integer('check_done').notNull().default(0),
     attachCount: integer('attach_count').notNull().default(0),
@@ -47,6 +49,9 @@ export const notes = sqliteTable(
     index('notes_due')
       .on(t.dueDay, t.dueTime)
       .where(sql`done_at IS NULL AND deleted_at IS NULL`),
+    index('notes_pinned')
+      .on(t.pinnedAt)
+      .where(sql`pinned_at IS NOT NULL AND deleted_at IS NULL`),
   ],
 )
 

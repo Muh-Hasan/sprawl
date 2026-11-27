@@ -66,17 +66,20 @@ export function buildNoteListQuery(q: NoteListQuery): BuiltQuery {
         ? 'n.done_at DESC'
         : SORT_ORDER[q.sort]
   const sql = `
-    SELECT n.id, n.title, n.color, substr(n.body_text, 1, ${FIRST_LINE_SCAN}) AS body_start,
-           n.check_total, n.check_done,
-           (SELECT count(*) FROM note_links l WHERE l.note_id = n.id) AS link_count,
-           n.due_day, n.due_time, n.done_at, n.created_at, n.updated_at,
-           EXISTS (SELECT 1 FROM canvas_items c WHERE c.kind = 'note' AND c.ref_id = n.id)
-             AS on_canvas
+    SELECT ${ROW_COLUMNS}
     FROM notes n
     WHERE ${where.join(' AND ')}
     ORDER BY ${order}, n.rowid DESC`
   return { sql, params }
 }
+
+/** What a row shows, from `notes n`. */
+const ROW_COLUMNS = `
+  n.id, n.title, n.color, substr(n.body_text, 1, ${FIRST_LINE_SCAN}) AS body_start,
+  n.check_total, n.check_done,
+  (SELECT count(*) FROM note_links l WHERE l.note_id = n.id) AS link_count,
+  n.due_day, n.due_time, n.done_at, n.pinned_at, n.created_at, n.updated_at,
+  EXISTS (SELECT 1 FROM canvas_items c WHERE c.kind = 'note' AND c.ref_id = n.id) AS on_canvas`
 
 interface ListRow {
   id: string
@@ -89,6 +92,7 @@ interface ListRow {
   due_day: string | null
   due_time: string | null
   done_at: number | null
+  pinned_at: number | null
   created_at: number
   updated_at: number
   on_canvas: number
@@ -100,10 +104,8 @@ export function firstLineOf(text: string): string {
   return line.trim().slice(0, FIRST_LINE_MAX)
 }
 
-export function listNotes({ sqlite }: DbHandle, q: NoteListQuery): NoteListRow[] {
-  const { sql, params } = buildNoteListQuery(q)
-  const rows = sqlite.prepare(sql).all(params) as ListRow[]
-  return rows.map((r) => ({
+function toRow(r: ListRow): NoteListRow {
+  return {
     id: r.id,
     title: r.title,
     color: r.color as NoteColor,
@@ -114,10 +116,29 @@ export function listNotes({ sqlite }: DbHandle, q: NoteListQuery): NoteListRow[]
     dueDay: r.due_day,
     dueTime: r.due_time,
     doneAt: r.done_at,
+    pinnedAt: r.pinned_at,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     onCanvas: r.on_canvas === 1,
-  }))
+  }
+}
+
+export function listNotes({ sqlite }: DbHandle, q: NoteListQuery): NoteListRow[] {
+  const { sql, params } = buildNoteListQuery(q)
+  return (sqlite.prepare(sql).all(params) as ListRow[]).map(toRow)
+}
+
+/** The sidebar's Pinned section: every live pinned note, done or not, in the order pinned. */
+export function listPinned({ sqlite }: DbHandle): NoteListRow[] {
+  const rows = sqlite
+    .prepare(
+      `SELECT ${ROW_COLUMNS}
+       FROM notes n
+       WHERE n.pinned_at IS NOT NULL AND n.deleted_at IS NULL
+       ORDER BY n.pinned_at, n.rowid`,
+    )
+    .all() as ListRow[]
+  return rows.map(toRow)
 }
 
 /** How many open notes are past their due time (or past the end of a day without one). */

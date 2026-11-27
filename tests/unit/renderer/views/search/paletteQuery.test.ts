@@ -21,6 +21,7 @@ const row = (fields: Partial<NoteListRow> = {}): NoteListRow => ({
   dueDay: null,
   dueTime: null,
   doneAt: null,
+  pinnedAt: null,
   createdAt: 0,
   updatedAt: 0,
   onCanvas: true,

@@ -32,6 +32,7 @@ const stored: Note = {
   remindAt: null,
   remindedAt: null,
   doneAt: null,
+  pinnedAt: null,
   checkTotal: 0,
   checkDone: 0,
   attachCount: 0,

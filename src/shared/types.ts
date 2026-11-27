@@ -30,6 +30,8 @@ export interface CardNote {
   dueTime: string | null
   /** When the note was marked done, or null. Done cards hide unless "Show done" is on. */
   doneAt: number | null
+  /** When the note was pinned to the sidebar, or null. */
+  pinnedAt: number | null
 }
 
 /** The fields the renderer chooses for a card (the rest is set by main). */
@@ -89,6 +91,8 @@ export interface Note {
   remindAt: number | null
   remindedAt: number | null
   doneAt: number | null
+  /** When the note was pinned to the sidebar, or null. */
+  pinnedAt: number | null
   checkTotal: number
   checkDone: number
   attachCount: number
@@ -217,6 +221,7 @@ export interface NoteListRow {
   dueDay: string | null
   dueTime: string | null
   doneAt: number | null
+  pinnedAt: number | null
   createdAt: number
   updatedAt: number
   onCanvas: boolean

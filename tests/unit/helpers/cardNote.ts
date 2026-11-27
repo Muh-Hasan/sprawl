@@ -13,6 +13,7 @@ export function cardNote(over: Partial<CardNote> = {}): CardNote {
     dueDay: null,
     dueTime: null,
     doneAt: null,
+    pinnedAt: null,
     ...over,
   }
 }
