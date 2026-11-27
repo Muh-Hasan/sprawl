@@ -25,7 +25,7 @@ export function SelectionBox() {
   }
   const box = boundsOf(rects)
   if (!box) return null
-  const pad = 'calc(6px * var(--inv-zoom, 1))'
+  const pad = 'calc(8px * var(--inv-zoom, 1))'
   return (
     <div
       data-testid="selection-box"

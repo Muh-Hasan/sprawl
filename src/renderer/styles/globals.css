@@ -70,7 +70,7 @@
   --due-overdue: #f87171;
   --due-overdue-bg: #2a1517;
   --due-soon: #fafafa;
-  --due-soon-bg: #27272a;
+  --due-soon-bg: rgb(250 250 250 / 0.14);
   --due-later: #a1a1aa;
   --due-later-bg: #1f1f23;
 
@@ -109,8 +109,8 @@
 
   /* selected text inside a note card: a little stronger than the app-wide one on tinted cards */
   --note-text-selection: rgb(255 255 255 / 0.24);
-  /* Card chips (UI_SPEC §4.5): a faint white over the note color, in the note's text color. */
-  --note-chip: rgb(255 255 255 / 0.06);
+  /* Card chips and hover buttons (UI_SPEC §4.5): a faint white over the note color, in the note's text color. */
+  --note-chip: rgb(255 255 255 / 0.08);
 
   /* canvas marquee (UI_SPEC §4.9) */
   --marquee-fill: rgb(250 250 250 / 0.04);
@@ -119,8 +119,12 @@
   --overlay: rgb(0 0 0 / 0.55);
 
   /* elevation & motion */
-  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-lift: 0 12px 32px -8px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --shadow-card:
+    0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 1px 2px rgb(0 0 0 / 0.4),
+    0 4px 12px -6px rgb(0 0 0 / 0.5);
+  --shadow-lift:
+    0 1px 0 0 rgb(255 255 255 / 0.05) inset, 0 16px 36px -10px rgb(0 0 0 / 0.75),
+    0 0 0 1px rgb(255 255 255 / 0.07);
   --shadow-popover: 0 16px 48px -12px rgb(0 0 0 / 0.8), 0 0 0 1px #27272a;
   --shadow-palette: 0 32px 80px -20px rgb(0 0 0 / 0.9);
   --shadow-toolbar: 0 20px 48px -16px rgb(0 0 0 / 0.85), 0 1px 0 rgb(255 255 255 / 0.04) inset;

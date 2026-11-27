@@ -56,7 +56,7 @@ describe('a note capture', () => {
       remindAt: localInstant('2026-11-27', '10:00'),
       onCanvas: true,
     })
-    expect(canvas.cardOf(noteId!)).toMatchObject({ x: 288, y: 272, w: 220, h: 64 })
+    expect(canvas.cardOf(noteId!)).toMatchObject({ x: 280, y: 272, w: 240, h: 64 })
   })
 
   it('sets no reminder for a day without a time, and nothing without a token', () => {
@@ -69,7 +69,7 @@ describe('a note capture', () => {
   it('steps each capture 24px down and right, over 8 places', () => {
     const xs: number[] = []
     for (let i = 0; i < 9; i++) xs.push(canvas.cardOf(capture.submit('note', `n${i}`).noteId!)!.x)
-    expect(xs.slice(0, 3)).toEqual([288, 312, 336])
+    expect(xs.slice(0, 3)).toEqual([280, 304, 328])
     expect(xs[8]).toBe(xs[0])
     expect(settings.lastCaptureOffset).toBe(1)
   })

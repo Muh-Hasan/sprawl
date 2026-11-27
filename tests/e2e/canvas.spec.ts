@@ -53,9 +53,9 @@ test.describe('notes on the canvas', () => {
     await expect
       .poll(async () => (await canvas.stored())[0])
       .toMatchObject({
-        x: 288,
+        x: 280,
         y: 272,
-        w: 220,
+        w: 240,
         h: 64,
         note: { title: 'Homepage redo', color: 'stone' },
       })
@@ -71,21 +71,21 @@ test.describe('notes on the canvas', () => {
       (await window.evaluate(() => (self as unknown as { __log: string[] }).__log)).join(' || '),
     )
     // Snapped: the card's corner lands on the grid.
-    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ x: 392, y: 328 })
+    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ x: 384, y: 328 })
 
     // Alt skips the snap.
     const box = (await card.boundingBox())!
     await canvas.dragBetween({ x: box.x + 20, y: box.y + 6 }, { x: box.x + 23, y: box.y + 11 }, [
       'Alt',
     ])
-    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ x: 395, y: 333 })
+    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ x: 387, y: 333 })
 
     await app.close()
     await relaunch(dirs, consoleProblems, async (_app, page) => {
       const again = new CanvasPage(page)
       await again.ready()
       await expect(again.card('Homepage redo')).toBeVisible()
-      expect((await again.stored())[0]).toMatchObject({ x: 395, y: 333 })
+      expect((await again.stored())[0]).toMatchObject({ x: 387, y: 333 })
     })
   })
 
@@ -201,16 +201,16 @@ test.describe('notes on the canvas', () => {
       { x: handle.x + 4, y: handle.y + 4 },
       { x: handle.x + 84, y: handle.y + 4 },
     )
-    await expect.poll(async () => (await canvas.stored())[0]?.w).toBe(304)
+    await expect.poll(async () => (await canvas.stored())[0]?.w).toBe(320)
     await window.keyboard.press('Delete')
     await expect(canvas.cards).toHaveCount(0)
 
     await window.keyboard.press('Control+KeyZ') // delete
     await expect(canvas.card('Undo me')).toBeVisible()
     await window.keyboard.press('Control+KeyZ') // resize
-    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ w: 220, x: 448 })
+    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ w: 240, x: 440 })
     await window.keyboard.press('Control+KeyZ') // move
-    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ x: 288 })
+    await expect.poll(async () => (await canvas.stored())[0]).toMatchObject({ x: 280 })
     await window.keyboard.press('Control+KeyZ') // create
     await expect(canvas.cards).toHaveCount(0)
     await expect.poll(async () => (await canvas.stored()).length).toBe(0)
@@ -236,9 +236,13 @@ test.describe('notes on the canvas', () => {
     await window.keyboard.press('Control+BracketRight')
     await expect.poll(async () => (await canvas.stored()).map((i) => i.id)).toEqual(['c-b', 'c-a'])
 
-    // The selection toolbar restacks too.
+    // The selection toolbar's More menu restacks too.
+    await window.getByTestId('selection-more').click()
     await window.getByTestId('selection-back').click()
     await expect.poll(async () => (await canvas.stored()).map((i) => i.id)).toEqual(['c-a', 'c-b'])
+    // A press while the menu is still closing would dismiss the new one with the old.
+    await expect(window.getByRole('menu')).toBeHidden()
+    await window.getByTestId('selection-more').click()
     await window.getByTestId('selection-front').click()
     await expect.poll(async () => (await canvas.stored()).map((i) => i.id)).toEqual(['c-b', 'c-a'])
 

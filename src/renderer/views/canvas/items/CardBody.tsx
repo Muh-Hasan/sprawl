@@ -42,7 +42,7 @@ export function CardBody({ itemId, noteId }: { itemId: string; noteId: string })
           end()
         }, 0)
       }}
-      className="-mx-1 mt-2 min-h-0 flex-1 cursor-text overflow-y-auto px-1"
+      className="-mx-1 mt-1.5 min-h-0 flex-1 cursor-text overflow-y-auto px-1"
     >
       {note && (
         <Suspense fallback={null}>

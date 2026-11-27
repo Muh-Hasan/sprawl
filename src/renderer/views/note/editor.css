@@ -139,7 +139,7 @@
 
 /*
  * Writing in a canvas card (UI_SPEC §4.5): exactly the card preview's look (text-xs, the note's
- * text color at 70%), so typing in the card looks like the card. Blocks made in the panel stay
+ * text color at 75%), so typing in the card looks like the card. Blocks made in the panel stay
  * quiet: a heading is bold body text, lists and checklists are compact.
  */
 .sprawl-editor-card.bn-container {
@@ -149,7 +149,7 @@
   font-size: var(--text-xs);
   line-height: var(--text-xs--line-height);
   color: currentColor;
-  opacity: 0.7;
+  opacity: 0.75;
 }
 .sprawl-editor-card .bn-block-outer:not(:first-child) {
   margin-top: 0;

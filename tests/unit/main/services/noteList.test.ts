@@ -200,7 +200,7 @@ describe('canvas.placeNote', () => {
       },
     ])
     const card = canvas.placeNote('a', { x: 1003, y: 500 })
-    expect(card).toMatchObject({ kind: 'note', refId: 'a', x: 896, y: 472, w: 220, h: 64, z: 8 })
+    expect(card).toMatchObject({ kind: 'note', refId: 'a', x: 880, y: 472, w: 240, h: 64, z: 8 })
     expect(card.note?.title).toBe('a')
     expect(canvas.placeNote('a', { x: 0, y: 0 }).id).toBe(card.id)
     expect(notes.get('a').onCanvas).toBe(true)

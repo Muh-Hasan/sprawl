@@ -19,8 +19,8 @@ interface ChipProps {
 }
 
 /**
- * A card chip (UI_SPEC §4.5): 20px tall, radius 5, `text-2xs` 500, a 12px icon and a 4px gap.
- * Plain chips sit on `rgb(255 255 255 / .06)` in the note's text color.
+ * A card chip (UI_SPEC §4.5): 22px tall, radius 6, `text-2xs` 500, a 13px icon and a 5px gap.
+ * Plain chips sit on `--note-chip` (8% white) in the note's text color.
  */
 export function Chip({ icon: Icon, children, due, className, ...props }: ChipProps) {
   return (
@@ -28,12 +28,12 @@ export function Chip({ icon: Icon, children, due, className, ...props }: ChipPro
       data-testid={props['data-testid']}
       data-due={due}
       className={cn(
-        'inline-flex h-5 items-center gap-1 rounded-[5px] px-1.5 text-2xs font-medium whitespace-nowrap',
+        'inline-flex h-[22px] items-center gap-[5px] rounded-md px-[7px] text-2xs font-medium whitespace-nowrap',
         due ? DUE_TONES[due] : 'bg-note-chip',
         className,
       )}
     >
-      <Icon className="size-3 shrink-0" stroke={2} aria-hidden />
+      <Icon className="size-[13px] shrink-0" stroke={2} aria-hidden />
       {children}
     </span>
   )

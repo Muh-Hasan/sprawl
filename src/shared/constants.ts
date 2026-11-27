@@ -55,7 +55,7 @@ export const AUTOSAVE_MS = 500
 export const PREVIEW_CHARS = 400
 
 /** A new note card's size in world px (the canvas's NOTE_SIZE starts from it). */
-export const NOTE_CARD = { w: 220, h: 64 } as const
+export const NOTE_CARD = { w: 240, h: 64 } as const
 
 /** The canvas snap grid in world px. */
 export const SNAP_GRID = 8
