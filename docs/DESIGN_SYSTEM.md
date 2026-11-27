@@ -135,6 +135,7 @@ Three fonts, all bundled locally as `.woff2` with `@font-face` in `globals.css` 
   - `--shadow-lift` (hovered or dragged card): `0 12px 32px -8px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06)`
   - `--shadow-popover`: `0 16px 48px -12px rgb(0 0 0 / 0.8), 0 0 0 1px #27272A`
   - `--shadow-palette` (the command palette): `0 32px 80px -20px rgb(0 0 0 / 0.9)`
+  - `--shadow-toolbar` (the canvas toolbar): `0 20px 48px -16px rgb(0 0 0 / 0.85), 0 1px 0 rgb(255 255 255 / 0.04) inset`
 
 ---
 
@@ -216,7 +217,7 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 
 - **Selection on the canvas:** a 1.5px `--selection` outline with a 2px offset, plus 8×8 white square handles with 2px radius and a 1px `--background` border at the corners. Multi-select adds a dashed bounding box in `--border-strong`.
 - **Hover on cards:** border goes up one step (note `border` → `border-hover`, +12% white) plus `--shadow-lift`, with no movement.
-- **Selection toolbar (FigJam-style):** a floating `--card` bar (border, radius 12, `--shadow-popover`, 4px padding, 44px tall) centered 14px above the selection, or below it when there's no room under the canvas toolbar. It holds the six color swatches, a divider, then Duplicate, Bring to front, Send to back and Delete (36×36 ghost icon buttons with tooltips). It hides while a move, resize or marquee runs.
+- **Selection toolbar (FigJam-style):** a floating `--card` bar (border, radius 12, `--shadow-popover`, 4px padding, 44px tall) centered 14px above the selection, or below it when there's no room under the top bar. It holds the six color swatches, a divider, then Duplicate, Bring to front, Send to back and Delete (36×36 ghost icon buttons with tooltips). It hides while a move, resize or marquee runs.
 - **Done state (when "Show done" is on):** 45% opacity and a struck-through title.
 - **Focus:** every interactive element has a visible `--ring` focus. Never remove an outline without replacing it.
 - **Empty states:** a Tabler icon at 20px in `--subtle-foreground`, one 14px line, and an optional ghost button. No illustrations.
@@ -351,6 +352,7 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   --shadow-lift: 0 12px 32px -8px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06);
   --shadow-popover: 0 16px 48px -12px rgb(0 0 0 / 0.8), 0 0 0 1px #27272a;
   --shadow-palette: 0 32px 80px -20px rgb(0 0 0 / 0.9);
+  --shadow-toolbar: 0 20px 48px -16px rgb(0 0 0 / 0.85), 0 1px 0 rgb(255 255 255 / 0.04) inset;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
 }

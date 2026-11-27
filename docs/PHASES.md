@@ -308,7 +308,7 @@ There's no separate Drawings page (PRODUCT §3.5). Build to the `DrawInPlace`, `
 
 **Build**
 - A full pass against DESIGN_SYSTEM and UI_SPEC on every screen: spacing, type, states, focus rings, motion and reduced motion.
-- All empty states and the onboarding welcome note (UI_SPEC §10).
+- All empty states and the welcome board (UI_SPEC §4.1a, §10).
 - Fill in `relaunch.spec.ts`.
 - An accessibility pass: everything can be reached by keyboard, focus is visible, ARIA labels are on icon buttons, and contrast is checked.
 - The electron-builder **NSIS** config (per-user install, Start-menu shortcut with the AppUserModelId, desktop shortcut optional, uninstaller keeps the vault) with the icons from `build/` (`icon.ico` multi-size), and the app version shown in Settings. The installer is built locally with `npm run dist`.

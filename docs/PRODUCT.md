@@ -233,7 +233,7 @@ Canvas single-key tools only fire when no text input is focused. Shortcuts are m
 ---
 
 ## 5. Empty and edge states
-- **First launch:** pick a vault folder (with the default prefilled). Then the canvas shows a welcome note: "Double-click anywhere to add a note. Press Ctrl+K to search." The user can delete it.
+- **First launch:** pick a vault folder (with the default prefilled). Then the canvas is empty and shows how to start (§3.1 Empty canvas). "Open the welcome board" adds five sample notes, which the user can delete or undo.
 - **Empty log day:** "Nothing logged yet. Mark a note done or write what you just did."
 - **Empty drawings:** "Sketch something" with a New drawing button.
 - **No search results:** "No matches for “{q}”."

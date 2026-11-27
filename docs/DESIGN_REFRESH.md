@@ -107,8 +107,8 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
 - [ ] **R5b · `feat/pin-notes`**: pin notes to the sidebar.
   - Migration adding `notes.pinned`, the IPC and zod schema, Pin / Unpin in the context menu and panel menu, and the Pinned list in the sidebar (drag to reorder is not in scope).
   - Tests: unit for the migration; e2e that a pinned note shows in the sidebar and opens.
-- [ ] **R6 · `feat/canvas-toolbar`**: bottom toolbar, empty state and welcome board.
-  - The toolbar moves to the bottom center: 44px buttons, 22px icons, tooltips with names and keys, the sticky-note tool's color dot. It shifts left while the note panel is open.
+- [x] **R6 · `feat/canvas-toolbar`**: bottom toolbar, empty state and welcome board.
+  - The toolbar moves to the bottom center: 44px buttons, 22px icons, tooltips with names and keys, the sticky-note tool's color dot. It centers on the uncovered canvas (`--canvas-inset-right`), so it shifts left once the panel floats (R8).
   - Empty canvas: the start tiles from `EmptyCanvas`. "Open the welcome board" places five sample notes that each teach one thing (it replaces UI_SPEC §10's single welcome note).
   - Status pill and zoom control restyled; a `?` button opens the shortcuts sheet once R13 lands (until then it's hidden).
   - Specs: UI_SPEC §4.1–4.4, §10. Tests: update canvas specs that click the toolbar.
@@ -118,6 +118,7 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
   - Specs: UI_SPEC §4.5, §4.9, DESIGN_SYSTEM §8. Tests: update card and selection specs.
 - [ ] **R8 · `feat/note-panel`**: floating note panel and full page.
   - The panel floats over the canvas (12px inset, radius 16, slide-in), keeps the resizable width (320 to 720, default 440) and the breadcrumb header; the meta rows sit under the title. Full page uses the `NotePage` layout (720px column, 36px title).
+  - While it's open, set `--canvas-inset-right` on the canvas to the panel's width plus its 12px inset. The toolbar, zoom control and empty state already center on what's left (R6), so that's all the shift needs.
   - Specs: UI_SPEC §5, §5.1. Tests: update `note-panel.spec.ts`.
 - [ ] **R9 · `feat/list-redesign`**: List view.
   - `List` artboard: 52px rows, larger filters, due groups (Overdue, Today, This week, Later, No date) in the Open tab too, hover actions. The Notes / Drawings switch shows only Notes until phase 8.
