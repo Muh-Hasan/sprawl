@@ -27,7 +27,7 @@ test.describe('quick capture', () => {
     const input = capture.getByTestId('capture-input')
     await expect(input).toBeFocused()
     await expect(capture.getByTestId('capture-root')).toHaveAttribute('data-mode', 'note')
-    await expect(capture.getByTestId('capture-destination')).toHaveText('→ Canvas')
+    await expect(capture.getByTestId('capture-destination')).toHaveText('Save to canvas')
 
     await input.pressSequentially('Call Ali !tomorrow 15:00')
     await expect(capture.getByTestId('capture-token')).toHaveText('!tomorrow 15:00')
@@ -80,7 +80,7 @@ test.describe('quick capture', () => {
     const input = capture.getByTestId('capture-input')
     await input.press('Tab')
     await expect(capture.getByTestId('capture-root')).toHaveAttribute('data-mode', 'log')
-    await expect(capture.getByTestId('capture-destination')).toHaveText('→ Today’s log')
+    await expect(capture.getByTestId('capture-destination')).toHaveText('Add to today’s log')
     await expect(input).toHaveAttribute('placeholder', 'What did you just do?')
     await input.pressSequentially('Called the bank !fri')
     await expect(capture.getByTestId('capture-due-chip')).toHaveCount(0)
@@ -117,6 +117,24 @@ test.describe('quick capture', () => {
     await again.getByTestId('capture-input').press('Enter')
     expect(await captureVisible(app)).toBe(true)
     expect(await new ListPage(page).stored()).toEqual([])
+  })
+
+  test('the save button names the destination and saves on click', async ({
+    app,
+    window: page,
+    consoleProblems,
+  }) => {
+    const capture = await openCapture(app, consoleProblems)
+    const save = capture.getByTestId('capture-destination')
+    // Nothing to save yet.
+    await expect(save).toBeDisabled()
+    await capture.getByTestId('capture-input').pressSequentially('Clicked into place')
+    await expect(save).toBeEnabled()
+    await save.click()
+    await expect(capture.getByTestId('capture-saved')).toHaveText('Saved to canvas')
+    await expect.poll(() => captureVisible(app)).toBe(false)
+    const [row] = await new ListPage(page).stored()
+    expect(row).toMatchObject({ title: 'Clicked into place', onCanvas: true })
   })
 
   test('a capture lands in the middle of the view, and the next fans out instead of stacking', async ({

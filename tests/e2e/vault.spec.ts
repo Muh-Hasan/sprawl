@@ -29,8 +29,9 @@ test.describe('vault', () => {
     await expect(window.getByTestId('onboarding')).toBeVisible()
     await expect(window.getByText('Welcome to sprawl')).toBeVisible()
     expect(await renderedFonts(window, '[data-testid="onboarding-title"]')).toEqual(['Sora'])
-    // Prefilled with Documents\Sprawl.
-    await expect(window.getByTestId('onboarding-path')).toHaveValue(/[\\/]Sprawl$/)
+    expect((await window.getByTestId('onboarding-card').boundingBox())?.width).toBe(440)
+    // Prefilled with Documents\Sprawl, and labelled.
+    await expect(window.getByLabel('Keep your notes in')).toHaveValue(/[\\/]Sprawl$/)
 
     // Choose… a temp folder (never create a vault in the real Documents).
     const chosen = join(dirs.root, 'My Vault')

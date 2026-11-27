@@ -79,8 +79,8 @@ export class CaptureWindow {
   }
 
   /**
-   * The window's size in device-independent px: the 520px card and its fitted height (112 to
-   * 320 CSS px), both scaled by the text size so the zoomed card still fills the window.
+   * The window's size in device-independent px: the 560px card and its fitted height (150 to
+   * 380 CSS px), both scaled by the text size so the zoomed card still fills the window.
    */
   private size(): { width: number; height: number } {
     const size = this.options.textSize()
@@ -135,7 +135,7 @@ export class CaptureWindow {
     win.hide()
   }
 
-  /** Fits the window to the card (`px` in CSS px), between 112 and 320px. */
+  /** Fits the window to the card (`px` in CSS px), between 150 and 380px. */
   setHeight(px: number): void {
     this.cardHeight = px
     const win = this.win

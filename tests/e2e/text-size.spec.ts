@@ -48,10 +48,10 @@ test('Ctrl+Shift+= / - / 0 change the text size in every window, and it survives
   await window.keyboard.press('Control+Equal')
   expect(await zoomOf(app, 'main')).toBe(1.1)
 
-  // Quick capture is zoomed too, and its window grows so the card stays 520px wide.
+  // Quick capture is zoomed too, and its window grows so the card stays 560px wide.
   await openCapture(app, consoleProblems)
   expect(await zoomOf(app, 'capture')).toBe(1.1)
-  expect(await captureWidth(app)).toBe(572)
+  expect(await captureWidth(app)).toBe(616)
   await app.close()
 
   await relaunch(dirs, consoleProblems, async (app2, page) => {
@@ -65,7 +65,7 @@ test('Ctrl+Shift+= / - / 0 change the text size in every window, and it survives
     await page.keyboard.press('Control+Shift+Digit0')
     await expect.poll(() => zoomOf(app2, 'main')).toBe(1)
     await expect.poll(() => zoomOf(app2, 'capture')).toBe(1)
-    expect(await captureWidth(app2)).toBe(520)
+    expect(await captureWidth(app2)).toBe(560)
     expect(await page.evaluate(() => self.sprawl.settings.get('textSize'))).toBe('default')
   })
 })
