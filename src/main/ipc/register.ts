@@ -207,6 +207,7 @@ export function registerIpc({
   handle(IPC.log.remove, noteIdInput, (id) => log.remove(id))
   handle(IPC.log.daysWithEntries, logMonthInput, (month) => log.daysWithEntries(month))
   handle(IPC.log.carriedOver, logDayInput, (day) => log.carriedOver(day))
+  handle(IPC.log.streak, logDayInput, (day) => log.streak(day))
 
   // quick capture ------------------------------------------------------------------------
   captureOnly(IPC.capture.submit, captureSubmitInput, ({ mode, text }) => {

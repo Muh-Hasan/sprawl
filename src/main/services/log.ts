@@ -99,6 +99,18 @@ export class LogService {
   }
 
   /**
+   * How many days in a row have entries, ending on `day`. Today counts from yesterday until
+   * something is logged, so a streak isn't broken before the day is over.
+   */
+  streak(day: string): number {
+    const days = this.handle()
+      .sqlite.prepare('SELECT DISTINCT day FROM log_entries WHERE day <= ? ORDER BY day DESC')
+      .pluck()
+      .all(day) as string[]
+    return countStreak(days, day, day === dayKey(this.now()))
+  }
+
+  /**
    * "Carried over" for `day`: the notes edited the day before that weren't done by the end of
    * `day` (so today it's what's still open; on a past day, what was still open then).
    */
@@ -130,6 +142,25 @@ export class LogService {
     if (row.kind !== 'manual') throw new Error(`Only manual entries can be changed (${id})`)
     return row
   }
+}
+
+/**
+ * The length of the run of consecutive days in `days` (distinct day keys, newest first) that
+ * ends on `end`. With `graceToday`, a run ending the day before `end` counts too: `end` is today
+ * and nothing has been logged yet.
+ */
+export function countStreak(days: readonly string[], end: string, graceToday = false): number {
+  let expected = end
+  if (days[0] !== end) {
+    if (!graceToday) return 0
+    expected = shiftDay(end, -1)
+  }
+  let run = 0
+  for (let i = 0; i < days.length && days[i] === expected; i++) {
+    run++
+    expected = shiftDay(expected, -1)
+  }
+  return run
 }
 
 /**
