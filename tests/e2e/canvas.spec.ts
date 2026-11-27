@@ -247,14 +247,13 @@ test.describe('notes on the canvas', () => {
     await window.keyboard.press('Control+BracketRight')
     await expect.poll(async () => (await canvas.stored()).map((i) => i.id)).toEqual(['c-b', 'c-a'])
 
-    // The selection toolbar's More menu restacks too.
-    await window.getByTestId('selection-more').click()
-    await window.getByTestId('selection-back').click()
+    // The context menu restacks too.
+    await a.click({ button: 'right' })
+    await window.getByTestId('menu-back').click()
     await expect.poll(async () => (await canvas.stored()).map((i) => i.id)).toEqual(['c-a', 'c-b'])
-    // A press while the menu is still closing would dismiss the new one with the old.
-    await expect(window.getByRole('menu')).toBeHidden()
-    await window.getByTestId('selection-more').click()
-    await window.getByTestId('selection-front').click()
+    await expect(window.getByTestId('canvas-menu')).toBeHidden()
+    await a.click({ button: 'right' })
+    await window.getByTestId('menu-front').click()
     await expect.poll(async () => (await canvas.stored()).map((i) => i.id)).toEqual(['c-b', 'c-a'])
 
     await window.keyboard.press('ArrowRight')

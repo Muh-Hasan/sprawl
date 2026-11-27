@@ -174,9 +174,9 @@ test.describe('note panel', () => {
       { key: 'b', x: 100, y: 320, title: 'Other' },
     ])
     const card = canvas.card('Plan')
-    // The hover button opens the panel.
-    await card.hover()
-    await card.getByTestId('note-card-open').click()
+    // Open in the selection toolbar opens the panel.
+    await card.click()
+    await page.getByTestId('selection-open').click()
     await panel.ready()
     await expect(panel.title).toHaveValue('Plan')
 

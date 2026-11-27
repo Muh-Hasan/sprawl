@@ -24,8 +24,7 @@ export function CardTitle({ itemId, title, editing, done = false }: CardTitlePro
         data-card-title
         data-testid="note-card-title"
         className={cn(
-          // Clear of the hover done and open buttons at the top-right.
-          'line-clamp-2 pr-[50px] text-card-title break-words',
+          'line-clamp-2 text-card-title break-words',
           !title && 'opacity-60',
           done && 'line-through',
         )}

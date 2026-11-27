@@ -1,14 +1,10 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import { IconArrowsDiagonal, IconCheck } from '@tabler/icons-react'
-import { HintTooltip } from '@/components/HintTooltip'
 import type { CanvasItem } from '@shared/types'
 import { NOTE_COLOR_CLASSES } from '@/lib/noteColors'
-import { CANVAS_SHORTCUTS, shortcutLabel } from '@/lib/shortcuts'
 import { cn } from '@/lib/utils'
 import { useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
 import { takeFresh } from '../fresh'
-import { openSelectedNote, setCardsDone } from '../actions'
 import { observeCard } from '../measure'
 import { NOTE_SIZE } from '../ops'
 import { CardBody } from './CardBody'
@@ -20,54 +16,6 @@ interface NoteCardProps {
   item: CanvasItem
   /** Below 40% zoom: the title only, with no shadow, to stay fast (UI_SPEC §4.5). */
   simplified: boolean
-}
-
-/**
- * A 26px button at the card's top-right, on the chip tint, that fades in on hover (UI_SPEC
- * §4.5). Hidden, it still takes clicks, so the title keeps clear of it.
- */
-const CARD_BUTTON =
-  'absolute top-2.5 flex size-[26px] items-center justify-center rounded-[7px] bg-note-chip opacity-0 transition-opacity duration-120 group-hover/card:opacity-100 hover:bg-note-text-selection focus-visible:opacity-100'
-
-/** Opens the note in the side panel. */
-function OpenButton({ itemId }: { itemId: string }) {
-  return (
-    <HintTooltip label="Open" shortcut="Enter">
-      <button
-        type="button"
-        data-card-action
-        data-testid="note-card-open"
-        aria-label="Open"
-        onClick={() => {
-          useSelectionStore.getState().select([itemId])
-          openSelectedNote()
-        }}
-        className={cn(CARD_BUTTON, 'right-2.5')}
-      >
-        <IconArrowsDiagonal className="size-[15px]" stroke={2} aria-hidden />
-      </button>
-    </HintTooltip>
-  )
-}
-
-/** One-click Mark done, left of the open button; on a done card (Show done) it undoes it. */
-function DoneButton({ itemId, done }: { itemId: string; done: boolean }) {
-  const label = done ? 'Mark not done' : 'Mark done'
-  return (
-    <HintTooltip label={label} shortcut={shortcutLabel(CANVAS_SHORTCUTS.markDone)}>
-      <button
-        type="button"
-        data-card-action
-        data-testid="note-card-done"
-        aria-label={label}
-        aria-pressed={done}
-        onClick={() => setCardsDone([itemId], !done)}
-        className={cn(CARD_BUTTON, 'right-10', done && 'opacity-100')}
-      >
-        <IconCheck className="size-[15px]" stroke={2} aria-hidden />
-      </button>
-    </HintTooltip>
-  )
 }
 
 /** The selection outline (DESIGN_SYSTEM §8), kept 1.5px on screen, 3.5px out, at any zoom. */
@@ -120,7 +68,7 @@ export const NoteCard = memo(function NoteCard({ item, simplified }: NoteCardPro
       data-done={done || undefined}
       data-leaving={leaving || undefined}
       className={cn(
-        'group/card absolute flex flex-col overflow-visible rounded-card border px-4 py-3.5',
+        'absolute flex flex-col overflow-visible rounded-card border px-4 py-3.5',
         'transition-[box-shadow,border-color,translate,scale,opacity] duration-180 ease-(--ease-out)',
         colors.bg,
         colors.border,
@@ -166,8 +114,6 @@ export const NoteCard = memo(function NoteCard({ item, simplified }: NoteCardPro
         )}
         {!simplified && item.note && <CardChips note={item.note} />}
       </div>
-      {!simplified && <DoneButton itemId={item.id} done={done} />}
-      {!simplified && <OpenButton itemId={item.id} />}
       {selected && alone && <ResizeHandles />}
     </div>
   )
