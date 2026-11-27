@@ -159,6 +159,7 @@ When the canvas has no cards at all, a start screen floats in the middle of the 
   - The six color swatches (20px, the card color in a ring of the bright hue); the current color has a white ring.
   - A divider, then **Open** (`IconArrowsDiagonal`, one note only; Enter) and **Mark done** (`IconCheck`, every selected note; Ctrl+Enter). When they're all done (only with "Show done") it reads **Mark not done** and shows pressed.
   - A divider, then **Duplicate** (Ctrl+D) and **Delete** (Del). Bring to front and Send to back stay in the context menu and on Ctrl+] / Ctrl+[.
+  - A click doesn't take focus (mousedown is cancelled on the toolbar), so keys keep going to the canvas; Tab still reaches the buttons.
   - testids `selection-toolbar`, `selection-color-<color>`, `selection-open`, `selection-done`, `selection-duplicate`, `selection-delete`.
 
 ### 4.10 Context menu
@@ -181,7 +182,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 1. **Header row** (44px, drag region on its empty parts). It sits in the window's top 44px, so its right side keeps 140px clear for the Windows caption buttons (§1):
    - **Left:** the color dot (10px swatch circle, which opens the color popover) and a breadcrumb in `text-xs` subtle showing "Note", or "Note · not on canvas" for list-only notes (clicking that places it on the canvas).
    - **Right**, ending 140px from the window edge: ghost icon buttons for `IconArrowsDiagonal` (full page, or `IconArrowsDiagonalMinimize2` to go back), `IconDots` (Duplicate, Export as markdown, Delete) and `IconX`.
-2. **Title:** a borderless textarea that grows, using `text-title`. The placeholder is "Untitled" in subtle text. 8px top margin.
+2. **Title:** a borderless textarea that grows, using `text-title`. The placeholder is "Untitled" in subtle text. 8px top margin. A note opened from the canvas (Enter, Open in the toolbar or menu) gets the cursor at the end of the body, or in the title while it has none; a new list note gets it in the title.
 3. **Editor:** BlockNote with 16px top margin (styling in §5.1).
 4. **Meta section:** 32px top margin, a 1px top border, 16px padding. Rows are 32px tall and `text-sm`, with a 16px icon in subtle and the label in muted:
    - **Links:** each link is a row showing the domain letter square (16px), the label or URL with an ellipsis, and hover actions (edit, remove). Below them is an "Add link" ghost row; clicking it turns the row into an input with the placeholder "Paste a URL".

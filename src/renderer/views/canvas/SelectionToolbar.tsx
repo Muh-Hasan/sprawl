@@ -89,6 +89,10 @@ export function SelectionToolbar() {
       aria-label={count === 1 ? 'Selected note' : 'Selected notes'}
       className="absolute z-10 flex h-11 -translate-x-1/2 animate-in items-center gap-0.5 rounded-card border border-border bg-card p-1 shadow-(--shadow-popover) duration-120 fade-in-0"
       style={{ left, top }}
+      // A click doesn't move focus here: it stays with the canvas (or goes where the button
+      // sends it, like Open's note), so typing after a click isn't swallowed by the toolbar.
+      // Tab still reaches the buttons.
+      onMouseDown={(e) => e.preventDefault()}
     >
       {NOTE_COLORS.map((color) => (
         <HintTooltip key={color} label={COLOR_NAMES[color]}>

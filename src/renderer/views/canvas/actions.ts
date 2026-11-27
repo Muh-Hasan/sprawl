@@ -32,7 +32,10 @@ export function openSelectedNote({ due = false }: { due?: boolean } = {}): void 
   const [id] = selected
   const item = id === undefined ? undefined : canvas().items.get(id)
   if (item?.kind !== 'note' || item.refId === null) return
-  useUiStore.getState().openNote(item.refId, { due })
+  // Typing goes on in the note: in the body, or in the title while it has none. The due-date
+  // picker keeps the cursor for itself.
+  const focus = due ? undefined : item.note?.title.trim() ? 'body' : 'title'
+  useUiStore.getState().openNote(item.refId, { due, focus })
 }
 
 /**

@@ -236,6 +236,8 @@ test.describe('notes on the canvas', () => {
     await a.click()
     await window.getByTestId('selection-color-sage').click()
     await expect(a).toHaveClass(/bg-note-sage/)
+    // A click on the toolbar leaves focus with the canvas.
+    await expect(window.getByTestId('selection-color-sage')).not.toBeFocused()
 
     await a.click({ button: 'right' })
     await window.getByTestId('menu-color').hover()

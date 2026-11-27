@@ -7,6 +7,9 @@ export type View = (typeof VIEWS)[number]
 /** The note panel: a side panel next to the view, or a full page over it (UI_SPEC §5). */
 export type PanelMode = 'side' | 'full'
 
+/** Where the panel can put the cursor when it opens a note. */
+export type FocusTarget = 'title' | 'body'
+
 interface UiState {
   view: View
   setView(view: View): void
@@ -17,14 +20,18 @@ interface UiState {
   duePickerRequested: boolean
   /** The panel showed the picker it was asked for. */
   takeDuePickerRequest(): boolean
-  /** The panel should put the cursor in the title once the note shows (a new list note). */
-  titleFocusRequested: boolean
-  takeTitleFocusRequest(): boolean
+  /**
+   * Where the panel should put the cursor once the note shows: the title (a new list note) or
+   * the end of the body (a note opened from the canvas).
+   */
+  focusRequest: { noteId: string; target: FocusTarget } | null
+  /** True once: the panel's `target` for note `noteId` is to take the cursor. */
+  takeFocusRequest(noteId: string, target: FocusTarget): boolean
   /**
    * Opens a note in the panel (side mode if it was closed); `due` also opens its date picker,
-   * `focusTitle` puts the cursor in the title.
+   * `focus` puts the cursor in the title or the body.
    */
-  openNote(id: string, options?: { due?: boolean; focusTitle?: boolean }): void
+  openNote(id: string, options?: { due?: boolean; focus?: FocusTarget }): void
   closeNote(): void
   setPanelMode(mode: PanelMode): void
   /** Esc in the panel: full page → side panel → closed (PRODUCT §3.2). */
@@ -45,18 +52,19 @@ export const useUiStore = create<UiState>()((set, get) => ({
     set({ duePickerRequested: false })
     return true
   },
-  titleFocusRequested: false,
-  takeTitleFocusRequest: () => {
-    if (!get().titleFocusRequested) return false
-    set({ titleFocusRequested: false })
+  focusRequest: null,
+  takeFocusRequest: (noteId, target) => {
+    const request = get().focusRequest
+    if (request?.noteId !== noteId || request.target !== target) return false
+    set({ focusRequest: null })
     return true
   },
-  openNote: (id, { due = false, focusTitle = false } = {}) =>
+  openNote: (id, { due = false, focus } = {}) =>
     set((s) => ({
       openNoteId: id,
       panelMode: s.openNoteId === null ? 'side' : s.panelMode,
       duePickerRequested: due,
-      titleFocusRequested: focusTitle,
+      focusRequest: focus ? { noteId: id, target: focus } : null,
     })),
   closeNote: () => set({ openNoteId: null, panelMode: 'side' }),
   setPanelMode: (panelMode) => set({ panelMode }),
