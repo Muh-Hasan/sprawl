@@ -8,14 +8,16 @@ export interface LogData {
   day: string | null
   entries: LogEntry[]
   carried: NoteSummary[]
+  /** How many days in a row have entries, ending on this day. */
+  streak: number
   /** Entries that weren't there the last time this day loaded: they get the row highlight. */
   fresh: ReadonlySet<string>
 }
 
-const EMPTY: LogData = { day: null, entries: [], carried: [], fresh: new Set() }
+const EMPTY: LogData = { day: null, entries: [], carried: [], streak: 0, fresh: new Set() }
 
 /**
- * A day's entries and carried-over notes, refetched when the day changes, when the log changes
+ * A day's entries, carried-over notes and streak, refetched when the day changes, when the log changes
  * elsewhere (a note marked done), and after an edit here (`reload`).
  */
 export function useLogDay(day: string): { data: LogData; reload: () => void } {
@@ -27,14 +29,15 @@ export function useLogDay(day: string): { data: LogData; reload: () => void } {
 
   useEffect(() => {
     let live = true
-    void Promise.all([window.sprawl.log.day(day), window.sprawl.log.carriedOver(day)]).then(
-      ([log, carried]) => {
+    const { log: api } = window.sprawl
+    void Promise.all([api.day(day), api.carriedOver(day), api.streak(day)]).then(
+      ([log, carried, streak]) => {
         if (!live) return
         const before = seen.current.get(day)
         const ids = new Set(log.entries.map((e) => e.id))
         const fresh = new Set(before ? [...ids].filter((id) => !before.has(id)) : [])
         seen.current.set(day, ids)
-        setData({ day, entries: log.entries, carried, fresh })
+        setData({ day, entries: log.entries, carried, streak, fresh })
       },
     )
     return () => {

@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { IconPencil } from '@tabler/icons-react'
 import { ShortcutKbd } from '@/components/ShortcutKbd'
 
 /**
- * The log composer (UI_SPEC §6), pinned to the bottom of the column: "What did you just do?"
+ * The log composer (UI_SPEC §6), floating at the bottom of the view: "What did you just do?"
  * Enter adds the line at the current time.
  */
 export function Composer({ onSubmit }: { onSubmit: (text: string) => Promise<void> }) {
@@ -10,7 +11,7 @@ export function Composer({ onSubmit }: { onSubmit: (text: string) => Promise<voi
   const [busy, setBusy] = useState(false)
   return (
     <form
-      className="relative"
+      className="flex h-[52px] items-center gap-2.5 rounded-[14px] border border-border bg-card pr-2 pl-[18px] shadow-(--shadow-toolbar) transition-colors duration-120 focus-within:border-border-strong"
       onSubmit={(e) => {
         e.preventDefault()
         const line = text.trim()
@@ -21,6 +22,11 @@ export function Composer({ onSubmit }: { onSubmit: (text: string) => Promise<voi
           .finally(() => setBusy(false))
       }}
     >
+      <IconPencil
+        className="size-[18px] shrink-0 text-subtle-foreground"
+        stroke={1.75}
+        aria-hidden
+      />
       <input
         data-testid="log-composer"
         aria-label="Add to the log"
@@ -28,13 +34,13 @@ export function Composer({ onSubmit }: { onSubmit: (text: string) => Promise<voi
         onChange={(e) => setText(e.target.value)}
         placeholder="What did you just do?"
         maxLength={10_000}
-        className="h-10 w-full rounded-[10px] border border-border bg-card pr-12 pl-3 text-sm outline-none placeholder:text-subtle-foreground focus:border-border-strong focus:ring-2 focus:ring-ring/30"
+        className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-subtle-foreground"
       />
       <ShortcutKbd
-        className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2"
+        className="pointer-events-none h-[34px] rounded-[9px] border-0 px-3 text-2xs"
         aria-hidden
       >
-        ↵
+        Enter
       </ShortcutKbd>
     </form>
   )

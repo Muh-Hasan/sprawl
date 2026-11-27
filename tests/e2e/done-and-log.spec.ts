@@ -58,8 +58,8 @@ test.describe('done and the daily log', () => {
     await expect(log.entry('Call the bank').getByTestId('log-entry-time')).toHaveText(
       hhmm(entry.at),
     )
-    await expect(log.entry('Call the bank').getByTestId('log-entry-color')).toHaveText('sand')
-    await expect(log.summary).toHaveText('1 done · 0 logged')
+    await expect(log.entry('Call the bank').getByTestId('log-entry-color')).toHaveText('Sand')
+    await log.expectSummary('1 note done', '0 things logged', '1 day in a row')
 
     // Undo on the canvas takes it all back: no entry, no done_at.
     await page.getByTestId('sidebar-canvas').click()
@@ -71,7 +71,7 @@ test.describe('done and the daily log', () => {
     expect((await page.evaluate(() => self.sprawl.notes.get('n-a'))).doneAt).toBeNull()
     await log.open()
     await expect(log.empty).toBeVisible()
-    await expect(log.summary).toHaveText('0 done · 0 logged')
+    await log.expectSummary('0 notes done', '0 things logged', '0 days in a row')
   })
 
   test('mark done from the menu, Ctrl+Enter and the panel footer; Show done; the toast Undo', async ({
@@ -158,7 +158,7 @@ test.describe('done and the daily log', () => {
     await log.add('Called the bank')
     await expect(log.entries).toHaveCount(1)
     await expect(log.entry('Called the bank')).toHaveAttribute('data-kind', 'manual')
-    await expect(log.summary).toHaveText('0 done · 1 logged')
+    await log.expectSummary('0 notes done', '1 thing logged', '1 day in a row')
     await log.add('Paid **rent**')
     await expect(log.entries).toHaveCount(2)
     await expect(log.entries.nth(1).getByTestId('log-entry-text').locator('strong')).toHaveText(
@@ -209,7 +209,7 @@ test.describe('done and the daily log', () => {
       const log2 = new LogPage(again)
       await log2.open()
       await expect(log2.entries).toHaveCount(2)
-      await expect(log2.summary).toHaveText('0 done · 2 logged')
+      await log2.expectSummary('0 notes done', '2 things logged', '1 day in a row')
     })
   })
 })

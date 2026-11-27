@@ -4,7 +4,7 @@ import { IconCircleCheck, IconPencil, IconTrash } from '@tabler/icons-react'
 import type { LogEntry } from '@shared/types'
 import { IconButton } from '@/components/IconButton'
 import { InlineMarkdown } from '@/components/InlineMarkdown'
-import { NOTE_COLOR_CLASSES } from '@/lib/noteColors'
+import { COLOR_NAMES, NOTE_COLOR_CLASSES } from '@/lib/noteColors'
 import { parseTime } from '@/lib/time'
 import { cn } from '@/lib/utils'
 
@@ -22,8 +22,11 @@ interface EntryProps extends EntryActions {
   fresh?: boolean
 }
 
-const ROW = 'grid min-h-10 grid-cols-[56px_1fr] items-start border-b border-border p-3'
+/** Time · icon · text · tag or actions; at least 48px tall, with a hover fill (UI_SPEC §6). */
+const ROW =
+  'grid min-h-12 grid-cols-[64px_28px_minmax(0,1fr)_auto] items-start gap-2 rounded-[10px] px-3 py-[13px] transition-colors duration-100 hover:bg-surface'
 const TIME = 'pt-0.5 text-left font-mono text-xs text-subtle-foreground'
+const ICON = 'mt-0.5 size-[18px]'
 
 /**
  * One line of the daily log (UI_SPEC §6). A done entry shows the note's title (live, or the
@@ -46,27 +49,31 @@ export function Entry({ entry, fresh = false, ...actions }: EntryProps) {
         <span data-testid="log-entry-time" className={TIME}>
           {time}
         </span>
+        <IconCircleCheck className={cn(ICON, 'text-foreground')} stroke={1.75} aria-label="Done" />
         <button
           type="button"
           data-testid="log-entry-open"
           disabled={!open}
           onClick={open}
-          className="flex min-w-0 items-center gap-2 text-left text-sm outline-none enabled:hover:underline enabled:hover:underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="min-w-0 rounded-sm text-left text-base outline-none enabled:hover:underline enabled:hover:underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring/50"
         >
-          <IconCircleCheck className="size-3.5 shrink-0 text-foreground" stroke={2} aria-hidden />
-          <span data-testid="log-entry-text" className="min-w-0 truncate">
+          <span data-testid="log-entry-text" className="block truncate">
             {note?.title || entry.text || 'Untitled'}
           </span>
-          {note && (
-            <span
-              data-testid="log-entry-color"
-              className="inline-flex h-5 shrink-0 items-center gap-1 rounded-full border border-border px-1.5 text-2xs text-muted-foreground capitalize"
-            >
-              <span className={cn('size-2 rounded-full', NOTE_COLOR_CLASSES[note.color].swatch)} />
-              {note.color}
-            </span>
-          )}
         </button>
+        {note && (
+          <span
+            data-testid="log-entry-color"
+            className={cn(
+              '-my-px inline-flex h-6 items-center gap-1.5 rounded-md px-2 text-2xs',
+              NOTE_COLOR_CLASSES[note.color].bg,
+              NOTE_COLOR_CLASSES[note.color].text,
+            )}
+          >
+            <span className={cn('size-2 rounded-full', NOTE_COLOR_CLASSES[note.color].swatch)} />
+            {COLOR_NAMES[note.color]}
+          </span>
+        )}
       </div>
     )
   }
@@ -92,7 +99,7 @@ function ManualEntry({
         <InlineInput
           testId="log-entry-time-input"
           initial={time}
-          className="w-12 font-mono text-xs"
+          className="w-14 pt-0.5 font-mono text-xs"
           onDone={(value) => {
             setEditing(null)
             const parsed = value === null ? null : parseTime(value)
@@ -110,44 +117,46 @@ function ManualEntry({
           {time}
         </button>
       )}
-      <div className="flex min-w-0 items-start gap-2">
-        {editing === 'text' ? (
-          <InlineInput
-            testId="log-entry-input"
-            initial={entry.text}
-            className="flex-1 text-sm"
-            onDone={(value) => {
-              setEditing(null)
-              const text = value?.trim()
-              if (text && text !== entry.text) update(entry.id, { text })
-            }}
+      <IconPencil
+        className={cn(ICON, 'text-subtle-foreground')}
+        stroke={1.75}
+        aria-label="Logged"
+      />
+      {editing === 'text' ? (
+        <InlineInput
+          testId="log-entry-input"
+          initial={entry.text}
+          className="text-base"
+          onDone={(value) => {
+            setEditing(null)
+            const text = value?.trim()
+            if (text && text !== entry.text) update(entry.id, { text })
+          }}
+        />
+      ) : (
+        <p data-testid="log-entry-text" className="min-w-0 text-base break-words">
+          <InlineMarkdown text={entry.text} />
+        </p>
+      )}
+      {editing === null && (
+        <div className="-my-[3px] flex gap-0.5 opacity-0 transition-opacity duration-120 group-hover/entry:opacity-100 focus-within:opacity-100">
+          <IconButton
+            data-testid="log-entry-edit"
+            icon={IconPencil}
+            label="Edit"
+            size="sm"
+            onClick={() => setEditing('text')}
           />
-        ) : (
-          <p data-testid="log-entry-text" className="min-w-0 flex-1 text-sm break-words">
-            <InlineMarkdown text={entry.text} />
-          </p>
-        )}
-        {editing === null && (
-          <div className="-my-1 flex shrink-0 gap-0.5 opacity-0 transition-opacity duration-120 group-hover/entry:opacity-100 focus-within:opacity-100">
-            <IconButton
-              data-testid="log-entry-edit"
-              icon={IconPencil}
-              label="Edit"
-              size="sm"
-              className="size-6"
-              onClick={() => setEditing('text')}
-            />
-            <IconButton
-              data-testid="log-entry-delete"
-              icon={IconTrash}
-              label="Delete"
-              size="sm"
-              className="size-6 hover:text-destructive"
-              onClick={() => remove(entry)}
-            />
-          </div>
-        )}
-      </div>
+          <IconButton
+            data-testid="log-entry-delete"
+            icon={IconTrash}
+            label="Delete"
+            size="sm"
+            className="hover:text-destructive"
+            onClick={() => remove(entry)}
+          />
+        </div>
+      )}
     </div>
   )
 }
