@@ -7,9 +7,10 @@ Exact layout and anatomy for every screen. Behavior lives in `PRODUCT.md`, and t
 ## 1. Window
 
 - **Minimum size** 960×600, default 1440×900. The window size and position are remembered.
-- **Windows (v1 target):** `titleBarStyle: 'hidden'` with `titleBarOverlay: { color: '#09090B', symbolColor: '#A1A1AA', height: 40 }`. This gives native minimize, maximize and close buttons at the top right, drawn on our dark color.
+- **Windows (v1 target):** `titleBarStyle: 'hidden'` with `titleBarOverlay: { color: '#09090B', symbolColor: '#A1A1AA', height: 44 }`. This gives native minimize, maximize and close buttons at the top right, drawn on our dark color.
   - The top 44px of the app is a drag region (`-webkit-app-region: drag`), and every button inside it is `no-drag`.
-  - Keep **140px clear on the right of the top 44px of the window** for the overlay buttons. That band is always the window's right edge, whatever is there: the top bar, the note panel's header (§5) or a full-page note. No clickable element goes in it.
+  - Keep **140px clear on the right of the top 44px of the window** for the overlay buttons. That band is always the window's right edge, whatever is there: the top bar, the note panel's header (§5) or a full-page note. No clickable element goes in it. Use `pr-caption` for it, never a fixed 140px (see the text size below).
+  - **Text size** (Small / Default / Large / Larger, DESIGN_SYSTEM §3) zooms the page, but not the caption buttons. So the overlay's height follows the zoomed top bar (44px × the zoom factor), and `pr-caption` is `140px / --app-zoom`, which stays 140 real pixels at every size.
   - Windows 11 rounds the window corners and adds the snap-layouts flyout on the maximize button automatically. Don't fight either.
 - (Unofficial macOS: `hiddenInset` with traffic lights at `{ x: 16, y: 14 }`.)
 - **Background** is `--background` on the BrowserWindow as well (`backgroundColor: '#09090B'`), so there's no white flash.
@@ -290,6 +291,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 - A centered column (max 640px) with sections separated by 32px. Each section title is `text-sm` 600, and each row is 48px tall with the label and description (`text-xs` muted) on the left and the control on the right.
 - **Sections:**
   - **Vault:** the path in mono `text-xs` with a "Change…" button.
+  - **Appearance:** Text size (`ToggleGroup`: Small | Default | Large | Larger, with the description "Ctrl+Shift+= and Ctrl+Shift+- change it from anywhere."). For now it's the only row; the settings redesign adds the sidebar and reduce motion rows.
   - **Canvas:** Snap to grid (Switch), Show done notes (Switch).
   - **Notifications:** Due reminders (Switch); Morning summary (Switch plus a time `Select` in 30-minute steps); "Send a test notification" (secondary). If Windows blocks Sprawl's notifications, the section shows a one-line warning in `--due-overdue` text with an "Open Windows settings" button.
   - **Quick capture:** Shortcut (a `ShortcutRecorder` showing the current combo as `kbd` keys; click "Change", press the new combo, and conflicts show "Already used by another app" in destructive text); Default mode (`ToggleGroup`: Note | Log).
