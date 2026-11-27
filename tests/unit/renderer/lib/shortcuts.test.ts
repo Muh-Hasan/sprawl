@@ -3,6 +3,8 @@ import {
   CANVAS_SHORTCUTS,
   matchesShortcut,
   NAV_SHORTCUTS,
+  PALETTE_SHORTCUT,
+  shortcutKeys,
   shortcutLabel,
   TEXT_SIZE_SHORTCUTS,
 } from '../../../../src/renderer/lib/shortcuts'
@@ -49,6 +51,16 @@ describe('shortcutLabel', () => {
   it('formats tooltips as Ctrl+1', () => {
     expect(shortcutLabel(NAV_SHORTCUTS.log)).toBe('Ctrl+3')
     expect(shortcutLabel({ codes: ['KeyD'], ctrl: true, shift: true })).toBe('Ctrl+Shift+D')
+    expect(shortcutLabel(PALETTE_SHORTCUT)).toBe('Ctrl+K')
+    expect(shortcutLabel(NAV_SHORTCUTS.settings)).toBe('Ctrl+,')
+  })
+})
+
+describe('shortcutKeys', () => {
+  it('lists the keys one by one, for a row of kbds', () => {
+    expect(shortcutKeys(TEXT_SIZE_SHORTCUTS.bigger)).toEqual(['Ctrl', 'Shift', '='])
+    expect(shortcutKeys(CANVAS_SHORTCUTS.zoomFit)).toEqual(['Shift', '1'])
+    expect(shortcutKeys(CANVAS_SHORTCUTS.toolHand)).toEqual(['H'])
   })
 })
 
