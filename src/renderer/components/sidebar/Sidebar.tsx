@@ -15,8 +15,8 @@ import { useSidebarStore } from '@/stores/sidebarStore'
 import { useUiStore } from '@/stores/uiStore'
 import { newNote } from '@/views/search/commands'
 import { CollapsedSidebar } from './CollapsedSidebar'
-import { RecentNotes } from './RecentNotes'
 import { OverdueBadge } from './OverdueBadge'
+import { PinnedNotes, RecentNotes } from './SidebarNotes'
 import { SETTINGS_ITEM, VIEW_ITEMS, type SidebarItem } from './sidebarItems'
 import { useOverdueCount } from './useSidebarData'
 
@@ -54,7 +54,7 @@ function ListHint({ shortcut }: { shortcut: Shortcut }) {
   return count > 0 ? <OverdueBadge count={count} /> : <RowHint s={shortcut} />
 }
 
-/** The open sidebar (UI_SPEC §2): 248px, labelled, with Recent notes. */
+/** The open sidebar (UI_SPEC §2): 248px, labelled, with Pinned and Recent notes. */
 function OpenSidebar() {
   const toggle = useSidebarStore((s) => s.toggle)
   return (
@@ -108,6 +108,7 @@ function OpenSidebar() {
             <ViewRow key={item.view} item={item} />
           ))}
         </nav>
+        <PinnedNotes />
         <RecentNotes />
       </div>
 

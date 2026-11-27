@@ -18,6 +18,7 @@ import { CANVAS_SHORTCUTS, shortcutLabel } from '@/lib/shortcuts'
 import { cn } from '@/lib/utils'
 import { useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
+import { pinLabel, setNotePinned } from '../note/pinActions'
 import {
   createNoteAt,
   createNoteFromText,
@@ -31,14 +32,21 @@ import {
 import { zoomToFit } from './camera'
 import { screenToWorld, type Point } from './Viewport'
 
-type CardsTarget = { kind: 'cards'; notes: boolean; single: boolean; allDone: boolean }
+type CardsTarget = {
+  kind: 'cards'
+  notes: boolean
+  single: boolean
+  allDone: boolean
+  /** The single selected note's id and whether it's pinned (for Pin / Unpin). */
+  pin: { noteId: string; pinned: boolean } | null
+}
 type Target = CardsTarget | { kind: 'canvas'; at: Point }
 
 /**
  * The right-click menu (UI_SPEC §4.10). On a card it acts on the whole selection (right-clicking
  * an unselected card selects just that one); on empty space it offers to create and paste.
- * Open and Due date… act on a single note; Mark done on every selected note (Mark not done when
- * they're all done, shown with "Show done"). later: phase-8 adds New drawing here.
+ * Open, Due date… and Pin to sidebar act on a single note; Mark done on every selected note (Mark
+ * not done when they're all done, shown with "Show done"). later: phase-8 adds New drawing here.
  */
 export function CanvasContextMenu({ children }: { children: ReactNode }) {
   const [target, setTarget] = useState<Target | null>(null)
@@ -59,7 +67,13 @@ export function CanvasContextMenu({ children }: { children: ReactNode }) {
       const ids = [...useSelectionStore.getState().selected]
       const notes = ids.every((i) => items.get(i)?.kind === 'note')
       const allDone = notes && ids.every((i) => items.get(i)?.note?.doneAt != null)
-      setTarget({ kind: 'cards', notes, single: notes && ids.length === 1, allDone })
+      const single = notes && ids.length === 1
+      const only = single ? items.get(ids[0]!) : undefined
+      const pin =
+        only?.refId && only.note
+          ? { noteId: only.refId, pinned: only.note.pinnedAt !== null }
+          : null
+      setTarget({ kind: 'cards', notes, single, allDone, pin })
       return
     }
     const r = e.currentTarget.getBoundingClientRect()
@@ -113,7 +127,7 @@ function Item({
   )
 }
 
-function CardItems({ notes, single, allDone }: Omit<CardsTarget, 'kind'>) {
+function CardItems({ notes, single, allDone, pin }: Omit<CardsTarget, 'kind'>) {
   return (
     <>
       {single && (
@@ -151,6 +165,11 @@ function CardItems({ notes, single, allDone }: Omit<CardsTarget, 'kind'>) {
           {single && (
             <Item testId="menu-due" onSelect={() => openSelectedNote({ due: true })}>
               Due date…
+            </Item>
+          )}
+          {pin && (
+            <Item testId="menu-pin" onSelect={() => void setNotePinned(pin.noteId, !pin.pinned)}>
+              {pinLabel(pin.pinned)}
             </Item>
           )}
           <ContextMenuSeparator />

@@ -1,34 +1,45 @@
+import type { NoteListRow } from '@shared/types'
 import { Button } from '@/components/ui/button'
 import { NOTE_COLOR_CLASSES } from '@/lib/noteColors'
 import { cn } from '@/lib/utils'
 import { useUiStore } from '@/stores/uiStore'
 import { openNoteResult } from '@/views/search/commands'
-import { useRecentNotes } from './useSidebarData'
+import { usePinnedNotes, useRecentNotes } from './useSidebarData'
 
 /**
- * The sidebar's Recent section (UI_SPEC §2): the five open notes edited last. A click opens the
- * note in the panel and, if it has a card on show, glides the canvas to it, as the palette does.
+ * A list of notes in the sidebar (UI_SPEC §2): a heading, then one 32px row per note with its
+ * color swatch and title. A click opens the note in the panel and, if it has a card on show,
+ * glides the canvas to it, as the palette does. Nothing shows while the list is empty.
  */
-export function RecentNotes() {
-  const rows = useRecentNotes()
+function NoteSection({
+  label,
+  id,
+  rows,
+}: {
+  label: string
+  /** `pinned` or `recent`, for the test ids. */
+  id: string
+  rows: readonly NoteListRow[]
+}) {
   const openNoteId = useUiStore((s) => s.openNoteId)
   if (rows.length === 0) return null
   return (
     <section
-      aria-label="Recent"
-      data-testid="sidebar-recent"
-      className="flex flex-col gap-0.5 px-2 pt-5 pb-2"
+      aria-label={label}
+      data-testid={`sidebar-${id}`}
+      className="flex flex-col gap-0.5 px-2 pt-5 pb-2 [&+&]:pt-1.5"
     >
       <h2 className="px-3 pb-1.5 text-2xs font-medium tracking-[0.02em] text-subtle-foreground">
-        Recent
+        {label}
       </h2>
       {rows.map((row) => {
         const open = row.id === openNoteId
+        const done = row.doneAt !== null
         return (
           <Button
             key={row.id}
             variant="ghost"
-            data-testid="sidebar-recent-note"
+            data-testid={`sidebar-${id}-note`}
             data-note-id={row.id}
             data-active={open || undefined}
             onClick={() => openNoteResult(row)}
@@ -44,7 +55,8 @@ export function RecentNotes() {
             <span
               className={cn(
                 'min-w-0 flex-1 truncate text-left',
-                !row.title && 'text-muted-foreground',
+                (!row.title || done) && 'text-muted-foreground',
+                done && 'line-through',
               )}
             >
               {row.title || 'Untitled'}
@@ -54,4 +66,14 @@ export function RecentNotes() {
       })}
     </section>
   )
+}
+
+/** The notes pinned from a note menu, in the order they were pinned. */
+export function PinnedNotes() {
+  return <NoteSection label="Pinned" id="pinned" rows={usePinnedNotes()} />
+}
+
+/** The five open notes edited last that aren't pinned. */
+export function RecentNotes() {
+  return <NoteSection label="Recent" id="recent" rows={useRecentNotes()} />
 }

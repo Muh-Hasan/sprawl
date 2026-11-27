@@ -7,6 +7,8 @@ import {
   IconFocus2,
   IconLayoutDashboard,
   IconLink,
+  IconPin,
+  IconPinnedOff,
   IconTrash,
 } from '@tabler/icons-react'
 import { dueChipLabel, dueState } from '@shared/due'
@@ -18,6 +20,7 @@ import { DropdownMenuContent, DropdownMenuItem } from '@/components/Menu'
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { NOTE_COLOR_CLASSES } from '@/lib/noteColors'
 import { cn } from '@/lib/utils'
+import { pinLabel } from '../note/pinActions'
 import { doneLabel, editedLabel } from './listLogic'
 
 export interface RowActions {
@@ -25,6 +28,7 @@ export interface RowActions {
   toggleDone(row: NoteListRow): void
   showOnCanvas(id: string): void
   place(id: string): void
+  setPinned(id: string, pinned: boolean): void
   duplicate(id: string): void
   remove(id: string): void
 }
@@ -156,6 +160,13 @@ export const NoteRow = memo(function NoteRow({
                 Place on canvas
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem
+              data-testid="list-row-pin"
+              onSelect={() => actions.setPinned(row.id, row.pinnedAt === null)}
+            >
+              {row.pinnedAt === null ? <IconPin stroke={1.75} /> : <IconPinnedOff stroke={1.75} />}
+              {pinLabel(row.pinnedAt !== null)}
+            </DropdownMenuItem>
             <DropdownMenuItem
               data-testid="list-row-duplicate"
               onSelect={() => actions.duplicate(row.id)}
