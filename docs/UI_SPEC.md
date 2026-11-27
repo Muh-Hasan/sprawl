@@ -216,18 +216,17 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 
 ## 5b. List view
 
-- `--background` page. The content column is max 960px wide and centered, with 24px side padding.
-- **Header row** (56px): the title "Notes" (`text-lg`) and a count in `text-sm` muted ("24 open"). On the right is a "New note" button (secondary, sm, `IconPlus`).
-- **Filter bar** (40px, 12px below the header):
-  - Left: a shadcn `ToggleGroup` (Open · Due · Done · All), sm size, ghost style, with the selected item in a `--muted` background.
+- `--background` page. The content column is max 880px wide and centered, with 40px side padding and 36px above the header.
+- **Header row:** the title "List" (`text-title`), then 24px on, the Notes / Drawings switch: tabs 34px tall, radius 9, `text-base` 500, the selected one on `--muted`. The Notes tab carries the current tab's count in `text-xs` subtle ("24 open", "5 due", "12 done" or "40 notes"; testid `list-count`). Until drawings arrive (phase 8) Notes is its only tab. On the right is a "New note" button (secondary, `IconPlus`).
+- **Filter bar** (20px below the header; it wraps when the column is too narrow, such as with the note panel open):
+  - Left: the tabs (Open · Due · Done · All) in a bordered track (`--card`, 1px `--border`, radius 11, 3px padding). Each tab is 32px, `text-sm` 500, with the selected one on `--muted`, and shows how many notes it holds after its label in `text-2xs` (with the color and title filter applied).
   - Then six color swatch dots (14px circles). Selected dots get a 2px `--foreground` ring, and with none selected all colors show.
-  - Right: a filter input (200px, 28px tall, with a `IconSearch` icon and the placeholder "Filter by title"), then a Sort `Select` (hidden on the Due tab, which always sorts by due date, and on Done, which sorts by done time).
-- The header count reads "24 open", "5 due", "12 done" or "40 notes".
-- **Rows:** 44px tall, a 1px `--border` bottom, 12px horizontal padding and radius 0. Hover gives a `--muted` background, and the keyboard-selected row gets a `--muted` background plus a 2px white left bar (radius 0).
-  - Columns: checkbox (16px, the same style as the editor checklist) · color dot (8px) · **title** (`text-sm` 500, ellipsis) · first body line (`text-sm` subtle, ellipsis, takes the remaining space and is hidden when the window is under 1100px wide) · chips (checklist, due, links; same chips as the cards) · "Not on canvas" tag (`text-2xs`, `--muted` background, only when it applies) · edited time (`text-xs` subtle mono, 64px, right-aligned).
+  - Right: a filter input (36px tall, radius 10, `--card`, an 17px `IconSearch`, the placeholder "Filter notes"; 240px wide, narrowing to 144px before the bar wraps), then a Sort `Select` of the same height (hidden on the Due tab, which always sorts by due date, and on Done, which sorts by done time).
+- **Rows:** 52px tall, radius 10, 12px horizontal padding, 14px between columns, no divider. Hover gives a `--surface` background, and the keyboard-selected row gets a `--muted` background plus a 2px white bar on its left edge.
+  - Columns: checkbox (20px, radius 6, 1.5px `--border-strong`) · color swatch (10px, radius 3) · **title** (`text-base` 500, ellipsis; struck through and muted when done) · first body line (`text-sm` subtle, ellipsis, takes the remaining space and is hidden when the window is under 1100px wide) · chips (checklist, due, links; same chips as the cards) · "Not on canvas" tag (`text-2xs`, `--muted` background, only when it applies) · edited time (`text-xs` subtle mono, 64px, right-aligned).
   - Hover actions replace the edited time: `IconFocus2` (Show on canvas; only for a note with a card that isn't done) and `IconDots` (Place on canvas for list-only notes, Pin to sidebar or Unpin from sidebar, Duplicate, Delete; testid `list-row-pin`).
   - Show on canvas switches to the canvas, selects the card and glides it to the middle at 100% or closer.
-- **Due tab grouping:** sticky section headings (32px, `text-2xs` 600 subtle, `--background` background), in order: Overdue (heading in `--due-overdue`) · Today · Tomorrow · This week · Later. Empty groups are hidden.
+- **Due groups** (Open and Due tabs): sticky section headings (36px, `text-xs` 600, `--background` background) with the group's row count after the name in subtle 500, 20px between groups. In order: Overdue (heading in `--due-overdue`) · Today · Tomorrow (both `--foreground`) · This week · Later (`--muted-foreground`) · No date (subtle; Open only). Within a group rows keep the tab's sort. Empty groups are hidden. ↑↓ follow the groups' order. Done and All are one flat list.
 - **Done tab:** rows show the done time instead of the edited time, and the checkbox is checked (unticking undoes done).
 - Ticking a row's checkbox fades the row out over 180ms in the Open and Due tabs.
 - **Empty states:** see PRODUCT §5. Done: "Nothing done yet. Tick a note and it shows up here." All: "No notes yet." With a color or title filter on: "No notes match these filters."

@@ -116,9 +116,9 @@ Opening a note (Enter on its selected card or Open in its menu, or clicking it i
 All notes in one dense list, for when the canvas is too spread out to scan.
 
 - **Rows** show a done checkbox, the color dot, the title, the first line of the body (muted), and chips for checklist progress, due date and links. On the far right is the "Edited 2h ago" time.
-- **Filters** (segmented control at the top): **Open** (default), **Due** (has a due date, sorted soonest first, overdue at the top), **Done**, **All**. There's also a color filter (swatch dots, multi-select) and a text filter box that filters by title as you type.
+- **Filters** (segmented control at the top, each tab showing how many notes it holds): **Open** (default), **Due** (has a due date, sorted soonest first, overdue at the top), **Done**, **All**. There's also a color filter (swatch dots, multi-select) and a text filter box that filters by title as you type.
 - **Sort** (Open and All): Recently edited (default), Created, Title A–Z, Due date.
-- **Due filter grouping:** Overdue · Today · Tomorrow · This week · Later, each with a small heading. "This week" runs to Sunday (weeks start on Monday, as in the date picker's "Next week").
+- **Due grouping** (Open and Due tabs): Overdue · Today · Tomorrow · This week · Later, then No date in Open, each with a small heading and its count. Within a group the rows keep the sort. "This week" runs to Sunday (weeks start on Monday, as in the date picker's "Next week").
 - The **Done** tab lists the most recently done first; the sort applies to Open and All. Equal times go to the most recently created.
 - **Actions:**
   - Clicking the checkbox marks the note done (creating a log entry, as everywhere else).
