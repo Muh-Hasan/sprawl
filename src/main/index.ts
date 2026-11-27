@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { app, Menu, powerMonitor, shell, type BrowserWindow } from 'electron'
 import { APP_USER_MODEL_ID, RAIL_WIDTH, WINDOW_DEFAULT } from '@shared/constants'
 import { parseDeepLink } from '@shared/deepLink'
+import { TEXT_SIZE_ZOOM } from '@shared/textSize'
 import { CaptureShortcut, CaptureWindow } from './captureWindow'
 import { guardClose, readyToClose } from './closeGuard'
 import { ConfigStore } from './config'
@@ -19,7 +20,7 @@ import { ReminderScheduler } from './services/reminders'
 import { SettingsService } from './services/settings'
 import { VaultService } from './services/vault'
 import { AppTray, type TrayState } from './tray'
-import { createMainWindow, focusWindow } from './window'
+import { applyTextSize, createMainWindow, focusWindow } from './window'
 
 // Must happen before anything else: userData also keys the single-instance lock, so tests
 // (and a second profile) never collide with your own running copy.
@@ -124,6 +125,7 @@ function start(): void {
     const captureWindow = new CaptureWindow({
       e2e: env.e2e,
       defaultMode: () => settings.get('captureDefaultMode'),
+      textSize: () => settings.get('textSize'),
       // A capture window that loaded after a test fixed the clock hasn't heard of it yet.
       beforeShow: env.e2e
         ? (contents) => contents.send('clock:changed', { now: clock.fixedAt })
@@ -133,9 +135,11 @@ function start(): void {
     const viewCenter = (): { x: number; y: number } => {
       const win = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null
       const [width, height] = win?.getContentSize() ?? [WINDOW_DEFAULT.width, WINDOW_DEFAULT.height]
+      // The content size is in device-independent px; the canvas works in zoomed CSS px.
+      const zoom = TEXT_SIZE_ZOOM[settings.get('textSize')]
       return viewCenterOf(settings.get('viewport'), {
-        width: Math.max(0, (width ?? 0) - RAIL_WIDTH),
-        height: height ?? 0,
+        width: Math.max(0, (width ?? 0) / zoom - RAIL_WIDTH),
+        height: (height ?? 0) / zoom,
       })
     }
     const capture = new CaptureService({ db, now, canvas, log, settings, viewCenter })
@@ -161,6 +165,11 @@ function start(): void {
         refreshTray()
       }
       if (key === 'openAtLogin') syncLoginItem()
+      if (key === 'textSize') {
+        const size = settings.get('textSize')
+        if (mainWindow && !mainWindow.isDestroyed()) applyTextSize(mainWindow, size)
+        captureWindow.applyTextSize()
+      }
     }
 
     registerIpc({
@@ -220,6 +229,7 @@ function start(): void {
         saved: config.get().window,
         onStateChange: (state) => config.update((c) => void (c.window = state)),
         hidden,
+        textSize: settings.get('textSize'),
       })
       guardClose(win, {
         // "Keep Sprawl running in the background": closing hides to the tray. Off in E2E.

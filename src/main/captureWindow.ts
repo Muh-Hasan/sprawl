@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { BrowserWindow, globalShortcut, screen, type WebContents } from 'electron'
 import { CAPTURE_WINDOW } from '@shared/constants'
 import type { CaptureMode } from '@shared/api'
+import { TEXT_SIZE_ZOOM, toWindowPx, type TextSize } from '@shared/textSize'
 
 /**
  * The quick-capture window (ARCHITECTURE §2, UI_SPEC §5c): created hidden at startup, so the
@@ -10,13 +11,16 @@ import type { CaptureMode } from '@shared/api'
  */
 export class CaptureWindow {
   private win: BrowserWindow | null = null
-  private height: number = CAPTURE_WINDOW.minHeight
+  /** The card's height in CSS px, as the renderer reported it. */
+  private cardHeight: number = CAPTURE_WINDOW.minHeight
 
   constructor(
     private readonly options: {
       /** E2E mode: blurring doesn't hide it (the test window takes focus back and forth). */
       e2e: boolean
       defaultMode: () => CaptureMode
+      /** The app text size: the page is zoomed by it and the window grows to match. */
+      textSize: () => TextSize
       /** Runs once the page has loaded, just before each show (E2E: tell it the fixed clock). */
       beforeShow?: (contents: WebContents) => void
     },
@@ -24,9 +28,10 @@ export class CaptureWindow {
 
   create(): BrowserWindow {
     if (this.win && !this.win.isDestroyed()) return this.win
+    const { width, height } = this.size()
     const win = new BrowserWindow({
-      width: CAPTURE_WINDOW.width,
-      height: this.height,
+      width,
+      height,
       show: false,
       frame: false,
       transparent: true,
@@ -46,6 +51,7 @@ export class CaptureWindow {
         sandbox: true,
         spellcheck: false,
         backgroundThrottling: false,
+        zoomFactor: TEXT_SIZE_ZOOM[this.options.textSize()],
       },
     })
     // Above full-screen apps too.
@@ -71,14 +77,28 @@ export class CaptureWindow {
     return this.win !== null && !this.win.isDestroyed() && this.win.isVisible()
   }
 
+  /**
+   * The window's size in device-independent px: the 520px card and its fitted height (112 to
+   * 320 CSS px), both scaled by the text size so the zoomed card still fills the window.
+   */
+  private size(): { width: number; height: number } {
+    const size = this.options.textSize()
+    const css = Math.min(
+      CAPTURE_WINDOW.maxHeight,
+      Math.max(CAPTURE_WINDOW.minHeight, this.cardHeight),
+    )
+    return { width: toWindowPx(CAPTURE_WINDOW.width, size), height: toWindowPx(css, size) }
+  }
+
   /** Centered on the monitor under the pointer, its top at 22% of that monitor's height. */
   private place(win: BrowserWindow): void {
     const { workArea } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
+    const { width, height } = this.size()
     win.setBounds({
-      x: Math.round(workArea.x + (workArea.width - CAPTURE_WINDOW.width) / 2),
+      x: Math.round(workArea.x + (workArea.width - width) / 2),
       y: Math.round(workArea.y + workArea.height * CAPTURE_WINDOW.top),
-      width: CAPTURE_WINDOW.width,
-      height: this.height,
+      width,
+      height,
     })
   }
 
@@ -112,13 +132,24 @@ export class CaptureWindow {
     win.hide()
   }
 
-  /** Fits the window to the card, between 112 and 320px. */
+  /** Fits the window to the card (`px` in CSS px), between 112 and 320px. */
   setHeight(px: number): void {
-    this.height = Math.min(CAPTURE_WINDOW.maxHeight, Math.max(CAPTURE_WINDOW.minHeight, px))
+    this.cardHeight = px
     const win = this.win
     if (!win || win.isDestroyed()) return
+    const { height } = this.size()
     const b = win.getBounds()
-    if (b.height !== this.height) win.setBounds({ ...b, height: this.height })
+    if (b.height !== height) win.setBounds({ ...b, height })
+  }
+
+  /** Follows a new text size: zooms the page and resizes the window around its center. */
+  applyTextSize(): void {
+    const win = this.win
+    if (!win || win.isDestroyed()) return
+    win.webContents.setZoomFactor(TEXT_SIZE_ZOOM[this.options.textSize()])
+    const { width, height } = this.size()
+    const b = win.getBounds()
+    win.setBounds({ x: Math.round(b.x + (b.width - width) / 2), y: b.y, width, height })
   }
 
   destroy(): void {

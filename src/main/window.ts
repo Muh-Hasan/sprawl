@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { BrowserWindow, screen, shell } from 'electron'
 import { APP_BG, TITLE_BAR_HEIGHT, TITLE_BAR_SYMBOL, WINDOW_MIN } from '@shared/constants'
 import { isAllowedExternalUrl } from '@shared/schemas'
+import { TEXT_SIZE_ZOOM, toWindowPx, type TextSize } from '@shared/textSize'
 import { env } from './env'
 import icon from '../../resources/icon.ico?asset'
 import type { WindowState } from './config'
@@ -13,6 +14,8 @@ export interface MainWindowOptions {
   onStateChange: (state: WindowState) => void
   /** Start hidden in the tray (`--hidden`, from start at login). */
   hidden?: boolean
+  /** The app text size: the page's zoom factor. */
+  textSize: TextSize
 }
 
 /** Creates the main window with the settings from UI_SPEC §1 and the security rules from ARCHITECTURE §2. */
@@ -20,6 +23,7 @@ export function createMainWindow({
   saved,
   onStateChange,
   hidden = false,
+  textSize,
 }: MainWindowOptions): BrowserWindow {
   const bounds = initialBounds(
     saved,
@@ -37,7 +41,7 @@ export function createMainWindow({
     icon,
     backgroundColor: APP_BG,
     titleBarStyle: 'hidden',
-    titleBarOverlay: { color: APP_BG, symbolColor: TITLE_BAR_SYMBOL, height: TITLE_BAR_HEIGHT },
+    titleBarOverlay: titleBarOverlay(textSize),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -48,6 +52,7 @@ export function createMainWindow({
       // frames, so animation frames, ResizeObserver and animations stall and the canvas tests
       // flake. A real window is in front when it's used, so it keeps Chromium's default.
       backgroundThrottling: !env.e2e,
+      zoomFactor: TEXT_SIZE_ZOOM[textSize],
     },
   })
 
@@ -76,6 +81,24 @@ export function createMainWindow({
   else void win.loadFile(join(__dirname, '../renderer/index.html'))
 
   return win
+}
+
+/**
+ * The native caption buttons' strip. It's as tall as the zoomed 44px top bar, so the buttons
+ * stay centered on it at every text size.
+ */
+function titleBarOverlay(size: TextSize): Electron.TitleBarOverlayOptions {
+  return {
+    color: APP_BG,
+    symbolColor: TITLE_BAR_SYMBOL,
+    height: toWindowPx(TITLE_BAR_HEIGHT, size),
+  }
+}
+
+/** Follows a new text size: zooms the page and resizes the caption-button strip. */
+export function applyTextSize(win: BrowserWindow, size: TextSize): void {
+  win.webContents.setZoomFactor(TEXT_SIZE_ZOOM[size])
+  win.setTitleBarOverlay(titleBarOverlay(size))
 }
 
 /** Brings a window to the front: shows it, un-minimizes it and focuses it. */
