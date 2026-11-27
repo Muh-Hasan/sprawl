@@ -39,11 +39,11 @@ test('uses the type scale and control sizes', async ({ window }) => {
     return {
       body: getComputedStyle(document.body).fontSize,
       topBar: style('top-bar').height,
-      iconButton: style('tool-note').height,
+      toolButton: style('tool-note').height,
       icon: icon.height,
     }
   })
-  expect(sizes).toEqual({ body: '14px', topBar: '44px', iconButton: '36px', icon: 18 })
+  expect(sizes).toEqual({ body: '14px', topBar: '44px', toolButton: '44px', icon: 22 })
 })
 
 test('keeps the renderer sandboxed behind window.sprawl', async ({ window }) => {

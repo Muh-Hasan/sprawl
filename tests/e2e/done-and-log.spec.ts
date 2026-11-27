@@ -31,7 +31,7 @@ test.describe('done and the daily log', () => {
       { key: 'b', x: 400, y: 120, title: 'Buy milk' },
     ])
     const day = await today(page)
-    await expect(page.getByTestId('status-pill')).toContainText('0 done today')
+    await expect(page.getByTestId('status-pill')).toContainText('Nothing done yet')
 
     // One click on the hover check.
     const card = canvas.card('Call the bank')
@@ -66,7 +66,7 @@ test.describe('done and the daily log', () => {
     await canvas.ready()
     await page.keyboard.press('Control+z')
     await expect(canvas.card('Call the bank')).toBeVisible()
-    await expect(page.getByTestId('status-pill')).toContainText('0 done today')
+    await expect(page.getByTestId('status-pill')).toContainText('Nothing done yet')
     expect((await log.stored(day)).entries).toEqual([])
     expect((await page.evaluate(() => self.sprawl.notes.get('n-a'))).doneAt).toBeNull()
     await log.open()

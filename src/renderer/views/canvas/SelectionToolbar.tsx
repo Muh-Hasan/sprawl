@@ -14,8 +14,8 @@ import { boundsOf, worldToScreen, type Rect } from './Viewport'
 
 /** Space between the selection and the toolbar, in screen px (clears the outline). */
 const GAP = 14
-/** Below this, there's no room above the selection (the top bar and main toolbar sit there). */
-const MIN_TOP = 104
+/** Below this, there's no room above the selection: the 44px top bar sits there. */
+const MIN_TOP = 56
 const TOOLBAR_H = 40
 
 /** The selection's bounds on screen, or null when there's nothing to show it for. */

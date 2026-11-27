@@ -76,19 +76,35 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
 - The cursor is `default`. It's `grab`/`grabbing` in Hand mode or while space is held, and `crosshair` for the Note and Link tools.
 - The canvas element itself never scrolls (focus and find-in-page could scroll even an overflow-hidden box); any scroll is reset at once.
 
-### 4.2 Floating toolbar
-- Positioned top center, 12px from the top. `--card` background with a 1px border, radius 10, `--shadow-popover`, and 4px padding.
-- Six 36×36 ghost icon buttons (18px icons): Select, Hand │ Note, Link, Drawing, Image. There's a 1px × 16px divider after Hand.
-- The **active tool** gets a `--muted` background and a `--foreground` icon.
+### 4.1a Empty canvas
+When the canvas has no cards at all, a start screen floats in the middle of the view (`EmptyCanvas` artboard; testid `canvas-empty`). It fades and rises in (500ms, `--ease-out`).
+- Centered on the uncovered canvas at 46% height, 640px wide.
+- Three tilted sticky-note shapes (sand, sky, sage; 74×64, radius 10) above the title.
+- "Your canvas is empty" in `text-title`, then "Double-click anywhere to add a sticky note, or start from one of these." in `text-base` muted.
+- Three start tiles in a row (12px gap): `--surface` background, 1px border, radius 14, 16px padding. Each has a 36px icon square on a note color, a `text-base` 600 title and a `text-xs` muted line. On hover the border goes `--border-strong`, the background `--popover`, and the tile rises 2px.
+  - **New sticky note** (sand, testid `start-new-note`): "Or press `N` and click where it goes". Makes a note in the middle of the view with its title focused.
+  - **Paste a list** (sky, `start-paste`): "Copied text becomes a note, first line as the title". Reads the clipboard; with nothing to paste it shows the toast "Copy some text first, then paste it here".
+  - **Open the welcome board** (lilac, `start-welcome-board`): "Sample notes that show everything in a minute". Places the welcome board (§10).
+- Under the tiles, in `text-xs` subtle: "Capture from any app with `Ctrl Shift Space`", using the shortcut set in Settings and left out when quick capture has none. R13 adds "· All shortcuts `?`".
+- Only the tiles take the pointer: double-clicking anywhere else, even on the title, still makes a note there. It disappears as soon as the canvas has a card, and comes back when the last one is deleted or undone.
+
+### 4.2 Toolbar
+- Bottom center, 20px from the bottom. `--popover` background with a 1px border, radius 16, 6px padding, 4px gap, `--shadow-toolbar`.
+- It centers on the part of the canvas that isn't covered: `--canvas-inset-right` is the width of whatever floats over the right edge (the floating note panel, R8), and the toolbar slides with it (`left`, 240ms `--ease-out`). The zoom control does the same.
+- Six 44×44 tool buttons with 22px icons and an 11px radius: Select, Hand │ Sticky note, Drawing, Image, Link. There's a 1px × 24px divider after Hand.
+- The **active tool** is filled white: `--primary` background with a `--primary-foreground` icon. The others are `--muted-foreground` and get a `--muted` background on hover.
+- The Sticky note tool has an 8px dot (radius 3, a 2px `--popover` ring) at its bottom right in the color a new note gets (stone).
+- Tools that aren't built yet (Drawing in phase 8, Image and Link in phase 7) are dimmed to 40% and `aria-disabled`, and stay hoverable: their tooltip says "Image · coming soon".
 - **Note tool:** a click places a default-size note there; a click-and-drag draws the note at the dragged size (snapped, within the note size limits), shown as a dashed card-shaped outline while dragging. Either way the title is focused and the tool goes back to Select.
-- Each tooltip shows the label and its single-key shortcut.
+- Each tooltip opens above the button and shows the label and its single-key shortcut.
 
 ### 4.3 Bottom-left status pill
-- 12px from the edges, height 28, `--card` background with a border, radius 8, 0 10px padding, `text-xs`, muted.
-- Content: `Tue 24 Nov · 3 done today` (done entries in today's log, refetched whenever a note is marked done or undone). Clicking it opens today's log. testid `status-pill`.
+- 16px from the edges, height 36, `--card` background with a border, radius 10, 0 14px padding, `text-xs`, muted. The border turns `--border-strong` on hover.
+- Content: the date in `--foreground` 500, a `·`, then "3 done today" or "Nothing done yet" (done entries in today's log, refetched whenever a note is marked done or undone). Clicking it opens today's log. testid `status-pill`.
 
 ### 4.4 Bottom-right zoom control
-- Same pill style: `−` (24px icon button), the percentage in mono `text-xs` (44px wide, clicking resets it), and `+`.
+- The same pill (16px from the edges, height 36, radius 10): `−`, the percentage in mono `text-2xs` (48px wide, clicking resets it), `+`, a 1px × 18px divider, then Zoom to fit (Shift+1). The buttons are 32×30 with 16px icons, each with a tooltip above it.
+- A `?` button (Help and shortcuts) joins it once the shortcuts sheet exists (R13).
 
 ### 4.5 Note card
 ```
@@ -327,9 +343,13 @@ Opened with Ctrl+K from anywhere (the note editor too; Ctrl+K again closes it) o
   - "Notes, to-dos, sketches and a daily log. All on one canvas, all on your machine." in `text-sm` muted.
   - A vault picker row: a read-only input showing `Documents\Sprawl` with a "Choose…" button.
   - A **Start** button (default/white, full width, 36px).
-- After Start, the canvas loads with one welcome note at the center (stone):
-  - Title "Start here".
-  - Body: "Double-click anywhere to add a note. Press Ctrl+K to search. Mark notes done and they show up in your daily log. Delete this when you're ready."
+- After Start, the canvas loads empty and shows the start screen (§4.1a).
+- **Welcome board** ("Open the welcome board"): five notes centered on the view, slightly apart and in five colors, each teaching one thing. They're placed in one batch, so one Ctrl+Z takes them all away. The copy lives in `welcomeBoard.ts` and must match what the app really does.
+  - Sand, "Drag me around": "Notes go anywhere. Hold Space and drag to pan, Ctrl + scroll to zoom."
+  - Sky, "Open a note": "Select it and press Enter for the full editor: headings, lists and checklists."
+  - Rose, "Give it a due date": "Right-click → Due date… It shows up in List, with a reminder if you pick a time."
+  - Sage, "Tick it off": "Ctrl + Enter marks it done. It lands in today's log."
+  - Lilac, "Find anything": "Ctrl + K searches your notes and runs every command."
 
 ---
 

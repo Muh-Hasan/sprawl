@@ -26,7 +26,7 @@ test.describe('daily log days (fixed clock)', () => {
 
     // Just after midnight: the 25th, and the status pill follows.
     await setNow(app, page, local(25, 0, 0, 5))
-    await expect(page.getByTestId('status-pill')).toContainText('Wed 25 Nov · 0 done today')
+    await expect(page.getByTestId('status-pill')).toContainText('Wed 25 Nov · Nothing done yet')
     await canvas.card('Morning one').click()
     await page.keyboard.press('Control+Enter')
     await expect(page.getByTestId('status-pill')).toContainText('1 done today')

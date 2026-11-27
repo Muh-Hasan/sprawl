@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
 import { CanvasContextMenu } from './ContextMenu'
+import { EmptyCanvas } from './EmptyCanvas'
 import { ItemLayer } from './ItemLayer'
 import { Marquee } from './Marquee'
 import { SelectionToolbar } from './SelectionToolbar'
@@ -193,6 +194,7 @@ export function Canvas() {
         <div data-canvas-chrome className="absolute inset-x-0 top-0">
           <TopBar transparent right={ready && <ShowDoneToggle />} />
         </div>
+        <EmptyCanvas />
         <Marquee />
         <SelectionToolbar />
         <Toolbar />

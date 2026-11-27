@@ -6,7 +6,7 @@ import { useVaultStore } from '@/stores/vaultStore'
 
 /**
  * First launch (UI_SPEC §10): pick where the vault lives (Documents\Sprawl by default), then
- * Start creates it. later: phase-12 adds the "Start here" welcome note.
+ * Start creates it, and the canvas opens on its start screen (UI_SPEC §4.1a).
  */
 export function ChooseVault({ defaultPath }: { defaultPath: string }) {
   const open = useVaultStore((s) => s.open)
