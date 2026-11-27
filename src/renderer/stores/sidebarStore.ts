@@ -7,7 +7,9 @@ interface SidebarState {
   loaded: boolean
   /** Reads the saved choice (once, from App). */
   load(): Promise<void>
-  /** Collapses or expands it, and saves the choice (Ctrl+\). */
+  /** Collapses or expands it, and saves the choice (Settings → Appearance). */
+  setCollapsed(collapsed: boolean): void
+  /** Flips it (Ctrl+\). */
   toggle(): void
 }
 
@@ -20,9 +22,9 @@ export const useSidebarStore = create<SidebarState>()((set, get) => ({
     const collapsed = await window.sprawl.settings.get('sidebarCollapsed').catch(() => false)
     if (!get().loaded) set({ collapsed, loaded: true })
   },
-  toggle: () => {
-    const collapsed = !get().collapsed
+  setCollapsed: (collapsed) => {
     set({ collapsed, loaded: true })
     void window.sprawl.settings.set('sidebarCollapsed', collapsed)
   },
+  toggle: () => get().setCollapsed(!get().collapsed),
 }))

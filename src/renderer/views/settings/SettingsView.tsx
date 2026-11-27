@@ -1,128 +1,47 @@
-import { TEXT_SIZE_LABELS, TEXT_SIZES } from '@shared/textSize'
-import { SegmentedControl } from '@/components/SegmentedControl'
-import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
-import markGradient from '@/assets/brand/sprawl-mark-gradient.svg'
+import { useState, type ComponentType } from 'react'
 import { TopBar } from '@/components/TopBar'
-import { useCanvasStore } from '@/stores/canvasStore'
-import { useTextSizeStore } from '@/stores/textSizeStore'
-import { CaptureSection, SystemSection } from './CaptureSection'
+import { AboutSection, ShortcutsSection } from './AboutSection'
+import { AppearanceSection } from './AppearanceSection'
+import { CaptureSection } from './CaptureSection'
+import { BackupSection, CanvasSection } from './CanvasSection'
+import { GeneralSection } from './GeneralSection'
 import { NotificationsSection } from './NotificationsSection'
-import { SettingsRow, SettingsSection } from './SettingsLayout'
-import { useSettings } from './useSettings'
-import { VaultSection } from './VaultSection'
+import { SettingsNav } from './SettingsNav'
+import type { SettingsSectionId } from './settingsSections'
+import { useSettings, type SectionProps } from './useSettings'
 
-const REPO_URL = 'https://github.com/Muh-Hasan/sprawl'
-
-const TEXT_SIZE_OPTIONS = TEXT_SIZES.map((value) => ({ value, label: TEXT_SIZE_LABELS[value] }))
-
-/** A disabled switch showing the stored value, until the setting's phase wires it up. */
-function PlaceholderSwitch({ checked, label }: { checked: boolean | undefined; label: string }) {
-  return <Switch checked={checked ?? false} disabled aria-label={label} />
+const SECTIONS: Record<SettingsSectionId, ComponentType<SectionProps>> = {
+  general: GeneralSection,
+  appearance: AppearanceSection,
+  canvas: CanvasSection,
+  notifications: NotificationsSection,
+  capture: CaptureSection,
+  backup: BackupSection,
+  shortcuts: ShortcutsSection,
+  about: AboutSection,
 }
 
 /**
- * Settings (UI_SPEC §9). Vault, "Show done notes", Notifications, Quick capture and System are
- * live; the other rows show their stored values but stay disabled. later: phase-11 (backup,
- * export, snap), phase-12 (version in About).
+ * Settings (UI_SPEC §9): the section menu on the left and the chosen section's card of rows on
+ * the right, in a column up to 920px wide. It opens on General.
  */
 export function SettingsView() {
-  const { settings, update, local } = useSettings()
-  const textSize = useTextSizeStore((s) => s.size)
-  const setTextSize = useTextSizeStore((s) => s.set)
+  const settingsProps = useSettings()
+  const [section, setSection] = useState<SettingsSectionId>('general')
+  const Section = SECTIONS[section]
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <TopBar left="Settings" />
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <TopBar />
+      <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]">
         <div
           data-testid="view-settings-content"
-          className="mx-auto flex max-w-[640px] flex-col gap-8 px-6 py-8"
+          className="mx-auto flex w-full max-w-[920px] gap-10 px-10 py-9"
         >
-          <VaultSection />
-
-          {/* later: the settings redesign (DESIGN_REFRESH R11) folds this into Appearance. */}
-          <SettingsSection title="Appearance" testId="settings-appearance">
-            <SettingsRow
-              label="Text size"
-              description="Ctrl+Shift+= and Ctrl+Shift+- change it from anywhere."
-            >
-              <SegmentedControl
-                label="Text size"
-                value={textSize}
-                options={TEXT_SIZE_OPTIONS}
-                onChange={setTextSize}
-                testIdPrefix="settings-text-size"
-              />
-            </SettingsRow>
-          </SettingsSection>
-
-          <SettingsSection title="Canvas">
-            <SettingsRow label="Snap to grid">
-              <PlaceholderSwitch label="Snap to grid" checked={settings?.snap} />
-            </SettingsRow>
-            <SettingsRow label="Show done notes">
-              {/* The same setting as the canvas top bar's toggle (PRODUCT §3.1). */}
-              <Switch
-                data-testid="settings-show-done"
-                aria-label="Show done notes"
-                checked={settings?.showDone ?? false}
-                disabled={!settings}
-                onCheckedChange={(showDone) => {
-                  local('showDone', showDone)
-                  useCanvasStore.getState().setShowDone(showDone)
-                }}
-              />
-            </SettingsRow>
-          </SettingsSection>
-
-          <NotificationsSection settings={settings} update={update} />
-          <CaptureSection settings={settings} update={update} local={local} />
-          <SystemSection settings={settings} update={update} />
-
-          <SettingsSection title="Backup">
-            <SettingsRow label="Daily backup">
-              <PlaceholderSwitch label="Daily backup" checked={settings?.autoBackup} />
-            </SettingsRow>
-            <SettingsRow label="Back up now">
-              <Button variant="secondary" size="sm" disabled>
-                Back up now
-              </Button>
-            </SettingsRow>
-          </SettingsSection>
-
-          <SettingsSection title="Export">
-            <SettingsRow label="Markdown">
-              <Button variant="secondary" size="sm" disabled>
-                Export as markdown…
-              </Button>
-            </SettingsRow>
-          </SettingsSection>
-
-          <SettingsSection title="About">
-            <div className="flex items-center gap-3 py-2">
-              <img src={markGradient} alt="" aria-hidden className="size-8" draggable={false} />
-              <div className="flex flex-col">
-                <span
-                  data-testid="settings-about-name"
-                  className="font-brand text-sm font-semibold"
-                >
-                  sprawl
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  MIT license ·{' '}
-                  <button
-                    type="button"
-                    data-testid="settings-about-github"
-                    className="underline-offset-4 hover:text-foreground hover:underline"
-                    onClick={() => void window.sprawl.app.openExternal(REPO_URL)}
-                  >
-                    GitHub
-                  </button>
-                </span>
-              </div>
-            </div>
-          </SettingsSection>
+          <SettingsNav current={section} onPick={setSection} />
+          <div className="min-w-0 flex-1 pt-[52px]">
+            <Section {...settingsProps} />
+          </div>
         </div>
       </div>
     </div>

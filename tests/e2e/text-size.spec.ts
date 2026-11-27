@@ -1,5 +1,6 @@
 import type { ElectronApplication, Page } from '@playwright/test'
 import { expect, openCapture, relaunch, test } from './fixtures'
+import { SettingsPage } from './pages/SettingsPage'
 
 /** The zoom factor of the main window, or of the capture window. */
 const zoomOf = (app: ElectronApplication, which: 'main' | 'capture'): Promise<number | undefined> =>
@@ -70,7 +71,7 @@ test('Ctrl+Shift+= / - / 0 change the text size in every window, and it survives
 })
 
 test('the Settings row picks a text size', async ({ app, window }) => {
-  await window.getByTestId('sidebar-settings').click()
+  await new SettingsPage(window).open('appearance')
   const small = window.getByTestId('settings-text-size-small')
   await expect(window.getByTestId('settings-text-size-default')).toHaveAttribute('data-state', 'on')
   await small.click()

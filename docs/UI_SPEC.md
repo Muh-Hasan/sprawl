@@ -327,17 +327,19 @@ Opened with Ctrl+K from anywhere (the note editor too; Ctrl+K again closes it) o
 
 ## 9. Settings
 
-- A centered column (max 640px) with sections separated by 32px. Each section title is `text-sm` 600, and each row is 48px tall with the label and description (`text-xs` muted) on the left and the control on the right.
+- **Layout:** the top bar is empty. Below it, a column up to 920px wide (36px top and bottom padding, 40px sides) holds the section menu on the left and the chosen section on the right, 40px apart. The scrollbar's gutter is always reserved, so the column doesn't shift when a long section scrolls.
+- **Section menu:** 200px wide. "Settings" in `text-title` 600 sits 16px above the rows, inset 12px. Each row is 36px, radius 8, an 18px icon and the label in `text-sm` 500, `--muted-foreground`; hover and the current section are `--muted` with `--foreground` text. Sections: General, Appearance, Canvas, Notifications, Quick capture, Backup and export, Shortcuts, About. Settings opens on General.
+- **Section:** it starts 52px down so its title lines up with the first menu row. The title is `text-lg` 600, then a one-line blurb in `text-sm` muted, then (20px below) a card: `--card` background, a 1px `--muted` border, radius 14, rows split by 1px `--muted` lines.
+- **Row:** at least 64px, padding 12/18. The label is `text-base` 500 with an optional description under it in `text-xs` muted; the control sits on the right. Buttons are `secondary` at the default size; one-of-N choices are the bordered `SegmentedControl` (`md`). A row whose feature isn't built yet shows a "Coming soon" badge (`text-2xs` 500 on `--muted`, radius 6) after its label, and its control is disabled.
 - **Sections:**
-  - **Vault:** the path in mono `text-xs` with a "Change…" button.
-  - **Appearance:** Text size (`ToggleGroup`: Small | Default | Large | Larger, with the description "Ctrl+Shift+= and Ctrl+Shift+- change it from anywhere."). For now it's the only row; the settings redesign adds the sidebar and reduce motion rows.
-  - **Canvas:** Snap to grid (Switch), Show done notes (Switch).
-  - **Notifications:** Due reminders (Switch); Morning summary (Switch plus a time `Select` in 30-minute steps); "Send a test notification" (secondary). If Windows blocks Sprawl's notifications, the section shows a one-line warning in `--due-overdue` text with an "Open Windows settings" button.
-  - **Quick capture:** Shortcut (a `ShortcutRecorder` showing the current combo as `kbd` keys; click "Change", press the new combo, and conflicts show "Already used by another app" in destructive text); Default mode (`ToggleGroup`: Note | Log).
-  - **System:** Keep Sprawl running in the background (Switch, with the description "Needed for reminders and quick capture. Closing the window hides Sprawl to the tray."); Start Sprawl when Windows starts (Switch).
-  - **Backup:** Daily backup (Switch), "Back up now" (secondary), and the last backup time.
-  - **Export:** "Export as markdown…" (secondary).
-  - **About:** `sprawl-mark-gradient` at 32px, "sprawl" in `font-brand` with the version, the MIT license and a GitHub link.
+  - **General** ("Where your notes live and how Sprawl runs."): Vault folder, its path under the label in mono `text-2xs`, with a "Change…" button (a failed switch shows its error under the path in destructive text); Keep Sprawl running in the background (Switch, "Needed for reminders and quick capture. Closing the window hides Sprawl to the tray."); Start Sprawl when Windows starts (Switch, "Starts hidden in the tray.").
+  - **Appearance** ("Make Sprawl easier on your eyes."): Text size (Small | Default | Large | Larger, "Scales the whole app. Ctrl+Shift+= and Ctrl+Shift+- work anywhere."); Sidebar (Labels | Icons only, "Ctrl+\ toggles it.", the same choice as Ctrl+\); Reduce motion (Switch, "Turns off slides and lifts. Follows Windows by default.", Coming soon until the motion work lands).
+  - **Canvas** ("How the board behaves."): Snap to grid (Switch, "Cards line up on the 8px grid as you drag them.", Coming soon); Show done notes (Switch, "Done notes stay on the board, faded and struck through.", the same setting as the canvas top bar's toggle).
+  - **Notifications** ("Reminders arrive as Windows notifications."): Due reminders (Switch); Morning summary (a time `Select` in 30-minute steps plus a Switch); Test notification ("Send a test"). If Windows blocks Sprawl's notifications, the card starts with a row in `--due-overdue` text, "Windows is blocking Sprawl's notifications", with an "Open Windows settings" button.
+  - **Quick capture** ("Jot something down from any app."): Shortcut (a `ShortcutRecorder` showing the current combo as `kbd` keys; click "Change", press the new combo, and conflicts show "Already used by another app" in destructive text); Default mode (Note | Log, "What the window opens in.").
+  - **Backup and export** ("Your data stays yours, in plain files."): Daily backup (Switch, "Keeps the last 7 as zip files in your vault."), Back up now, Export as markdown ("Export…"). All Coming soon until backup and export are built.
+  - **Shortcuts** ("The ones that work everywhere in Sprawl."): read-only rows with the keys as 26px `kbd`s: Search and commands, New note, Go to Canvas / List / Daily log, Settings, Toggle sidebar, Bigger text, Smaller text, Default text size, and Quick capture (its current combo, "Works from any app. Change it under Quick capture."). The `?` shortcuts sheet lists every shortcut once it lands.
+  - **About** ("License and source."): one card with `sprawl-mark-gradient` at 40px, "Sprawl" in `font-brand` `text-lg` 600, and "Open source under the MIT license · GitHub" (the link opens the repo). The version number joins the name later.
 
 ---
 

@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, renderedFonts, test } from './fixtures'
+import { SettingsPage } from './pages/SettingsPage'
 
 test('opens a dark "Sprawl" window on the vault', async ({ window, dirs }) => {
   await expect(window.getByTestId('app-root')).toBeVisible()
@@ -23,10 +24,11 @@ test('loads the bundled fonts', async ({ window }) => {
 })
 
 test('renders UI text in Geist and paths and keys in Geist Mono', async ({ window }) => {
-  await window.getByTestId('sidebar-settings').click()
+  await new SettingsPage(window).open()
   await expect(window.getByTestId('settings-vault-path')).toBeVisible()
-  expect(await renderedFonts(window, '[data-testid="top-bar"] > div')).toEqual(['Geist'])
+  expect(await renderedFonts(window, '[data-testid="settings-section-general"]')).toEqual(['Geist'])
   expect(await renderedFonts(window, '[data-testid="settings-vault-path"]')).toEqual(['Geist Mono'])
+  await new SettingsPage(window).menu('about').click()
   expect(await renderedFonts(window, '[data-testid="settings-about-name"]')).toEqual(['Sora'])
 })
 
