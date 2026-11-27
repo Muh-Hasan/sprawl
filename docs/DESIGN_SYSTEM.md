@@ -36,7 +36,7 @@ Short, plain and lowercase-friendly. Use sentence case everywhere, with no excla
 | Token | Hex | Use |
 |---|---|---|
 | `--background` | `#09090B` | App background, canvas |
-| `--surface` | `#0F0F11` | Sidebar, full-page note, log page |
+| `--surface` | `#0F0F11` | Sidebar, full-page note, week-strip cells, row hover |
 | `--card` | `#141416` | Cards, palette, menus |
 | `--popover` | `#18181B` | Popovers, dropdowns, tooltips |
 | `--muted` / `--accent` (shadcn) | `#1F1F23` | Hover fills, selected rows, chips |

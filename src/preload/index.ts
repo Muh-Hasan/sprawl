@@ -50,6 +50,7 @@ const api: SprawlAPI = {
     remove: (id) => ipcRenderer.invoke(IPC.log.remove, id),
     daysWithEntries: (month) => ipcRenderer.invoke(IPC.log.daysWithEntries, month),
     carriedOver: (day) => ipcRenderer.invoke(IPC.log.carriedOver, day),
+    streak: (day) => ipcRenderer.invoke(IPC.log.streak, day),
   },
   capture: {
     submit: (capture) => ipcRenderer.invoke(IPC.capture.submit, capture),

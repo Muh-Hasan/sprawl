@@ -27,3 +27,22 @@ export function stepDay(day: string, dir: -1 | 1, today: string): string {
   const next = shiftDay(day, dir)
   return next > today ? today : next
 }
+
+export interface SummaryTile {
+  id: 'done' | 'logged' | 'streak'
+  value: string
+  label: string
+}
+
+/** The three summary tiles (UI_SPEC §6), singular for one. The streak is blank until it loads. */
+export function summaryTiles(done: number, logged: number, streak: number | null): SummaryTile[] {
+  return [
+    { id: 'done', value: String(done), label: done === 1 ? 'note done' : 'notes done' },
+    { id: 'logged', value: String(logged), label: logged === 1 ? 'thing logged' : 'things logged' },
+    {
+      id: 'streak',
+      value: streak === null ? '–' : `${streak} ${streak === 1 ? 'day' : 'days'}`,
+      label: 'in a row',
+    },
+  ]
+}

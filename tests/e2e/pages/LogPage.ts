@@ -43,6 +43,13 @@ export class LogPage {
     })
   }
 
+  /** The summary tiles read as text, e.g. "1 note done", "0 things logged", "1 day in a row". */
+  async expectSummary(done: string, logged: string, streak: string): Promise<void> {
+    await expect(this.summary.getByTestId(/^log-summary-/)).toHaveText([done, logged, streak], {
+      useInnerText: true,
+    })
+  }
+
   /** Types a line into the composer and adds it. */
   async add(text: string): Promise<void> {
     await this.composer.fill(text)

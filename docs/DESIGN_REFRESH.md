@@ -123,7 +123,7 @@ Colors don't change. The palette in DESIGN_SYSTEM §2 stays, including the stric
 - [x] **R9 · `feat/list-redesign`**: List view.
   - `List` artboard: 52px rows, larger filters, due groups (Overdue, Today, This week, Later, No date) in the Open tab too, hover actions. The Notes / Drawings switch shows only Notes until phase 8.
   - Specs: UI_SPEC §5b. Tests: update `list.spec.ts`.
-- [ ] **R10 · `feat/log-redesign`**: Daily log.
+- [x] **R10 · `feat/log-redesign`**: Daily log.
   - `DailyLog` artboard: larger week strip, the three summary tiles (done, logged, days in a row), roomier entries, the floating composer.
   - Specs: UI_SPEC §6. Tests: update `log-days.spec.ts` and `done-and-log.spec.ts`; unit for the streak count.
 - [ ] **R11 · `feat/settings-redesign`**: Settings.

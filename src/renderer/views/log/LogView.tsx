@@ -16,6 +16,7 @@ import { Composer } from './Composer'
 import { stepDay, stripDays } from './days'
 import { Entry, type EntryActions } from './Entry'
 import { LogHeader } from './LogHeader'
+import { LogSummary } from './LogSummary'
 import { useDaysWithEntries, useLogDay } from './useLogData'
 import { WeekStrip } from './WeekStrip'
 
@@ -45,8 +46,9 @@ function useDayKeys(day: string, today: string): void {
 }
 
 /**
- * The daily log (UI_SPEC §6): a page per local day with the header, the week strip, a summary,
- * the entries in time order, what was carried over from yesterday, and the composer.
+ * The daily log (UI_SPEC §6): a page per local day with the header, the week strip, the summary
+ * tiles, the entries in time order, what was carried over from yesterday, and the composer
+ * floating at the bottom.
  */
 export function LogView() {
   const today = useClockStore((s) => dayKey(s.now))
@@ -58,6 +60,7 @@ export function LogView() {
 
   const entries = data.day === day ? data.entries : []
   const done = entries.filter((e) => e.kind === 'done').length
+  const streak = data.day === day ? data.streak : null
 
   const actions: EntryActions = {
     openNote: (id) => useUiStore.getState().openNote(id),
@@ -71,14 +74,14 @@ export function LogView() {
   }
 
   return (
-    <div className="flex h-full flex-col bg-surface">
+    <div className="flex h-full flex-col bg-background">
       <TopBar left="Daily log" />
       <div className={cn('relative min-h-0 flex-1', PANEL_INSET)}>
         <div className="h-full overflow-y-auto">
           <div
             data-testid="log-page"
             data-day={day}
-            className="mx-auto w-full max-w-[680px] px-6 pt-8 pb-24"
+            className="mx-auto w-full max-w-[720px] px-10 pt-9 pb-[140px]"
           >
             <LogHeader
               day={day}
@@ -93,9 +96,7 @@ export function LogView() {
               marked={marked}
               onPick={(d) => pickDay(d, today)}
             />
-            <p data-testid="log-summary" className="mt-5 text-xs text-muted-foreground">
-              {done} done · {entries.length - done} logged
-            </p>
+            <LogSummary done={done} logged={entries.length - done} streak={streak} />
             {data.day === day && entries.length === 0 ? (
               <div className="h-48">
                 <EmptyState icon={IconNotebook} testId="log-empty">
@@ -103,7 +104,7 @@ export function LogView() {
                 </EmptyState>
               </div>
             ) : (
-              <div data-testid="log-entries" className="mt-2">
+              <div data-testid="log-entries" className="mt-7 flex flex-col gap-0.5">
                 {entries.map((entry) => (
                   <Entry
                     key={entry.id}
@@ -117,8 +118,8 @@ export function LogView() {
             {data.day === day && <CarriedOver notes={data.carried} onOpen={actions.openNote} />}
           </div>
         </div>
-        <div className="pointer-events-none absolute bottom-3 left-0 right-[var(--canvas-inset-right,0px)] transition-[right] duration-240 ease-(--ease-out)">
-          <div className="pointer-events-auto mx-auto w-full max-w-[680px] px-6">
+        <div className="pointer-events-none absolute bottom-0 left-0 right-[var(--canvas-inset-right,0px)] bg-linear-to-b from-transparent to-background to-40% pt-8 pb-5 transition-[right] duration-240 ease-(--ease-out)">
+          <div className="pointer-events-auto mx-auto w-full max-w-[720px] px-10">
             <Composer
               onSubmit={async (text) => {
                 await window.sprawl.log.addManual(day, text)

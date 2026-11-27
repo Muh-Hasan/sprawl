@@ -43,7 +43,7 @@ describe('log Entry', () => {
     )
     expect(screen.getByTestId('log-entry-time').textContent).toBe('18:30')
     expect(screen.getByTestId('log-entry-text').textContent).toBe('Call the bank')
-    expect(screen.getByTestId('log-entry-color').textContent).toBe('sage')
+    expect(screen.getByTestId('log-entry-color').textContent).toBe('Sage')
     fireEvent.click(screen.getByTestId('log-entry-open'))
     expect(actions.openNote).toHaveBeenCalledWith('n1')
   })

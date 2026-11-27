@@ -139,7 +139,7 @@ A separate page per calendar day (using the local timezone).
   - Manual entries are free text (markdown inline only) and can be edited or deleted on hover.
 - **Composer** at the bottom: "What did you just do?" Enter adds an entry at the current time, and the time can be edited after.
 - **Carried over** is a small section listing notes that were *edited* yesterday but not done. It's informational only, with a one-click "Open".
-- A **summary line** shows "{n} done · {m} logged".
+- Three **summary tiles** show the notes done that day, the things logged by hand, and how many days in a row have entries up to that day. Today's streak counts up to yesterday until something is logged, so it isn't broken before the day is over.
 - Marking a note done creates an auto entry, and undoing done removes it.
 - Notes are never created from the log in v1.
 

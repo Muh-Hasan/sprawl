@@ -114,6 +114,8 @@ export interface LogAPI {
   daysWithEntries(month: string): Promise<string[]>
   /** Notes edited the day before `day` and not done by its end. */
   carriedOver(day: string): Promise<NoteSummary[]>
+  /** How many days in a row have entries, ending on `day` (today: on yesterday until logged). */
+  streak(day: string): Promise<number>
 }
 
 export type CaptureMode = 'note' | 'log'
@@ -219,6 +221,7 @@ export const IPC = {
     remove: 'log:remove',
     daysWithEntries: 'log:daysWithEntries',
     carriedOver: 'log:carriedOver',
+    streak: 'log:streak',
   },
   capture: {
     submit: 'capture:submit',

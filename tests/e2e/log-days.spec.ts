@@ -38,6 +38,8 @@ test.describe('daily log days (fixed clock)', () => {
     await expect(log.date).toHaveText('Thursday, 26 November')
     await log.add('Standup')
     await expect(log.entry('Standup').getByTestId('log-entry-time')).toHaveText('09:15')
+    // Three days in a row have entries: the 24th, 25th and 26th.
+    await log.expectSummary('0 notes done', '1 thing logged', '3 days in a row')
 
     // ← goes back a day at a time.
     await log.prev.click()
@@ -50,6 +52,7 @@ test.describe('daily log days (fixed clock)', () => {
     await log.prev.click()
     await log.showing('2026-11-23')
     await expect(log.empty).toBeVisible()
+    await log.expectSummary('0 notes done', '0 things logged', '0 days in a row')
 
     // → comes forward, and stops at today; Ctrl+[ and Ctrl+] do the same.
     await log.next.click()
@@ -62,6 +65,7 @@ test.describe('daily log days (fixed clock)', () => {
     await log.showing('2026-11-26')
     await page.keyboard.press('Control+[')
     await log.showing('2026-11-25')
+    await log.expectSummary('1 note done', '0 things logged', '2 days in a row')
 
     // The week strip: the 7 days up to today, dots on the days with entries.
     await expect(log.stripDays).toHaveCount(7)
@@ -85,7 +89,8 @@ test.describe('daily log days (fixed clock)', () => {
     await expect(log.stripDays.last()).toHaveAttribute('data-day', '2026-11-19')
     await expect(marked).toHaveCount(0)
 
-    // The month picker jumps to a day and marks the days with entries.
+    // The month picker, named for the month shown, jumps to a day and marks the days with entries.
+    await expect(page.getByTestId('log-calendar')).toHaveText('November')
     await page.getByTestId('log-calendar').click()
     const picker = page.getByTestId('log-month-picker')
     await expect(picker).toBeVisible()

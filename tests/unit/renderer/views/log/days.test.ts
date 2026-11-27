@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { monthsOf, stepDay, stripDays } from '../../../../../src/renderer/views/log/days'
+import {
+  monthsOf,
+  stepDay,
+  stripDays,
+  summaryTiles,
+} from '../../../../../src/renderer/views/log/days'
 
 describe('the week strip', () => {
   it('shows the last 7 days while the selected day is among them', () => {
@@ -40,5 +45,25 @@ describe('stepping days', () => {
     expect(stepDay('2026-03-01', -1, '2026-11-25')).toBe('2026-02-28')
     expect(stepDay('2026-11-24', 1, '2026-11-25')).toBe('2026-11-25')
     expect(stepDay('2026-11-25', 1, '2026-11-25')).toBe('2026-11-25')
+  })
+})
+
+describe('summaryTiles', () => {
+  it('counts done, logged and the streak, singular for one', () => {
+    expect(summaryTiles(3, 2, 5).map((t) => `${t.value} ${t.label}`)).toEqual([
+      '3 notes done',
+      '2 things logged',
+      '5 days in a row',
+    ])
+    expect(summaryTiles(1, 1, 1).map((t) => `${t.value} ${t.label}`)).toEqual([
+      '1 note done',
+      '1 thing logged',
+      '1 day in a row',
+    ])
+  })
+
+  it('shows 0 days and a blank streak while it loads', () => {
+    expect(summaryTiles(0, 0, 0)[2]?.value).toBe('0 days')
+    expect(summaryTiles(0, 0, null)[2]?.value).toBe('–')
   })
 })

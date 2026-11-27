@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { openDatabase, type DbHandle } from '../../../../src/main/db/client'
 import { CanvasService } from '../../../../src/main/services/canvas'
-import { LogService } from '../../../../src/main/services/log'
+import { countStreak, LogService } from '../../../../src/main/services/log'
 import { NotesService, purgeDeleted, PURGE_AFTER_MS } from '../../../../src/main/services/notes'
 import { dayKey, localInstant } from '../../../../src/shared/due'
 
@@ -282,6 +282,41 @@ describe('days with entries', () => {
     log.addManual('2026-12-01', 'e')
     expect(log.daysWithEntries('2026-11')).toEqual(['2026-11-03', '2026-11-25'])
     expect(log.daysWithEntries('2026-09')).toEqual([])
+  })
+})
+
+describe('streak', () => {
+  it('counts the run of days ending on the given day', () => {
+    const days = ['2026-11-25', '2026-11-24', '2026-11-23', '2026-11-21', '2026-11-20']
+    expect(countStreak(days, '2026-11-25')).toBe(3)
+    expect(countStreak(days, '2026-11-21')).toBe(0) // not the newest day given
+    expect(countStreak(days.slice(3), '2026-11-21')).toBe(2)
+    expect(countStreak([], '2026-11-25')).toBe(0)
+  })
+
+  it('is 0 for a day with no entries, unless that day is today', () => {
+    const days = ['2026-11-24', '2026-11-23']
+    expect(countStreak(days, '2026-11-25')).toBe(0)
+    expect(countStreak(days, '2026-11-25', true)).toBe(2)
+    expect(countStreak(['2026-11-23'], '2026-11-25', true)).toBe(0)
+  })
+
+  it('crosses months and years', () => {
+    expect(countStreak(['2027-01-01', '2026-12-31', '2026-12-30'], '2027-01-01')).toBe(3)
+    expect(countStreak(['2026-03-01', '2026-02-28'], '2026-03-01')).toBe(2)
+  })
+
+  it('reads the log from the database, ignoring later days', () => {
+    for (const day of ['2026-11-22', '2026-11-23', '2026-11-24', '2026-11-26']) {
+      log.addManual(day, 'x')
+      log.addManual(day, 'y')
+    }
+    // Today (the 25th) has nothing yet: the run up to yesterday still counts.
+    expect(log.streak('2026-11-25')).toBe(3)
+    expect(log.streak('2026-11-23')).toBe(2)
+    expect(log.streak('2026-11-21')).toBe(0)
+    notes.setDone('n1', true) // a done entry counts too
+    expect(log.streak('2026-11-25')).toBe(4)
   })
 })
 

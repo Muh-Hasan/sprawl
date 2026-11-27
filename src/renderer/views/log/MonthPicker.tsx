@@ -2,9 +2,15 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { IconCalendar } from '@tabler/icons-react'
 import { dayStart } from '@shared/due'
-import { IconButton } from '@/components/IconButton'
+import { HintTooltip } from '@/components/HintTooltip'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { monthOf } from './days'
+
+/** The header's outlined buttons (UI_SPEC §6): 36px, radius 10, `--card` on a 1px border. */
+export const OUTLINED =
+  'rounded-[10px] border border-border bg-card text-foreground hover:bg-muted dark:hover:bg-muted'
 
 const MonthCalendar = lazy(() => import('./MonthCalendar'))
 
@@ -15,7 +21,8 @@ interface MonthPickerProps {
 }
 
 /**
- * The log's month popover (UI_SPEC §6): a calendar where days with entries carry a dot. Days
+ * The log's month button and popover (UI_SPEC §6): the button names the month of the day being
+ * shown and opens a calendar where days with entries carry a dot. Days
  * after today can't be picked.
  */
 export function MonthPicker({ day, today, onPick }: MonthPickerProps) {
@@ -43,9 +50,18 @@ export function MonthPicker({ day, today, onPick }: MonthPickerProps) {
         setOpen(next)
       }}
     >
-      <PopoverTrigger asChild>
-        <IconButton data-testid="log-calendar" icon={IconCalendar} label="Pick a day" />
-      </PopoverTrigger>
+      <HintTooltip label="Pick a day">
+        <PopoverTrigger asChild>
+          <Button
+            data-testid="log-calendar"
+            variant="ghost"
+            className={cn('h-9 px-3 font-normal', OUTLINED)}
+          >
+            <IconCalendar className="size-[17px]" stroke={1.75} aria-hidden />
+            {format(dayStart(day), 'MMMM')}
+          </Button>
+        </PopoverTrigger>
+      </HintTooltip>
       <PopoverContent
         align="end"
         data-testid="log-month-picker"
