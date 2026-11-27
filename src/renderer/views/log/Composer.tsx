@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type Ref } from 'react'
 import { IconPencil } from '@tabler/icons-react'
 import { ShortcutKbd } from '@/components/ShortcutKbd'
 
@@ -6,7 +6,14 @@ import { ShortcutKbd } from '@/components/ShortcutKbd'
  * The log composer (UI_SPEC §6), floating at the bottom of the view: "What did you just do?"
  * Enter adds the line at the current time.
  */
-export function Composer({ onSubmit }: { onSubmit: (text: string) => Promise<void> }) {
+export function Composer({
+  onSubmit,
+  inputRef,
+}: {
+  onSubmit: (text: string) => Promise<void>
+  /** The input, for the empty state's Log something. */
+  inputRef?: Ref<HTMLInputElement>
+}) {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   return (
@@ -28,6 +35,7 @@ export function Composer({ onSubmit }: { onSubmit: (text: string) => Promise<voi
         aria-hidden
       />
       <input
+        ref={inputRef}
         data-testid="log-composer"
         aria-label="Add to the log"
         value={text}

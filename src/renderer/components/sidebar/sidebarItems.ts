@@ -1,11 +1,12 @@
 import {
+  IconHelpCircle,
   IconLayoutDashboard,
   IconListCheck,
   IconNotebook,
   IconSettings,
   type TablerIcon,
 } from '@tabler/icons-react'
-import { NAV_SHORTCUTS, type Shortcut } from '@/lib/shortcuts'
+import { NAV_SHORTCUTS, SHEET_SHORTCUT, type Shortcut } from '@/lib/shortcuts'
 import type { View } from '@/stores/uiStore'
 
 export interface SidebarItem {
@@ -28,3 +29,10 @@ export const SETTINGS_ITEM: SidebarItem = {
   icon: IconSettings,
   shortcut: NAV_SHORTCUTS.settings,
 }
+
+/** Help and shortcuts, under Settings: it opens the shortcuts sheet (UI_SPEC §12). */
+export const HELP_ITEM = {
+  label: 'Help and shortcuts',
+  icon: IconHelpCircle,
+  shortcut: SHEET_SHORTCUT,
+} as const

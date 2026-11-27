@@ -1,10 +1,10 @@
-import { useEffect } from 'react'
-import { IconNotebook } from '@tabler/icons-react'
+import { useEffect, useRef } from 'react'
+import { IconNotebook, IconTrash } from '@tabler/icons-react'
 import { dayKey } from '@shared/due'
 import type { LogEntry } from '@shared/types'
 import { EmptyState } from '@/components/EmptyState'
 import { TopBar } from '@/components/TopBar'
-import { showUndoToast } from '@/components/UndoToast'
+import { showToast } from '@/components/toasts'
 import { LOG_SHORTCUTS, matchesShortcut } from '@/lib/shortcuts'
 import { useClockStore } from '@/stores/clockStore'
 import { useLogStore } from '@/stores/logStore'
@@ -62,13 +62,16 @@ export function LogView() {
   const done = entries.filter((e) => e.kind === 'done').length
   const streak = data.day === day ? data.streak : null
 
+  const composer = useRef<HTMLInputElement>(null)
   const actions: EntryActions = {
     openNote: (id) => useUiStore.getState().openNote(id),
     update: (id, patch) => void window.sprawl.log.update(id, patch).then(reload),
     remove: (entry: LogEntry) => {
       void window.sprawl.log.remove(entry.id).then(reload)
-      showUndoToast('Deleted', () => {
-        void window.sprawl.log.addManual(entry.day, entry.text, entry.at).then(reload)
+      showToast('Deleted', {
+        icon: IconTrash,
+        onUndo: () =>
+          void window.sprawl.log.addManual(entry.day, entry.text, entry.at).then(reload),
       })
     },
   }
@@ -98,9 +101,18 @@ export function LogView() {
             />
             <LogSummary done={done} logged={entries.length - done} streak={streak} />
             {data.day === day && entries.length === 0 ? (
-              <div className="h-48">
-                <EmptyState icon={IconNotebook} testId="log-empty">
-                  Nothing logged yet. Mark a note done or write what you just did.
+              <div className="mt-7">
+                <EmptyState
+                  icon={IconNotebook}
+                  title="Nothing logged yet"
+                  testId="log-empty"
+                  action={{
+                    label: 'Log something',
+                    testId: 'log-empty-write',
+                    onClick: () => composer.current?.focus(),
+                  }}
+                >
+                  Mark a note done, or write what you just did below.
                 </EmptyState>
               </div>
             ) : (
@@ -121,6 +133,7 @@ export function LogView() {
         <div className="pointer-events-none absolute bottom-0 left-0 right-[var(--canvas-inset-right,0px)] bg-linear-to-b from-transparent to-background to-40% pt-8 pb-5 transition-[right] duration-240 ease-(--ease-out)">
           <div className="pointer-events-auto mx-auto w-full max-w-[720px] px-10">
             <Composer
+              inputRef={composer}
               onSubmit={async (text) => {
                 await window.sprawl.log.addManual(day, text)
                 reload()

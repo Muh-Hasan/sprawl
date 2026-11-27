@@ -206,10 +206,11 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 - **Top bar:** 44px, the same as the native title-bar overlay (`TITLE_BAR_HEIGHT`).
 - **Input:** 36px, transparent background with a `--border` border; on focus the border is `--border-strong` plus a 2px `--ring` at 30% alpha.
 - **Kbd:** Geist Mono 11px (`text-kbd`), `--muted` background, 1px `--border`, 4px radius, 2px 5px padding.
-- **Tooltip:** `--popover` background, 13px text with the shortcut `kbd` on the right, 400ms delay.
+- **Tooltip** (`HintTooltip`): inverted so it stands out over the dark app, with a `--foreground` background and `--background` text. 30px tall, 8px radius, 10px side padding, no arrow. The label is 13px (`text-xs`) 500, and the shortcut follows 8px later in Geist Mono `text-kbd` at 55% of the text color, with spaces between its keys ("Ctrl Enter"). 400ms delay. Every icon button has one.
 - **Command (palette):** 640px wide, 16px radius, `--card` background with a `--border` hairline, `--shadow-palette`, over `--overlay`. Input row 60px, items 44px tall with a 10px radius and a `--muted` selected background. See UI_SPEC §8.
-- **Context menu and dropdown:** use the content and item wrappers in `components/Menu.tsx`: `--popover` background, 12px radius, 6px padding, `--shadow-popover`, items 34px tall at 14px with an 8px radius, separators in `--border`.
-- **Toast (Sonner):** bottom center, `--popover` background, 14px text, optional "Undo" action. Shown for 4s.
+- **Context menu and dropdown:** use the content and item wrappers in `components/Menu.tsx`: `--popover` background, 12px radius, 6px padding, `--shadow-popover`, items 34px tall at 14px with an 8px radius and 10px gaps, a 16px icon first, separators in `--border`. `MenuShortcut` puts an item's keys on the right ("Ctrl D", Geist Mono `text-kbd`, `--subtle-foreground`).
+- **Toast (Sonner):** bottom center for 4s, 380×48, `--popover` with a `--border` hairline, 12px radius, an 18px icon, 14px text and an optional 32px "Undo" (600). Show them with `showToast` in `components/toasts.tsx`, which takes the icon. See UI_SPEC §11.
+- **Dialogs** (confirm, shortcuts sheet, palette): `--card` with a `--border` hairline and `--shadow-palette`, over `--overlay` with a 2px blur. The confirm dialog is 420px with a 16px radius; the sheet is 900px with 18px.
 - **Calendar:** today has a 1px `--foreground` ring, the selected day is white with black text, and days with log entries get a 3px `--muted-foreground` dot beneath.
 
 ---
@@ -218,10 +219,10 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 
 - **Selection on the canvas:** a 1.5px `--selection` outline 3.5px outside the card (it follows the card's radius), plus 9×9 handles at its corners: `--background` squares with a 1.5px `--selection` border and 3px radius. All of it stays the same size on screen at any zoom. Multi-select adds a dashed bounding box in `--border-strong`, 8px out.
 - **Hover on cards:** border goes up one step (note `border` → `border-hover`, +12% white), `--shadow-lift`, and the card lifts 2px (a 2px strip under the lifted card keeps the pointer on it, so the bottom edge doesn't flicker).
-- **Selection toolbar (FigJam-style):** a floating `--card` bar (border, radius 12, `--shadow-popover`, 4px padding, 44px tall) centered 14px above the selection, or below it when there's no room under the top bar. It holds the six color swatches, a divider, Open and Mark done, a divider, then Duplicate and Delete (36×36 ghost icon buttons with tooltips). It hides while a move, resize or marquee runs.
+- **Selection toolbar (FigJam-style):** a floating `--card` bar (border, radius 12, `--shadow-popover`, 4px padding, 44px tall) centered 14px above the selection, or below it when there's no room under the top bar. It holds the six color swatches, a divider, Open and Mark done, a divider, then Duplicate and Delete (36×36 ghost icon buttons with tooltips). With several notes it starts with an "N selected" count and the actions become text buttons (UI_SPEC §4.9). It hides while a move, resize or marquee runs.
 - **Done state (when "Show done" is on):** 45% opacity and a struck-through title.
 - **Focus:** every interactive element has a visible `--ring` focus. Never remove an outline without replacing it.
-- **Empty states:** a Tabler icon at 20px in `--subtle-foreground`, one 14px line, and an optional ghost button. No illustrations.
+- **Empty states** (`EmptyState`) always say what to do next. A dashed `--border-strong` box (radius 16, 28px padding, at most 560px wide, centered) holds a 28px Tabler icon in `--muted-foreground`, a `text-base` 600 title, one `text-sm` muted line, and usually an outlined 32px button that does the next step. No illustrations.
 
 ---
 

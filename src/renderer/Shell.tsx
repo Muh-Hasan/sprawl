@@ -6,6 +6,7 @@ import { useUiStore, type View } from '@/stores/uiStore'
 import { Canvas } from '@/views/canvas/Canvas'
 import { ListView } from '@/views/list/ListView'
 import { PanelFrame } from '@/views/note/PanelFrame'
+import { ShortcutsSheet } from '@/views/help/ShortcutsSheet'
 import { CommandPalette } from '@/views/search/CommandPalette'
 import { SettingsView } from '@/views/settings/SettingsView'
 
@@ -91,6 +92,7 @@ export function Shell() {
         </main>
       </PanelFrame>
       <CommandPalette />
+      <ShortcutsSheet />
     </div>
   )
 }

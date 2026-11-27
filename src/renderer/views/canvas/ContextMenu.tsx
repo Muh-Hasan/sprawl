@@ -1,21 +1,23 @@
 import { useState, type ReactNode } from 'react'
-import { NOTE_COLORS } from '@shared/constants'
 import {
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-} from '@/components/Menu'
-import {
-  ContextMenu,
-  ContextMenuSeparator,
-  ContextMenuShortcut,
-  ContextMenuSub,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu'
-import { NOTE_COLOR_CLASSES } from '@/lib/noteColors'
-import { CANVAS_SHORTCUTS, shortcutLabel } from '@/lib/shortcuts'
-import { cn } from '@/lib/utils'
+  IconArrowDown,
+  IconArrowsDiagonal,
+  IconArrowsMaximize,
+  IconArrowUp,
+  IconCalendar,
+  IconCheck,
+  IconClipboard,
+  IconCopy,
+  IconPin,
+  IconPinnedOff,
+  IconPlus,
+  IconTrash,
+  type TablerIcon,
+} from '@tabler/icons-react'
+import type { NoteColor } from '@shared/constants'
+import { ContextMenuContent, ContextMenuItem, MenuShortcut } from '@/components/Menu'
+import { ContextMenu, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu'
+import { CANVAS_SHORTCUTS, shortcutHint, type Shortcut } from '@/lib/shortcuts'
 import { useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
 import { pinLabel, setNotePinned } from '../note/pinActions'
@@ -26,10 +28,10 @@ import {
   duplicateSelection,
   openSelectedNote,
   restackSelection,
-  setSelectionColor,
   toggleSelectionDone,
 } from './actions'
 import { zoomToFit } from './camera'
+import { ColorItems } from './MenuColors'
 import { screenToWorld, type Point } from './Viewport'
 
 type CardsTarget = {
@@ -37,6 +39,8 @@ type CardsTarget = {
   notes: boolean
   single: boolean
   allDone: boolean
+  /** The selection's color when every note shares one, ringed in the swatches. */
+  color: NoteColor | null
   /** The single selected note's id and whether it's pinned (for Pin / Unpin). */
   pin: { noteId: string; pinned: boolean } | null
 }
@@ -67,13 +71,15 @@ export function CanvasContextMenu({ children }: { children: ReactNode }) {
       const ids = [...useSelectionStore.getState().selected]
       const notes = ids.every((i) => items.get(i)?.kind === 'note')
       const allDone = notes && ids.every((i) => items.get(i)?.note?.doneAt != null)
+      const colors = new Set(ids.map((i) => items.get(i)?.note?.color))
+      const color = notes && colors.size === 1 ? ([...colors][0] ?? null) : null
       const single = notes && ids.length === 1
       const only = single ? items.get(ids[0]!) : undefined
       const pin =
         only?.refId && only.note
           ? { noteId: only.refId, pinned: only.note.pinnedAt !== null }
           : null
-      setTarget({ kind: 'cards', notes, single, allDone, pin })
+      setTarget({ kind: 'cards', notes, single, allDone, color, pin })
       return
     }
     const r = e.currentTarget.getBoundingClientRect()
@@ -91,7 +97,7 @@ export function CanvasContextMenu({ children }: { children: ReactNode }) {
       </ContextMenuTrigger>
       <ContextMenuContent
         data-testid="canvas-menu"
-        className="min-w-52"
+        className="w-[260px]"
         // Focus stays where the command put it (say, a new note's title), not back on the board.
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
@@ -104,13 +110,15 @@ export function CanvasContextMenu({ children }: { children: ReactNode }) {
 
 function Item({
   testId,
+  icon: Icon,
   shortcut,
   destructive,
   onSelect,
   children,
 }: {
   testId: string
-  shortcut?: string
+  icon: TablerIcon
+  shortcut?: Shortcut | string
   destructive?: boolean
   onSelect: () => void
   children: ReactNode
@@ -121,17 +129,27 @@ function Item({
       variant={destructive ? 'destructive' : 'default'}
       onSelect={onSelect}
     >
+      <Icon stroke={1.75} aria-hidden />
       {children}
-      {shortcut && <ContextMenuShortcut>{shortcut}</ContextMenuShortcut>}
+      {shortcut && (
+        <MenuShortcut>
+          {typeof shortcut === 'string' ? shortcut : shortcutHint(shortcut)}
+        </MenuShortcut>
+      )}
     </ContextMenuItem>
   )
 }
 
-function CardItems({ notes, single, allDone, pin }: Omit<CardsTarget, 'kind'>) {
+function CardItems({ notes, single, allDone, color, pin }: Omit<CardsTarget, 'kind'>) {
   return (
     <>
       {single && (
-        <Item testId="menu-open" shortcut="Enter" onSelect={() => openSelectedNote()}>
+        <Item
+          testId="menu-open"
+          icon={IconArrowsDiagonal}
+          shortcut={CANVAS_SHORTCUTS.open}
+          onSelect={() => openSelectedNote()}
+        >
           Open
         </Item>
       )}
@@ -139,59 +157,54 @@ function CardItems({ notes, single, allDone, pin }: Omit<CardsTarget, 'kind'>) {
         <>
           <Item
             testId="menu-done"
-            shortcut={shortcutLabel(CANVAS_SHORTCUTS.markDone)}
+            icon={IconCheck}
+            shortcut={CANVAS_SHORTCUTS.markDone}
             onSelect={toggleSelectionDone}
           >
             {allDone ? 'Mark not done' : 'Mark done'}
           </Item>
-          <ContextMenuSub>
-            <ContextMenuSubTrigger data-testid="menu-color">Color</ContextMenuSubTrigger>
-            <ContextMenuSubContent className="flex gap-1 p-1.5">
-              {NOTE_COLORS.map((color) => (
-                <ContextMenuItem
-                  key={color}
-                  data-testid={`menu-color-${color}`}
-                  aria-label={color}
-                  className="size-7 justify-center p-0"
-                  onSelect={() => setSelectionColor(color)}
-                >
-                  <span
-                    className={cn('size-4 rounded-full', NOTE_COLOR_CLASSES[color].pickerSwatch)}
-                  />
-                </ContextMenuItem>
-              ))}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
           {single && (
-            <Item testId="menu-due" onSelect={() => openSelectedNote({ due: true })}>
+            <Item
+              testId="menu-due"
+              icon={IconCalendar}
+              onSelect={() => openSelectedNote({ due: true })}
+            >
               Due date…
             </Item>
           )}
           {pin && (
-            <Item testId="menu-pin" onSelect={() => void setNotePinned(pin.noteId, !pin.pinned)}>
+            <Item
+              testId="menu-pin"
+              icon={pin.pinned ? IconPinnedOff : IconPin}
+              onSelect={() => void setNotePinned(pin.noteId, !pin.pinned)}
+            >
               {pinLabel(pin.pinned)}
             </Item>
           )}
+          <ColorItems current={color} />
           <ContextMenuSeparator />
         </>
       )}
       <Item
         testId="menu-duplicate"
-        shortcut={shortcutLabel(CANVAS_SHORTCUTS.duplicate)}
+        icon={IconCopy}
+        shortcut={CANVAS_SHORTCUTS.duplicate}
         onSelect={duplicateSelection}
       >
         Duplicate
       </Item>
       <Item
         testId="menu-front"
-        shortcut={shortcutLabel(CANVAS_SHORTCUTS.bringToFront)}
+        icon={IconArrowUp}
+        shortcut={CANVAS_SHORTCUTS.bringToFront}
         onSelect={() => restackSelection('front')}
       >
         Bring to front
       </Item>
       <Item
         testId="menu-back"
-        shortcut={shortcutLabel(CANVAS_SHORTCUTS.sendToBack)}
+        icon={IconArrowDown}
+        shortcut={CANVAS_SHORTCUTS.sendToBack}
         onSelect={() => restackSelection('back')}
       >
         Send to back
@@ -199,7 +212,8 @@ function CardItems({ notes, single, allDone, pin }: Omit<CardsTarget, 'kind'>) {
       <ContextMenuSeparator />
       <Item
         testId="menu-delete"
-        shortcut={shortcutLabel(CANVAS_SHORTCUTS.delete)}
+        icon={IconTrash}
+        shortcut={CANVAS_SHORTCUTS.delete}
         destructive
         onSelect={deleteSelection}
       >
@@ -216,16 +230,26 @@ function CanvasItems({ at }: { at: Point }) {
   }
   return (
     <>
-      <Item testId="menu-new-note" onSelect={() => createNoteAt(at, { edit: true })}>
+      <Item
+        testId="menu-new-note"
+        icon={IconPlus}
+        onSelect={() => createNoteAt(at, { edit: true })}
+      >
         New note here
       </Item>
-      <Item testId="menu-paste" shortcut="Ctrl+V" onSelect={() => void paste()}>
+      <Item
+        testId="menu-paste"
+        icon={IconClipboard}
+        shortcut="Ctrl V"
+        onSelect={() => void paste()}
+      >
         Paste
       </Item>
       <ContextMenuSeparator />
       <Item
         testId="menu-fit"
-        shortcut={shortcutLabel(CANVAS_SHORTCUTS.zoomFit)}
+        icon={IconArrowsMaximize}
+        shortcut={CANVAS_SHORTCUTS.zoomFit}
         onSelect={zoomToFit}
       >
         Zoom to fit

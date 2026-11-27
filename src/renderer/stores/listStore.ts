@@ -25,6 +25,8 @@ interface ListState {
   toggleColor(color: NoteColor): void
   setSort(sort: ListSort): void
   setText(text: string): void
+  /** Clears the title filter and the colors (the empty state's Clear filters). */
+  clearFilters(): void
   changed(): void
   edited(): void
 }
@@ -65,6 +67,10 @@ export const useListStore = create<ListState>()((set, get) => {
     },
     setSort: (sort) => save({ ...get().filter, sort }),
     setText: (text) => set({ text }),
+    clearFilters: () => {
+      set({ text: '' })
+      if (get().filter.colors.length > 0) save({ ...get().filter, colors: [] })
+    },
     changed: () => set((s) => ({ rev: s.rev + 1 })),
     edited: () => set((s) => ({ edits: s.edits + 1 })),
   }

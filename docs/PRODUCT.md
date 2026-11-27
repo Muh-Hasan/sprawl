@@ -238,10 +238,11 @@ Canvas single-key tools only fire when no text input is focused. Shortcuts are m
 
 ## 5. Empty and edge states
 - **First launch:** pick a vault folder (with the default prefilled). Then the canvas is empty and shows how to start (§3.1 Empty canvas). "Open the welcome board" adds five sample notes, which the user can delete or undo.
-- **Empty log day:** "Nothing logged yet. Mark a note done or write what you just did."
+- **Every empty state says what to do next**, with a button that does it where there is one.
+- **Empty log day:** "Nothing logged yet. Mark a note done, or write what you just did below." with Log something (it focuses the composer).
 - **Empty drawings:** "Sketch something" with a New drawing button.
 - **No search results:** "No matches for “{q}”."
-- **Empty list (Open filter):** "All clear. Nothing open right now." **Empty Due filter:** "Nothing due. Add a due date to a note to see it here."
+- **Empty list (Open filter):** "All clear. Nothing open right now." with New note. **Empty Due filter:** "Nothing due. Add a due date to a note to see it here." with Show open notes. **Nothing matches the filters:** Clear filters.
 - **Notifications blocked by Windows:** the Settings notification section shows "Windows is blocking Sprawl's notifications" with an "Open Windows settings" button (`ms-settings:notifications`).
 - **A missing attachment file** shows a placeholder card ("File missing") with "Locate…" and "Remove" options.
 - **Database locked or corrupt:** show an error screen with "Open backup folder" and "Choose another vault".

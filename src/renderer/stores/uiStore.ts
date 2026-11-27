@@ -42,6 +42,9 @@ interface UiState {
   /** The command palette (Ctrl+K) is showing. */
   paletteOpen: boolean
   setPaletteOpen(open: boolean): void
+  /** The shortcuts sheet (`?`, or Help and shortcuts in the sidebar) is showing. */
+  shortcutsOpen: boolean
+  setShortcutsOpen(open: boolean): void
 }
 
 export const useUiStore = create<UiState>()((set, get) => ({
@@ -79,6 +82,8 @@ export const useUiStore = create<UiState>()((set, get) => ({
   },
   paletteOpen: false,
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  shortcutsOpen: false,
+  setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
 }))
 
 /** The gap between the floating panel and the main area's edges (UI_SPEC §5). */

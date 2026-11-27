@@ -9,7 +9,12 @@ import { cn } from '@/lib/utils'
  * come from `components/ui` unchanged.
  */
 const CONTENT = 'rounded-menu p-1.5 shadow-(--shadow-popover)'
-const ITEM = 'min-h-[34px] rounded-lg px-2.5'
+const ITEM = 'min-h-[34px] gap-2.5 rounded-lg px-2.5'
+
+/** An item's shortcut, on the right: its keys with spaces ("Ctrl D") in Geist Mono 11px. */
+export function MenuShortcut({ children }: { children: React.ReactNode }) {
+  return <span className="ml-auto pl-4 font-mono text-kbd text-subtle-foreground">{children}</span>
+}
 
 export function DropdownMenuContent({
   className,

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { IconBell } from '@tabler/icons-react'
 import type { NotificationStatus } from '@shared/api'
+import { showToast } from '@/components/toasts'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -116,7 +117,7 @@ export function NotificationsSection({ settings, update }: SectionProps) {
           variant="secondary"
           onClick={() => {
             void window.sprawl.system.testNotification()
-            toast('Test notification sent')
+            showToast('Test notification sent', { icon: IconBell })
           }}
         >
           Send a test

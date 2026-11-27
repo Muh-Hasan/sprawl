@@ -1,5 +1,6 @@
 import markGradient from '@/assets/brand/sprawl-mark-gradient.svg'
 import { ShortcutKbd } from '@/components/ShortcutKbd'
+import { Button } from '@/components/ui/button'
 import {
   CANVAS_SHORTCUTS,
   NAV_SHORTCUTS,
@@ -8,6 +9,7 @@ import {
   SIDEBAR_SHORTCUT,
   TEXT_SIZE_SHORTCUTS,
 } from '@/lib/shortcuts'
+import { useUiStore } from '@/stores/uiStore'
 import { SettingsRow, SettingsSection } from './SettingsLayout'
 import type { SectionProps } from './useSettings'
 
@@ -41,7 +43,7 @@ function Keys({ keys }: { keys: readonly string[] }) {
 
 /**
  * Settings → Shortcuts (UI_SPEC §9): the app-wide shortcuts, plus quick capture's, which changes
- * under Quick capture. later: the shortcuts sheet (DESIGN_REFRESH R13) lists every shortcut.
+ * under Quick capture. The rest are on the shortcuts sheet, which the last row opens.
  */
 export function ShortcutsSection({ settings }: SectionProps) {
   return (
@@ -61,6 +63,20 @@ export function ShortcutsSection({ settings }: SectionProps) {
         testId="settings-shortcut-capture"
       >
         {settings && <Keys keys={settings.captureShortcut.split('+')} />}
+      </SettingsRow>
+      <SettingsRow
+        label="Every shortcut"
+        description="The canvas, notes and log ones too."
+        testId="settings-shortcut-all"
+      >
+        <Button
+          variant="secondary"
+          size="sm"
+          data-testid="settings-shortcuts-sheet"
+          onClick={() => useUiStore.getState().setShortcutsOpen(true)}
+        >
+          Show all
+        </Button>
       </SettingsRow>
     </SettingsSection>
   )

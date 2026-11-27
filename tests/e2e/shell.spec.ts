@@ -65,7 +65,7 @@ test('the collapse button names its shortcut', async ({ window }) => {
   await window.getByTestId('sidebar-toggle').hover()
   const tooltip = window.getByRole('tooltip')
   await expect(tooltip).toContainText('Collapse sidebar')
-  await expect(tooltip).toContainText('Ctrl+\\')
+  await expect(tooltip).toContainText('Ctrl \\')
 })
 
 test('Ctrl+\\ collapses the sidebar to a rail with tooltips, and the choice survives a relaunch', async ({
@@ -90,7 +90,7 @@ test('Ctrl+\\ collapses the sidebar to a rail with tooltips, and the choice surv
   await window.getByTestId('sidebar-list').hover()
   const tooltip = window.getByRole('tooltip')
   await expect(tooltip).toContainText('List')
-  await expect(tooltip).toContainText('Ctrl+2')
+  await expect(tooltip).toContainText('Ctrl 2')
   await window.getByTestId('sidebar-list').click()
   await expectActive(window, 'list')
 

@@ -1,18 +1,20 @@
 import type { ReactElement } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { ShortcutKbd } from './ShortcutKbd'
+import { labelToHint } from '@/lib/shortcuts'
 
 interface HintTooltipProps {
   label: string
-  /** Shown as a kbd on the right, e.g. "Ctrl+1". */
+  /** The shortcut, e.g. "Ctrl+1". It's shown with spaces ("Ctrl 1"), muted, after the label. */
   shortcut?: string
   side?: 'top' | 'right' | 'bottom' | 'left'
   children: ReactElement
 }
 
 /**
- * A tooltip with a label and an optional shortcut (DESIGN_SYSTEM §7): `--popover` background,
- * 12px text, no arrow. The 400ms delay comes from the TooltipProvider in App.
+ * A tooltip naming an action and its key (DESIGN_SYSTEM §7): inverted (`--foreground`
+ * background, `--background` text) so it stands out over the dark app, 30px tall, a 13px 500
+ * label and the shortcut in Geist Mono 11px. No arrow. The 400ms delay comes from the
+ * TooltipProvider in App.
  */
 export function HintTooltip({ label, shortcut, side = 'bottom', children }: HintTooltipProps) {
   return (
@@ -21,13 +23,15 @@ export function HintTooltip({ label, shortcut, side = 'bottom', children }: Hint
       <TooltipContent
         side={side}
         sideOffset={6}
-        // The stock arrow is drawn in the white tooltip color; ours has none.
-        className="rounded-md border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-(--shadow-popover) [&>span:last-child]:hidden"
+        // The stock arrow would point from a tooltip that has none.
+        className="flex h-[30px] items-center gap-2 rounded-lg bg-foreground px-2.5 py-0 text-xs font-medium text-background shadow-(--shadow-popover) [&>span:last-child]:hidden"
       >
-        <div className="flex items-center gap-2">
-          <span className="font-medium">{label}</span>
-          {shortcut && <ShortcutKbd>{shortcut}</ShortcutKbd>}
-        </div>
+        <span>{label}</span>
+        {shortcut && (
+          <kbd className="font-mono text-kbd font-normal text-background/55">
+            {labelToHint(shortcut)}
+          </kbd>
+        )}
       </TooltipContent>
     </Tooltip>
   )

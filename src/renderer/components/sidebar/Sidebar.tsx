@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import {
   CANVAS_SHORTCUTS,
   PALETTE_SHORTCUT,
-  shortcutKeys,
+  shortcutHint,
   shortcutLabel,
   SIDEBAR_SHORTCUT,
   type Shortcut,
@@ -17,11 +17,8 @@ import { newNote } from '@/views/search/commands'
 import { CollapsedSidebar } from './CollapsedSidebar'
 import { OverdueBadge } from './OverdueBadge'
 import { PinnedNotes, RecentNotes } from './SidebarNotes'
-import { SETTINGS_ITEM, VIEW_ITEMS, type SidebarItem } from './sidebarItems'
+import { HELP_ITEM, SETTINGS_ITEM, VIEW_ITEMS, type SidebarItem } from './sidebarItems'
 import { useOverdueCount } from './useSidebarData'
-
-/** A shortcut as the sidebar's rows hint it, e.g. "Ctrl 1". */
-const hint = (s: Shortcut): string => shortcutKeys(s).join(' ')
 
 /** A view row (UI_SPEC §2): icon, label, and the shortcut (or the List's overdue badge). */
 function ViewRow({ item }: { item: SidebarItem }) {
@@ -45,13 +42,32 @@ function ViewRow({ item }: { item: SidebarItem }) {
 }
 
 function RowHint({ s }: { s: Shortcut }) {
-  return <span className="font-mono text-kbd font-normal text-subtle-foreground">{hint(s)}</span>
+  return (
+    <span className="font-mono text-kbd font-normal text-subtle-foreground">{shortcutHint(s)}</span>
+  )
 }
 
 /** The overdue badge takes the shortcut's place while anything is overdue. */
 function ListHint({ shortcut }: { shortcut: Shortcut }) {
   const count = useOverdueCount()
   return count > 0 ? <OverdueBadge count={count} /> : <RowHint s={shortcut} />
+}
+
+/** Help and shortcuts (UI_SPEC §2): a row like the views', but it opens the shortcuts sheet. */
+function HelpRow() {
+  const Icon = HELP_ITEM.icon
+  return (
+    <Button
+      variant="ghost"
+      data-testid="sidebar-help"
+      onClick={() => useUiStore.getState().setShortcutsOpen(true)}
+      className="h-9 w-full justify-start gap-3 rounded-lg pr-2.5 pl-3 text-sm font-medium text-muted-foreground hover:text-foreground"
+    >
+      <Icon stroke={1.75} className="size-[19px]" />
+      <span className="flex-1 text-left">{HELP_ITEM.label}</span>
+      <RowHint s={HELP_ITEM.shortcut} />
+    </Button>
+  )
 }
 
 /** The open sidebar (UI_SPEC §2): 248px, labelled, with Pinned and Recent notes. */
@@ -87,7 +103,7 @@ function OpenSidebar() {
           <IconPlus stroke={2} className="size-[18px]" />
           <span className="flex-1 text-left">New note</span>
           <span className="font-mono text-2xs font-medium text-primary-foreground/55">
-            {hint(CANVAS_SHORTCUTS.newNote)}
+            {shortcutHint(CANVAS_SHORTCUTS.newNote)}
           </span>
         </Button>
         <Button
@@ -98,7 +114,7 @@ function OpenSidebar() {
         >
           <IconSearch stroke={1.75} className="size-[18px]" />
           <span className="min-w-0 flex-1 truncate text-left">Search or jump to…</span>
-          <ShortcutKbd>{hint(PALETTE_SHORTCUT)}</ShortcutKbd>
+          <ShortcutKbd>{shortcutHint(PALETTE_SHORTCUT)}</ShortcutKbd>
         </Button>
       </div>
 
@@ -114,6 +130,7 @@ function OpenSidebar() {
 
       <div className="flex shrink-0 flex-col gap-0.5 border-t border-border p-2">
         <ViewRow item={SETTINGS_ITEM} />
+        <HelpRow />
       </div>
     </aside>
   )

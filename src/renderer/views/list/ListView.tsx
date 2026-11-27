@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { IconListCheck } from '@tabler/icons-react'
 import type { NoteListRow } from '@shared/types'
-import { EmptyState } from '@/components/EmptyState'
 import { TopBar } from '@/components/TopBar'
 import { DONE_EXIT_MS } from '@/stores/canvasStore'
 import { useClockStore } from '@/stores/clockStore'
@@ -11,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { useUiStore } from '@/stores/uiStore'
 import { showNoteOnCanvas } from '@/views/canvas/actions'
 import { deleteNote, duplicateNote, placeOnCanvas, setNoteDone } from './listActions'
+import { ListEmpty } from './ListEmpty'
 import { ListFilters } from './ListFilters'
 import { ListGroup } from './ListGroup'
 import { ListHeader } from './ListHeader'
@@ -19,13 +18,6 @@ import { NoteRow, type RowActions } from './NoteRow'
 import { setNotePinned } from '../note/pinActions'
 import { useListKeys } from './useListKeys'
 import { useListCounts, useListRows } from './useListRows'
-
-const EMPTY: Record<string, string> = {
-  open: 'All clear. Nothing open right now.',
-  due: 'Nothing due. Add a due date to a note to see it here.',
-  done: 'Nothing done yet. Tick a note and it shows up here.',
-  all: 'No notes yet.',
-}
 
 /**
  * The List view (PRODUCT §3.3, UI_SPEC §5b): every note in one list, filtered by tab, color and
@@ -157,11 +149,7 @@ export function ListView() {
             className="mx-auto w-full max-w-[880px] px-10 pb-16"
           >
             {rows !== null && rows.length === 0 && (
-              <div className="h-64">
-                <EmptyState icon={IconListCheck} testId="list-empty">
-                  {filtering ? 'No notes match these filters.' : EMPTY[filter.tab]}
-                </EmptyState>
-              </div>
+              <ListEmpty filtering={filtering} tab={filter.tab} />
             )}
             {groups
               ? groups.map(({ group, rows: groupRows }) => (

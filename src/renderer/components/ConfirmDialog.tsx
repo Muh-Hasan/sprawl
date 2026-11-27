@@ -18,14 +18,15 @@ interface ConfirmDialogProps {
   description: ReactNode
   confirmLabel: string
   onConfirm(): void
-  /** Deletes: `--destructive` text on `--muted`, solid only on hover. */
+  /** Deletes: a solid `--destructive` button. */
   destructive?: boolean
   testId?: string
 }
 
 /**
- * The confirm dialog (UI_SPEC §11): 400px, a 14px/600 title, a muted description, and Cancel
- * (ghost) plus the confirm button. Used only for changing the vault and deleting a drawing.
+ * The confirm dialog (UI_SPEC §11): 420px, 24px padding, a 16px radius, a `text-lg` 600 title, a
+ * muted description, then Cancel (outlined) and the confirm button, both 36px. Used only for
+ * changing the vault and deleting a drawing.
  */
 export function ConfirmDialog({
   open,
@@ -41,24 +42,27 @@ export function ConfirmDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent
         data-testid={testId}
-        className="gap-5 rounded-xl border-border bg-popover p-5 shadow-(--shadow-popover) data-[size=default]:sm:max-w-[400px]"
+        className="gap-[22px] rounded-2xl border-border bg-card p-6 shadow-(--shadow-palette) data-[size=default]:sm:max-w-[420px]"
       >
-        <AlertDialogHeader className="gap-1.5">
-          <AlertDialogTitle className="text-base font-semibold">{title}</AlertDialogTitle>
+        <AlertDialogHeader className="gap-2">
+          <AlertDialogTitle className="text-lg font-semibold">{title}</AlertDialogTitle>
           <AlertDialogDescription className="text-sm text-muted-foreground">
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel variant="ghost" size="sm" data-testid={testId && `${testId}-cancel`}>
+          <AlertDialogCancel
+            variant="outline"
+            data-testid={testId && `${testId}-cancel`}
+            className="rounded-[10px] border-border bg-popover hover:bg-muted dark:border-border dark:bg-popover dark:hover:bg-muted"
+          >
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
-            variant={destructive ? 'secondary' : 'default'}
-            size="sm"
             data-testid={testId && `${testId}-confirm`}
             className={cn(
-              destructive && 'text-destructive hover:bg-destructive hover:text-background',
+              'rounded-[10px] font-semibold',
+              destructive && 'bg-destructive text-background hover:bg-destructive/90',
             )}
             onClick={onConfirm}
           >
