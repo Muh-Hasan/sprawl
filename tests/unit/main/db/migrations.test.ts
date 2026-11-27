@@ -36,7 +36,13 @@ describe('migrations', () => {
     const { sqlite } = handle
     for (const table of TABLES) expect(names(sqlite, 'table')).toContain(table)
     expect(names(sqlite, 'index')).toEqual(
-      expect.arrayContaining(['canvas_items_ref', 'notes_remind', 'notes_due', 'log_entries_day']),
+      expect.arrayContaining([
+        'canvas_items_ref',
+        'notes_remind',
+        'notes_due',
+        'notes_pinned',
+        'log_entries_day',
+      ]),
     )
     expect(sqlite.pragma('user_version', { simple: true })).toBe(MIGRATIONS.length)
   })
@@ -113,6 +119,25 @@ describe('migrations', () => {
       note_id: null,
       text: 'Title',
     })
+  })
+
+  it('add notes.pinned_at to a vault made before it, keeping its notes', () => {
+    const sqlite = new Database(':memory:')
+    try {
+      // A vault from before pinning: only the first migration ran.
+      sqlite.exec(MIGRATIONS[0]!.sql)
+      sqlite.pragma('user_version = 1')
+      sqlite
+        .prepare(`INSERT INTO notes (id, title, created_at, updated_at) VALUES ('n1', 'Old', 1, 1)`)
+        .run()
+      expect(migrate(sqlite)).toBe(MIGRATIONS.length - 1)
+      expect(sqlite.prepare('SELECT title, pinned_at FROM notes').get()).toEqual({
+        title: 'Old',
+        pinned_at: null,
+      })
+    } finally {
+      sqlite.close()
+    }
   })
 
   it('give notes the documented defaults', () => {

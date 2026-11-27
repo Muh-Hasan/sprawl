@@ -21,12 +21,14 @@ const api: SprawlAPI = {
   notes: {
     list: (query) => ipcRenderer.invoke(IPC.notes.list, query),
     overdueCount: () => ipcRenderer.invoke(IPC.notes.overdueCount),
+    pinned: () => ipcRenderer.invoke(IPC.notes.pinned),
     placeOnCanvas: (id, at) => ipcRenderer.invoke(IPC.notes.placeOnCanvas, { id, at }),
     get: (id) => ipcRenderer.invoke(IPC.notes.get, id),
     create: (note) => ipcRenderer.invoke(IPC.notes.create, note),
     update: (id, patch) => ipcRenderer.invoke(IPC.notes.update, { id, patch }),
     duplicate: (id) => ipcRenderer.invoke(IPC.notes.duplicate, id),
     setDone: (id, done) => ipcRenderer.invoke(IPC.notes.setDone, { id, done }),
+    setPinned: (id, pinned) => ipcRenderer.invoke(IPC.notes.setPinned, { id, pinned }),
     remove: (id) => ipcRenderer.invoke(IPC.notes.remove, id),
     restore: (id) => ipcRenderer.invoke(IPC.notes.restore, id),
     links: {

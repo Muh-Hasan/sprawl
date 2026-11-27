@@ -31,6 +31,7 @@ function row(over: Partial<NoteListRow> = {}): NoteListRow {
     dueDay: null,
     dueTime: null,
     doneAt: null,
+    pinnedAt: null,
     createdAt: NOW - 3 * 3600_000,
     updatedAt: NOW - 2 * 3600_000,
     onCanvas: true,
@@ -44,6 +45,7 @@ function actions(): RowActions {
     toggleDone: vi.fn(),
     showOnCanvas: vi.fn(),
     place: vi.fn(),
+    setPinned: vi.fn(),
     duplicate: vi.fn(),
     remove: vi.fn(),
   }

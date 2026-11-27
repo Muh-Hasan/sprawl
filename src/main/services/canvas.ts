@@ -230,6 +230,7 @@ const CARD_NOTE_FIELDS = {
   dueDay: notes.dueDay,
   dueTime: notes.dueTime,
   doneAt: notes.doneAt,
+  pinnedAt: notes.pinnedAt,
 }
 
 interface CardNoteRow {
@@ -243,6 +244,7 @@ interface CardNoteRow {
   dueDay: string | null
   dueTime: string | null
   doneAt: number | null
+  pinnedAt: number | null
 }
 
 /** A left join gives nulls for a card that isn't a note's. */
@@ -259,6 +261,7 @@ function toCardNote(row: CardNoteRow): CanvasItem['note'] {
     dueDay: row.dueDay,
     dueTime: row.dueTime,
     doneAt: row.doneAt,
+    pinnedAt: row.pinnedAt,
   }
 }
 

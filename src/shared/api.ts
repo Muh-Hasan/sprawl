@@ -54,6 +54,8 @@ export interface NotesAPI {
   list(query: NoteListQuery): Promise<NoteListRow[]>
   /** How many open notes are overdue (the List badge and the tray tooltip). */
   overdueCount(): Promise<number>
+  /** The sidebar's Pinned notes (live ones, done or not), in the order they were pinned. */
+  pinned(): Promise<NoteListRow[]>
   /**
    * Gives a list-only note a card, centered on `at` (world), or on the middle of the last
    * canvas view. A note that already has one keeps it.
@@ -70,6 +72,8 @@ export interface NotesAPI {
    * the canvas use the undoable `setDone` canvas op instead.
    */
   setDone(id: string, done: boolean): Promise<Note>
+  /** Pins a note to the sidebar, at the end of the Pinned list, or unpins it. Not an edit. */
+  setPinned(id: string, pinned: boolean): Promise<Note>
   /** Soft delete; purged for good after 30 days. */
   remove(id: string): Promise<void>
   restore(id: string): Promise<void>
@@ -182,12 +186,14 @@ export const IPC = {
   notes: {
     list: 'notes:list',
     overdueCount: 'notes:overdueCount',
+    pinned: 'notes:pinned',
     placeOnCanvas: 'notes:placeOnCanvas',
     get: 'notes:get',
     create: 'notes:create',
     update: 'notes:update',
     duplicate: 'notes:duplicate',
     setDone: 'notes:setDone',
+    setPinned: 'notes:setPinned',
     remove: 'notes:remove',
     restore: 'notes:restore',
     links: {

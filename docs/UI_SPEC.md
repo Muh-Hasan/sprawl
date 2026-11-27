@@ -40,16 +40,16 @@ Artboards: `Sidebar`, `Main` (open and collapsed). `--surface` background with a
 - **Views** (8px side padding, 16px above, 2px apart): Canvas, List and Daily log. Each row is 36px, radius 8, 12px gap: the icon at 19px, the label (`text-sm` 500), and its shortcut on the right ("Ctrl 1", in Geist Mono `text-kbd`, `--subtle-foreground`). testids `sidebar-canvas`, `sidebar-list`, `sidebar-log`.
   - **Rest:** `--muted-foreground`. **Hover:** the ghost hover and `--foreground`. **Active:** `--muted` background and `--foreground`, with `aria-current="page"`.
   - **List badge:** while anything is overdue, a 20px pill takes the shortcut's place: the count in `text-2xs` 600, `--due-overdue` on `--due-overdue-bg`, "99+" past 99. testid `sidebar-list-badge`.
-- **Recent** (20px above): a "Recent" heading in `text-2xs` 500 `--subtle-foreground` (12px side padding, 6px below), then the five open notes edited last, newest first. Rows are 32px, radius 8: a 10px swatch (3px radius) in the note's bright hue, and the title in `text-sm` at 85% `--foreground`, truncated ("Untitled" muted when empty). A click opens the note in the panel and glides the canvas to its card, as the palette does. The open note's row is `--muted`. The section is hidden while there are no open notes. testids `sidebar-recent`, `sidebar-recent-note` (with `data-note-id`). It follows every saved edit, so a renamed or finished note updates straight away.
-  - *Pinned* notes go above Recent in the next PR (R5b).
-- The views and Recent scroll together if the window is short.
+- **Pinned** (20px above): a "Pinned" heading in `text-2xs` 500 `--subtle-foreground` (12px side padding, 6px below), then every note pinned from a note menu (§4.10, §5, §5b), in the order they were pinned. Rows are 32px, radius 8: a 10px swatch (3px radius) in the note's bright hue, and the title in `text-sm` at 85% `--foreground`, truncated ("Untitled" muted when empty). A done note stays pinned, its title muted and struck through. A click opens the note in the panel and glides the canvas to its card, as the palette does. The open note's row is `--muted`. Hidden while nothing is pinned. testids `sidebar-pinned`, `sidebar-pinned-note` (with `data-note-id`). Drag to reorder isn't in v1.
+- **Recent** (20px above, or 14px below Pinned): the same heading and rows for the five open notes edited last that aren't pinned, newest first. Hidden while there are none. testids `sidebar-recent`, `sidebar-recent-note` (with `data-note-id`). Both lists follow every saved edit, so a renamed or finished note updates straight away.
+- The views, Pinned and Recent scroll together if the window is short.
 - **Bottom** (a 1px `--border` above, 8px padding): Settings, a view row with "Ctrl ,". testid `sidebar-settings`. *Help and shortcuts (`?`) joins it when the shortcuts sheet lands (R13).*
 
 **Collapsed (60px)**, a centered column of 40px icon buttons (radius 10, 20px icons, 4px apart), each with a tooltip on the right naming it and its shortcut:
 - The toggle (`IconLayoutSidebar`, "Expand sidebar" with `Ctrl+\`) in a 52px drag strip.
 - New note (primary, `IconPlus`), then Search.
 - A 24px × 1px `--border` divider, then Canvas, List and Daily log. Active is `--muted` with a `--foreground` icon. The List badge is a 16px pill at the icon's top right.
-- Settings at the bottom, 8px up. Recent isn't shown.
+- Settings at the bottom, 8px up. Pinned and Recent aren't shown, so pinning or unpinning there says so in a toast ("Pinned to the sidebar").
 
 ---
 
@@ -142,8 +142,8 @@ A drag region with a 1px bottom border on every view **except the canvas**. On t
 - **Selection toolbar:** over selected notes, FigJam-style (DESIGN_SYSTEM §8): the six color swatches, then Duplicate, Bring to front, Send to back and Delete. testids `selection-toolbar`, `selection-color-<color>`, `selection-duplicate`, `selection-front`, `selection-back`, `selection-delete`.
 
 ### 4.10 Context menu
-Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatches inline in the submenu, 16px circles) · Due date… · ─ · Duplicate (Ctrl+D) · Bring to front (Ctrl+]) · Send to back (Ctrl+[) · ─ · Delete (Del, destructive text).
-- Note-only items (Mark done, Color, Due date…) are hidden for other card kinds. With a multi-selection, the menu applies to every selected item. Right-clicking an unselected card selects just that card first.
+Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatches inline in the submenu, 16px circles) · Due date… · Pin to sidebar (Unpin from sidebar when pinned) · ─ · Duplicate (Ctrl+D) · Bring to front (Ctrl+]) · Send to back (Ctrl+[) · ─ · Delete (Del, destructive text).
+- Note-only items (Mark done, Color, Due date…, Pin) are hidden for other card kinds; Open, Due date… and Pin only show for a single note (testid `menu-pin`). With a multi-selection, the menu applies to every selected item. Right-clicking an unselected card selects just that card first.
 - Items appear in the phase that makes them work: phase 3 has Color, Duplicate, Bring to front, Send to back and Delete; Open and Due date… come in phase 4, Mark done in phase 5, New drawing here in phase 8. The selection toolbar repeats the quick actions; the menu stays as the full list.
 - **Mark done** applies to every selected note and reads **Mark not done** when they're all done (only possible with "Show done" on). Ctrl+Enter on the canvas does the same. Marking done shows "Marked done · Undo".
 - On empty canvas: New note here · New drawing here · Paste · ─ · Zoom to fit (Shift+1).
@@ -160,7 +160,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 **Anatomy** (padding 24px horizontal):
 1. **Header row** (44px, drag region on its empty parts). It sits in the window's top 44px, so its right side keeps 140px clear for the Windows caption buttons (§1):
    - **Left:** the color dot (10px swatch circle, which opens the color popover) and a breadcrumb in `text-xs` subtle showing "Note", or "Note · not on canvas" for list-only notes (clicking that places it on the canvas).
-   - **Right**, ending 140px from the window edge: ghost icon buttons for `IconArrowsDiagonal` (full page, or `IconArrowsDiagonalMinimize2` to go back), `IconDots` (Duplicate, Export as markdown, Delete) and `IconX`.
+   - **Right**, ending 140px from the window edge: ghost icon buttons for `IconArrowsDiagonal` (full page, or `IconArrowsDiagonalMinimize2` to go back), `IconDots` (Pin to sidebar or Unpin from sidebar with `IconPin` / `IconPinnedOff`, Duplicate, Export as markdown, Delete; testid `note-panel-pin`) and `IconX`.
 2. **Title:** a borderless textarea that grows, using `text-title`. The placeholder is "Untitled" in subtle text. 8px top margin.
 3. **Editor:** BlockNote with 16px top margin (styling in §5.1).
 4. **Meta section:** 32px top margin, a 1px top border, 16px padding. Rows are 32px tall and `text-sm`, with a 16px icon in subtle and the label in muted:
@@ -201,7 +201,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 - The header count reads "24 open", "5 due", "12 done" or "40 notes".
 - **Rows:** 44px tall, a 1px `--border` bottom, 12px horizontal padding and radius 0. Hover gives a `--muted` background, and the keyboard-selected row gets a `--muted` background plus a 2px white left bar (radius 0).
   - Columns: checkbox (16px, the same style as the editor checklist) · color dot (8px) · **title** (`text-sm` 500, ellipsis) · first body line (`text-sm` subtle, ellipsis, takes the remaining space and is hidden when the window is under 1100px wide) · chips (checklist, due, links; same chips as the cards) · "Not on canvas" tag (`text-2xs`, `--muted` background, only when it applies) · edited time (`text-xs` subtle mono, 64px, right-aligned).
-  - Hover actions replace the edited time: `IconFocus2` (Show on canvas; only for a note with a card that isn't done) and `IconDots` (Place on canvas for list-only notes, Duplicate, Delete).
+  - Hover actions replace the edited time: `IconFocus2` (Show on canvas; only for a note with a card that isn't done) and `IconDots` (Place on canvas for list-only notes, Pin to sidebar or Unpin from sidebar, Duplicate, Delete; testid `list-row-pin`).
   - Show on canvas switches to the canvas, selects the card and glides it to the middle at 100% or closer.
 - **Due tab grouping:** sticky section headings (32px, `text-2xs` 600 subtle, `--background` background), in order: Overdue (heading in `--due-overdue`) · Today · Tomorrow · This week · Later. Empty groups are hidden.
 - **Done tab:** rows show the done time instead of the edited time, and the checkbox is checked (unticking undoes done).

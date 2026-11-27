@@ -69,7 +69,7 @@ export class ListPage {
   }
 
   /** Hovers a row and picks an item from its ⋯ menu. */
-  async menu(title: string, item: 'place' | 'duplicate' | 'delete'): Promise<void> {
+  async menu(title: string, item: 'place' | 'pin' | 'duplicate' | 'delete'): Promise<void> {
     const row = this.row(title).first()
     await this.hover(row)
     await row.getByTestId('list-row-menu').click()

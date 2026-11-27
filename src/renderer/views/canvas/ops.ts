@@ -47,6 +47,7 @@ export function newCardNote(note: NewNote, source?: CardNote): CardNote {
     dueDay: null,
     dueTime: null,
     doneAt: null,
+    pinnedAt: null,
   }
 }
 

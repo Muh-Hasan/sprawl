@@ -17,6 +17,7 @@ import {
   notesListInput,
   notesPlaceInput,
   notesSetDoneInput,
+  notesSetPinnedInput,
   notesUpdateInput,
   openExternalInput,
   openVaultInput,
@@ -168,6 +169,7 @@ export function registerIpc({
   // notes --------------------------------------------------------------------------------
   handle(IPC.notes.list, notesListInput, (query) => notes.list(query))
   handle(IPC.notes.overdueCount, noInput, () => notes.overdueCount())
+  handle(IPC.notes.pinned, noInput, () => notes.pinned())
   write(IPC.notes.placeOnCanvas, notesPlaceInput, ({ id, at }) =>
     canvas.placeNote(id, at ?? viewCenter()),
   )
@@ -176,6 +178,7 @@ export function registerIpc({
   write(IPC.notes.update, notesUpdateInput, ({ id, patch }) => notes.update(id, patch))
   write(IPC.notes.duplicate, noteIdInput, (id) => notes.duplicate(id))
   write(IPC.notes.setDone, notesSetDoneInput, ({ id, done }) => notes.setDone(id, done))
+  handle(IPC.notes.setPinned, notesSetPinnedInput, ({ id, pinned }) => notes.setPinned(id, pinned))
   write(IPC.notes.remove, noteIdInput, (id) => notes.remove(id))
   write(IPC.notes.restore, noteIdInput, (id) => notes.restore(id))
   handle(IPC.notes.links.add, linksAddInput, ({ noteId, url, label }) =>

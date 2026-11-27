@@ -82,7 +82,8 @@ An infinite, pannable and zoomable board with a dotted background.
 - Ctrl+] brings the selection to the front, and Ctrl+[ sends it to the back.
 - Arrow keys nudge by 1px, and Shift+arrow nudges by 8px.
 - Selected notes get a floating toolbar above them (FigJam-style): the six colors, Duplicate, Bring to front, Send to back and Delete (UI_SPEC §4.9).
-- Right-click opens a context menu: Open, Mark done, Color ▸, Due date…, Duplicate, Bring to front, Send to back, Delete (full layout in UI_SPEC §4.10).
+- Right-click opens a context menu: Open, Mark done, Color ▸, Due date…, Pin to sidebar, Duplicate, Bring to front, Send to back, Delete (full layout in UI_SPEC §4.10).
+- **Pin to sidebar** (in the card menu, the panel's ⋯ menu and a List row's ⋯ menu) lists the note under Pinned in the sidebar, in the order pinned, until it's unpinned. Pinning isn't an edit, so the note keeps its place in Recent and the List.
 - **Undo/redo** (Ctrl+Z and Ctrl+Shift+Z) covers every canvas operation: create, move, resize, delete, color and done.
 
 **Note card (sticky)**
