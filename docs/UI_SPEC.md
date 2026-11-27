@@ -259,28 +259,27 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 
 ## 6. Daily log
 
-- `--surface` page with a centered column, max width 680px, padding 32px 24px.
+- `--background` page with a centered column, max 720px wide, with 40px side padding, 36px above the header and 140px below the last section (room for the composer).
 - **Header:**
-  - The date in `text-lg` ("Tuesday, 24 November"). Next to it, a `text-xs` muted "Today" tag, or a "Go to today" ghost button when viewing another day.
-  - On the right: ← and → icon buttons and a `IconCalendar` button that opens a month popover. → is disabled on today: the log never goes past today.
+  - The date as the view title (`text-title`, "Thursday, 26 November"). Next to it a "Today" tag (24px, radius 6, `--muted` background, `text-2xs`), or a "Go to today" ghost button (sm) when viewing another day.
+  - On the right, 8px apart: ← and → as outlined icon buttons (36px, radius 10, `--card` on a 1px `--border`), then the month button, outlined the same way, with a 17px `IconCalendar` and the shown day's month ("November"); its tooltip is "Pick a day". → is disabled on today (transparent, `--muted` border): the log never goes past today.
   - **Month popover:** the Calendar (weeks start on Monday) with a 4px dot under days with entries; days after today are disabled. Picking a day closes it.
-- **Week strip:** 16px below the header. Seven equal cells, 52px tall, radius 8. It shows the last 7 days ending today while the selected day is among them; further back, the 7 days ending on the selected day.
-  - Each cell shows the weekday (`text-2xs` subtle) above the day number (`text-sm` 500).
-  - Days with entries get a 4px `--muted-foreground` dot underneath.
-  - The selected day has a `--muted` background and white number, and today has a 1px `--border-strong` ring.
-- **Summary line:** 20px below the strip, `text-xs` muted, for example "3 done · 2 logged".
-- **Entries list:** 8px below the summary. Each row is at least 40px tall, laid out as a grid of 56px (time) and 1fr, with 12px padding and a 1px bottom border.
+- **Week strip:** 24px below the header. Seven equal cells 8px apart, 68px tall, radius 12, `--surface` with a 1px `--muted` border, `--popover` on hover. It shows the last 7 days ending today while the selected day is among them; further back, the 7 days ending on the selected day.
+  - Each cell shows the weekday (`text-2xs` subtle, muted when selected) above the day number (18px 600).
+  - Days with entries get a 5px `--muted-foreground` dot underneath.
+  - The selected day has a `--muted` background, and today has a `--border-strong` border.
+- **Summary tiles:** 24px below the strip, three equal tiles 12px apart: `--card`, 1px border, radius 12, 14px/16px padding. Each has a value (24/30 600, tabular figures) over a `text-xs` muted label: "3 / notes done", "2 / things logged", "5 days / in a row" (singular for one). The streak counts the days in a row with entries ending on the shown day; on today with nothing yet it counts up to yesterday. It reads "–" until it loads.
+- **Entries list:** 28px below the tiles, rows 2px apart. Each row is at least 48px tall: radius 10, 12px horizontal padding, no divider, a `--surface` fill on hover. It's a grid of 64px (time), 28px (icon), the text, and an auto column (the color tag or the hover actions), 8px apart.
   - **Time:** Geist Mono (`font-mono`) `text-xs` subtle. Clicking it on a manual entry edits it.
-  - **Done entry:** a `IconCircleCheck` 14px white icon, the note title in `text-sm`, and the note's color tag (a chip with the swatch dot and the color name in `text-2xs`). Clicking opens the note panel.
-  - **Manual entry:** text in `text-sm` with inline markdown (bold, italic, code, links; links open in the browser). Hovering reveals edit and delete icon buttons on the right. Edit turns the text into an input (Enter or leaving it saves, Esc cancels); the time field reads typed times like the due time (9, 930, 9:30). Delete shows "Deleted · Undo".
+  - **Done entry:** an 18px `IconCircleCheck` in `--foreground`, the note title in `text-base`, and the note's color tag on the right: 24px, radius 6, in the note's own background and text colors, with an 8px swatch dot and the color name ("Sage") in `text-2xs`. Clicking the title opens the note panel.
+  - **Manual entry:** an 18px `IconPencil` in subtle, then the text in `text-base` with inline markdown (bold, italic, code, links; links open in the browser). Hovering reveals edit and delete icon buttons (28px) on the right. Edit turns the text into an input (Enter or leaving it saves, Esc cancels); the time field reads typed times like the due time (9, 930, 9:30). Delete shows "Deleted · Undo".
   - A done entry whose note is deleted shows the title as it was when done, with no color tag, and doesn't open.
-- **Carried over:** a 24px top margin, the label "Carried over from yesterday" in `text-2xs` uppercase-free muted, then compact rows with the color dot, title and an "Open" ghost button.
-- **Composer:** pinned to the bottom of the column, 12px from the bottom of the view. On another day, Enter adds the entry at the current time of day on that day.
-  - An input 40px tall with radius 10, `--card` background, 1px border and the placeholder "What did you just do?"
-  - Inside the input on the right: a `kbd ↵` hint.
+- **Carried over:** 32px above, the heading "Carried over from yesterday" (`text-xs` 600 muted), then rows 6px apart: 44px tall, radius 10, a 1px `--muted` border, 12px padding, with a 10px color swatch (radius 3), the title in `text-base` and an "Open" ghost button (30px, `text-xs`).
+- **Composer:** floats at the bottom of the view over a fade from transparent to `--background` (32px above it, 20px below), centered on the same 640px as the column. On another day, Enter adds the entry at the current time of day on that day.
+  - A bar 52px tall with radius 14: `--card`, 1px `--border` (`--border-strong` while focused) and the toolbar shadow. Inside: an 18px subtle `IconPencil`, the input (`text-base`, placeholder "What did you just do?") and an "Enter" key hint (34px, radius 9, `--muted`, mono `text-2xs`).
   - On submit, the new row slides in at the right time position and gets the highlight from DESIGN_SYSTEM §6. Any entry new since the day last loaded (say, a note marked done on the canvas) gets the same one-time highlight.
 - **Keys:** Ctrl+[ and Ctrl+] step back and forward a day while the log is showing.
-- testids: `log-page`, `log-date` (with `data-day`), `log-today-tag`, `log-go-today`, `log-prev`, `log-next`, `log-calendar`, `log-month-picker`, `log-strip-day` (with `data-day`, `data-selected`, `data-today`, `data-has-entries`), `log-summary`, `log-entry` (with `data-kind`), `log-entry-time`, `log-entry-text`, `log-entry-color`, `log-entry-open`, `log-entry-edit`, `log-entry-delete`, `log-carried-row`, `log-carried-open`, `log-composer`, `log-empty`.
+- testids: `log-page`, `log-date` (with `data-day`), `log-today-tag`, `log-go-today`, `log-prev`, `log-next`, `log-calendar`, `log-month-picker`, `log-strip-day` (with `data-day`, `data-selected`, `data-today`, `data-has-entries`), `log-summary` (tiles `log-summary-done`, `log-summary-logged`, `log-summary-streak`), `log-entry` (with `data-kind`), `log-entry-time`, `log-entry-text`, `log-entry-color`, `log-entry-open`, `log-entry-edit`, `log-entry-delete`, `log-carried-row`, `log-carried-open`, `log-composer`, `log-empty`.
 - **Empty day:** the `IconNotebook` icon with "Nothing logged yet. Mark a note done or write what you just did."
 
 ---
