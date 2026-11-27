@@ -74,5 +74,5 @@ export const CAPTURE_FLASH_MS = 600
 /** Toast titles are cut to this many characters (UI_SPEC §5d). */
 export const TOAST_TITLE_MAX = 60
 
-/** The rail's width in px (UI_SPEC §2): the canvas is the window minus this. */
-export const RAIL_WIDTH = 52
+/** The sidebar's width in px (UI_SPEC §2), open and collapsed: the canvas is the window minus this. */
+export const SIDEBAR_WIDTH = { open: 248, collapsed: 60 } as const

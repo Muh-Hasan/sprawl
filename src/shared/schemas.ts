@@ -127,6 +127,8 @@ export const SETTINGS = {
   keepInTray: def('machine', z.boolean(), true),
   openAtLogin: def('machine', z.boolean(), false),
   textSize: def('machine', z.enum(TEXT_SIZES), DEFAULT_TEXT_SIZE),
+  /** The sidebar is collapsed to its icon rail (Ctrl+\). */
+  sidebarCollapsed: def('machine', z.boolean(), false),
 }
 
 export type SettingKey = keyof typeof SETTINGS
