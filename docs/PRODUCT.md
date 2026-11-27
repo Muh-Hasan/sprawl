@@ -68,7 +68,7 @@ An infinite, pannable and zoomable board with a dotted background.
 - Double-click an empty area to create a note there and focus its title.
 - The Note tool creates a note on click (or, with a click-and-drag, a note of the dragged size), and the tool then reverts to Select.
 - A new note gets its title focused. If it's off screen or the view is zoomed out, the view glides to it at 100%.
-- Pasting text on the canvas creates a note with that text. Pasting a URL creates a link card. Pasting an image creates an image card.
+- Pasting text on the canvas creates a note with that text, under the pointer (or in the middle of the view). If a card already sits there, the note goes 40px down and right of it, so repeated pastes fan out instead of stacking. Pasting a URL creates a link card. Pasting an image creates an image card.
 - Dropping files from the OS: images become image cards, and other files become a note with a file block.
 - The Drawing tool: drag out an area (or click for a default 640×420) and draw in it right there on the canvas (§3.5).
 
@@ -163,7 +163,7 @@ A small always-on-top window for getting things out of your head fast, from any 
 
 - **Global shortcut:** Ctrl+Shift+Space by default, and it can be changed in Settings. It works whenever Sprawl is running, including in the background (see §3.8).
 - **The window** is 520×auto, centered near the top of the screen, frameless, with rounded corners. It holds one multi-line text box and a mode switch:
-  - **Note** (default): the first line becomes the title and the rest becomes the body. The note is placed on the canvas near the center of the last view, offset so new captures don't stack exactly on top of each other.
+  - **Note** (default): the first line becomes the title and the rest becomes the body. The note is placed in the middle of the last canvas view; if a card is already there, it goes 40px down and right of it, so a run of captures fans out instead of stacking.
   - **Log:** adds a manual entry to today's log at the current time.
   - Tab switches the mode.
 - Typing `!today`, `!tomorrow`, `!fri` or `!12dec` anywhere in a note capture sets the due date (and `!fri 15:00` also sets the time, with an "At due time" reminder). The token is removed from the text.
