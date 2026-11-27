@@ -118,7 +118,7 @@ test.describe('quick capture', () => {
     expect(await new ListPage(page).stored()).toEqual([])
   })
 
-  test('a capture lands near the middle of the view, stepped so captures do not stack', async ({
+  test('a capture lands in the middle of the view, and the next fans out instead of stacking', async ({
     app,
     window: page,
     consoleProblems,
@@ -135,8 +135,8 @@ test.describe('quick capture', () => {
       canvas.card('One').boundingBox(),
       canvas.card('Two').boundingBox(),
     ])
-    expect(Math.round(two!.x - one!.x)).toBe(24)
-    expect(Math.round(two!.y - one!.y)).toBe(24)
+    expect(Math.round(two!.x - one!.x)).toBe(40)
+    expect(Math.round(two!.y - one!.y)).toBe(40)
     const view = await canvas.root.boundingBox()
     expect(Math.abs(one!.x + one!.width / 2 - (view!.x + view!.width / 2))).toBeLessThan(12)
   })

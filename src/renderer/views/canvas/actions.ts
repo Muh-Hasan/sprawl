@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
 import { toast } from 'sonner'
 import type { NoteColor } from '@shared/constants'
+import { cascadeSpot } from '@shared/placement'
 import type { CanvasOp, CanvasRect } from '@shared/types'
 import { shownItems, useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
@@ -10,6 +11,7 @@ import { DUPLICATE_OFFSET, inputOf, NOTE_SIZE, restackOps, snapTo, topZ } from '
 import { centerOnRect, revealRect } from './camera'
 import { renderedRect } from './measure'
 import { markFresh } from './fresh'
+import { pointerWorld } from './pointer'
 import { screenToWorld, type Point } from './Viewport'
 
 /**
@@ -58,21 +60,19 @@ interface NewNoteOptions {
   body?: string
   /** Put the cursor in the new card's title. */
   edit?: boolean
+  /** Step 40px down and right past cards already on the spot (a paste), instead of covering them. */
+  cascade?: boolean
 }
 
 /**
  * Creates a note with its card, centered on `at` (world), and selects it. The card pops in and
  * the view glides to it if it's off screen or too small to read (FigJam-style).
  */
-export function createNoteAt(at: Point, options: NewNoteOptions = {}) {
+export function createNoteAt(at: Point, { cascade = false, ...options }: NewNoteOptions = {}) {
   const place = (v: number) => (canvas().snap ? snapTo(v) : Math.round(v))
-  const rect = {
-    x: place(at.x - NOTE_SIZE.w / 2),
-    y: place(at.y - NOTE_SIZE.h / 2),
-    w: NOTE_SIZE.w,
-    h: NOTE_SIZE.h,
-  }
-  return createNoteIn(rect, options)
+  const start = { x: place(at.x - NOTE_SIZE.w / 2), y: place(at.y - NOTE_SIZE.h / 2) }
+  const { x, y } = cascade ? cascadeSpot(start, shownItems().values()) : start
+  return createNoteIn({ x, y, w: NOTE_SIZE.w, h: NOTE_SIZE.h }, options)
 }
 
 /** Creates a note whose card fills `rect` (world), as drawn with the Note tool. */
@@ -106,10 +106,11 @@ export function createNoteIn(
 }
 
 /**
- * Pasted text becomes a note: the first line is the title, the rest the body.
+ * Pasted text becomes a note: the first line is the title, the rest the body. It lands under
+ * the pointer (or in the middle of the view), and a paste onto a card fans out from it.
  * later: phase-7 turns a pasted URL into a link card instead.
  */
-export function createNoteFromText(text: string, at: Point = viewCenter()) {
+export function createNoteFromText(text: string, at: Point = pointerWorld() ?? viewCenter()) {
   const lines = text.replace(/\r\n?/g, '\n').split('\n')
   const first = lines.findIndex((l) => l.trim() !== '')
   if (first === -1) return null
@@ -119,7 +120,7 @@ export function createNoteFromText(text: string, at: Point = viewCenter()) {
     .join('\n')
     .replace(/^\s*\n/, '')
     .trimEnd()
-  return createNoteAt(at, { title, body: body || undefined })
+  return createNoteAt(at, { title, body: body || undefined, cascade: true })
 }
 
 /** Deletes the selected cards (and their notes), with a "Deleted · Undo" toast. */

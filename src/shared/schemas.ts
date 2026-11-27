@@ -120,7 +120,6 @@ export const SETTINGS = {
   notificationsPausedUntil: def('vault', z.number().int().nonnegative().nullable(), null),
   /** The day the morning summary was last sent, so it goes out once a day. */
   morningSummarySentOn: def('vault', dayKeySchema.nullable(), null),
-  lastCaptureOffset: def('vault', z.number().int().min(0).max(100), 0),
   // machine
   captureShortcut: def('machine', acceleratorSchema, 'Ctrl+Shift+Space'),
   captureDefaultMode: def('machine', z.enum(['note', 'log']), 'note'),

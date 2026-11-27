@@ -143,7 +143,7 @@ function start(): void {
         height: (height ?? 0) / zoom,
       })
     }
-    const capture = new CaptureService({ db, now, canvas, log, settings, viewCenter })
+    const capture = new CaptureService({ db, now, canvas, log, viewCenter })
 
     // system -------------------------------------------------------------------------------
     /** Start at login, hidden in the tray (ARCHITECTURE §2). Never from E2E runs. */

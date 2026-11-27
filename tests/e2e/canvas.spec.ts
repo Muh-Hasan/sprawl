@@ -109,12 +109,23 @@ test.describe('notes on the canvas', () => {
     await expect(canvas.cards.getByText('Untitled')).toBeVisible()
 
     await app.evaluate(({ clipboard }) => clipboard.writeText('Groceries\neggs\nmilk'))
-    await canvas.root.click({ position: { x: 40, y: 400 } }) // clear the selection, focus the board
+    await canvas.root.click({ position: { x: 200, y: 520 } }) // clear the selection, focus the board
     await window.keyboard.press('Control+KeyV')
     const pasted = canvas.card('Groceries')
     await expect(pasted).toBeVisible()
     await expect(pasted.getByTestId('note-card-preview')).toHaveText('eggs\nmilk')
     await expect(canvas.cards).toHaveCount(3)
+
+    // It lands under the pointer, and pasting there again fans out 40px instead of stacking.
+    const spot = async (title: string) => {
+      const item = (await canvas.stored()).find((i) => i.note?.title === title)
+      return item && { x: item.x, y: item.y }
+    }
+    await expect.poll(() => spot('Groceries')).toEqual({ x: 80, y: 488 })
+    await app.evaluate(({ clipboard }) => clipboard.writeText('Errands'))
+    await canvas.root.click({ position: { x: 200, y: 520 } })
+    await window.keyboard.press('Control+KeyV')
+    await expect.poll(() => spot('Errands')).toEqual({ x: 120, y: 528 })
   })
 
   test('the Note tool draws a note at the size you drag', async ({ window }) => {
