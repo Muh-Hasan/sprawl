@@ -14,7 +14,7 @@ Reference feel: Linear, Vercel, Raycast. Quiet chrome, sharp type, content first
 The mark is **two thick arcs from a Truchet tile**: a square tile with two quarter-circle curves. Rotated at random and placed side by side, Truchet tiles join into an endless winding pattern. One tile is a single note; many tiles are the sprawl.
 
 **`brand/README.md` is the source of truth** for the geometry, every brand file and where each one is copied in the repo (`build/icon.ico`, `resources/icon.ico`, `resources/tray.ico`, `src/renderer/assets/brand/`). In the app:
-- The rail logo is `sprawl-mark-light.svg` (flat white).
+- The sidebar logo is `sprawl-mark-light.svg` (flat white), beside "Sprawl" in Sora.
 - Onboarding and About use `sprawl-mark-gradient.svg` (white → zinc-400).
 - The window, taskbar and installer use `icon.ico`, and the tray uses `tray.ico`.
 
@@ -36,7 +36,7 @@ Short, plain and lowercase-friendly. Use sentence case everywhere, with no excla
 | Token | Hex | Use |
 |---|---|---|
 | `--background` | `#09090B` | App background, canvas |
-| `--surface` | `#0F0F11` | Rail, note panel, log page |
+| `--surface` | `#0F0F11` | Sidebar, note panel, log page |
 | `--card` | `#141416` | Cards, palette, menus |
 | `--popover` | `#18181B` | Popovers, dropdowns, tooltips |
 | `--muted` / `--accent` (shadcn) | `#1F1F23` | Hover fills, selected rows, chips |
@@ -199,7 +199,7 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
 - **Button:**
   - `default` is white with black text, used once per view at most (for example "Mark done").
   - `secondary` is `--muted` with white text.
-  - `ghost` is transparent with a `--muted` hover. Most toolbar and rail buttons use it.
+  - `ghost` is transparent with a `--muted` hover. Most toolbar and sidebar buttons use it.
   - Height is 36px (`sm`, 32px). Icon buttons (`IconButton`) are 36×36 with an 18px icon; `size="sm"` is 28×28 with a 16px icon, for buttons inside rows. The canvas toolbar's are 44×44.
 - **Top bar:** 44px, the same as the native title-bar overlay (`TITLE_BAR_HEIGHT`).
 - **Input:** 36px, transparent background with a `--border` border; on focus the border is `--border-strong` plus a 2px `--ring` at 30% alpha.
