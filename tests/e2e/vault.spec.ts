@@ -108,7 +108,7 @@ test.describe('changing the vault', () => {
     window,
     dirs,
   }) => {
-    await window.getByTestId('rail-settings').click()
+    await window.getByTestId('sidebar-settings').click()
     await expect(window.getByTestId('settings-vault-path')).toHaveText(dirs.vault)
 
     const other = join(dirs.root, 'Other vault')

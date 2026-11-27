@@ -25,9 +25,9 @@ export class LogPage {
     this.next = page.getByTestId('log-next')
   }
 
-  /** Opens the log from the rail. */
+  /** Opens the log from the sidebar. */
   async open(): Promise<void> {
-    await this.page.getByTestId('rail-log').click()
+    await this.page.getByTestId('sidebar-log').click()
     await expect(this.root).toBeVisible()
   }
 

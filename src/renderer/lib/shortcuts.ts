@@ -35,9 +35,11 @@ export const NAV_SHORTCUTS = {
   canvas: digit(1),
   list: digit(2),
   log: digit(3),
-  drawings: digit(4),
   settings: { codes: ['Comma'], ctrl: true },
 } as const satisfies Record<string, Shortcut>
+
+/** Collapses or expands the sidebar (PRODUCT §4). It works in every view. */
+export const SIDEBAR_SHORTCUT: Shortcut = { codes: ['Backslash'], ctrl: true }
 
 /** The command palette (PRODUCT §3.6). It works everywhere, even in the note editor. */
 export const PALETTE_SHORTCUT: Shortcut = { codes: ['KeyK'], ctrl: true }
@@ -67,6 +69,7 @@ const CODE_LABELS: Record<string, string> = {
   Equal: '=',
   Minus: '-',
   Comma: ',',
+  Backslash: '\\',
   BracketLeft: '[',
   BracketRight: ']',
   Delete: 'Del',

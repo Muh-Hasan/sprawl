@@ -70,7 +70,7 @@ test('Ctrl+Shift+= / - / 0 change the text size in every window, and it survives
 })
 
 test('the Settings row picks a text size', async ({ app, window }) => {
-  await window.getByTestId('rail-settings').click()
+  await window.getByTestId('sidebar-settings').click()
   const small = window.getByTestId('settings-text-size-small')
   await expect(window.getByTestId('settings-text-size-default')).toHaveAttribute('data-state', 'on')
   await small.click()

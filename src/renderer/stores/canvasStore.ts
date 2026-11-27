@@ -6,6 +6,7 @@ import { SpatialGrid } from '@/views/canvas/spatial'
 import { lerpViewport, type Size, type Viewport } from '@/views/canvas/Viewport'
 import { clockNow } from './clockStore'
 import { canvasHistory } from './historyStore'
+import { useListStore } from './listStore'
 import { useLogStore } from './logStore'
 
 export type CanvasTool = 'select' | 'hand' | 'note'
@@ -172,6 +173,7 @@ export const useCanvasStore = create<CanvasState>()((set, get) => {
     window.sprawl.canvas.apply(ops).then(
       ({ created }) => {
         if (touchesLog) useLogStore.getState().changed()
+        useListStore.getState().edited()
         if (created.length === 0) return
         // Only take what main adds: the card may have moved locally since this batch went out.
         const items = new Map(get().items)
@@ -307,10 +309,13 @@ export const useCanvasStore = create<CanvasState>()((set, get) => {
       set({ items })
       // The note's create may still be queued; it has to reach main first.
       if (flushQueued) sendOps()
-      window.sprawl.notes.update(item.refId, { title }).catch((err: unknown) => {
-        console.error('[canvas] rename failed; reloading', err)
-        void get().load()
-      })
+      window.sprawl.notes.update(item.refId, { title }).then(
+        () => useListStore.getState().edited(),
+        (err: unknown) => {
+          console.error('[canvas] rename failed; reloading', err)
+          void get().load()
+        },
+      )
     },
 
     syncNote: (noteId, fields) => {

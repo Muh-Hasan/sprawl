@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
-/** The main views reachable from the rail (UI_SPEC §2). */
-export const VIEWS = ['canvas', 'list', 'log', 'drawings', 'settings'] as const
+/** The main views reachable from the sidebar (UI_SPEC §2). */
+export const VIEWS = ['canvas', 'list', 'log', 'settings'] as const
 export type View = (typeof VIEWS)[number]
 
 /** The note panel: a side panel next to the view, or a full page over it (UI_SPEC §5). */
