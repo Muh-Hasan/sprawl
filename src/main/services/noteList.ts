@@ -1,6 +1,6 @@
 import type { NoteColor } from '@shared/constants'
 import { dayKey, dueState } from '@shared/due'
-import type { NoteListQuery, NoteListRow } from '@shared/types'
+import type { NoteCountQuery, NoteListCounts, NoteListQuery, NoteListRow } from '@shared/types'
 import type { DbHandle } from '../db/client'
 
 /**
@@ -41,11 +41,10 @@ function likeEscape(text: string): string {
   return text.replace(/[\\%_]/g, (c) => `\\${c}`)
 }
 
-export function buildNoteListQuery(q: NoteListQuery): BuiltQuery {
+/** The color and title filter every tab shares, over live notes. */
+function filterWhere(q: NoteCountQuery): { where: string[]; params: BuiltQuery['params'] } {
   const where = ['n.deleted_at IS NULL']
-  const params: Record<string, string | number> = {}
-  const tab = TAB_WHERE[q.tab]
-  if (tab) where.push(tab)
+  const params: BuiltQuery['params'] = {}
   if (q.colors.length > 0) {
     const names = q.colors.map((color, i) => {
       params[`color${i}`] = color
@@ -58,6 +57,13 @@ export function buildNoteListQuery(q: NoteListQuery): BuiltQuery {
     params['text'] = `%${likeEscape(text)}%`
     where.push(`n.title LIKE @text ESCAPE '\\'`)
   }
+  return { where, params }
+}
+
+export function buildNoteListQuery(q: NoteListQuery): BuiltQuery {
+  const { where, params } = filterWhere(q)
+  const tab = TAB_WHERE[q.tab]
+  if (tab) where.push(tab)
   // Due always sorts by due date and Done by when; the sort select is for Open and All.
   const order =
     q.tab === 'due'
@@ -126,6 +132,24 @@ function toRow(r: ListRow): NoteListRow {
 export function listNotes({ sqlite }: DbHandle, q: NoteListQuery): NoteListRow[] {
   const { sql, params } = buildNoteListQuery(q)
   return (sqlite.prepare(sql).all(params) as ListRow[]).map(toRow)
+}
+
+/** The tab counts in one pass: how many rows each tab would list for these filters. */
+export function buildNoteCountQuery(q: NoteCountQuery): BuiltQuery {
+  const { where, params } = filterWhere(q)
+  const count = (tab: 'open' | 'due' | 'done'): string => `coalesce(sum(${TAB_WHERE[tab]}), 0)`
+  const sql = `
+    SELECT ${count('open')} AS open, ${count('due')} AS due, ${count('done')} AS done,
+      count(*) AS "all"
+    FROM notes n
+    WHERE ${where.join(' AND ')}`
+  return { sql, params }
+}
+
+/** How many notes each List tab holds for a color and title filter. */
+export function countNotes({ sqlite }: DbHandle, q: NoteCountQuery): NoteListCounts {
+  const { sql, params } = buildNoteCountQuery(q)
+  return sqlite.prepare(sql).get(params) as NoteListCounts
 }
 
 /** The sidebar's Pinned section: every live pinned note, done or not, in the order pinned. */

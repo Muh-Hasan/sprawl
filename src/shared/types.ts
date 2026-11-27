@@ -208,6 +208,12 @@ export interface NoteListQuery {
   sort: ListSort
 }
 
+/** What `notes.listCounts` counts: the colors and title filter, across every tab. */
+export type NoteCountQuery = Pick<NoteListQuery, 'colors' | 'text'>
+
+/** How many notes each List tab shows for a color and title filter. */
+export type NoteListCounts = Record<ListTab, number>
+
 /** One row of the List view (UI_SPEC §5b). */
 export interface NoteListRow {
   id: string

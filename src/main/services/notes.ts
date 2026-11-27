@@ -7,6 +7,8 @@ import type {
   Note,
   NoteLink,
   NoteLinkPatch,
+  NoteCountQuery,
+  NoteListCounts,
   NoteListQuery,
   NoteListRow,
   NotePatch,
@@ -15,7 +17,7 @@ import type { DbHandle } from '../db/client'
 import { deriveBody, textToBody } from '../db/derive'
 import { noteLinks, notes } from '../db/schema'
 import { setNoteDone } from './log'
-import { countOverdue, listNotes, listPinned } from './noteList'
+import { countNotes, countOverdue, listNotes, listPinned } from './noteList'
 
 /** Soft-deleted notes and drawings are purged for good this long after deletion. */
 export const PURGE_AFTER_MS = 30 * 24 * 60 * 60 * 1000
@@ -62,6 +64,11 @@ export class NotesService {
   /** The List view's rows (PRODUCT §3.3). */
   list(query: NoteListQuery): NoteListRow[] {
     return listNotes(this.handle(), query)
+  }
+
+  /** How many notes each List tab holds for a color and title filter. */
+  listCounts(query: NoteCountQuery): NoteListCounts {
+    return countNotes(this.handle(), query)
   }
 
   /** The notes pinned to the sidebar, in the order they were pinned. */
