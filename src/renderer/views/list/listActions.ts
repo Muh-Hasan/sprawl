@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
-import { toast } from 'sonner'
+import { IconCheck, IconCopy, IconTrash } from '@tabler/icons-react'
 import type { Note } from '@shared/types'
-import { showUndoToast } from '@/components/UndoToast'
+import { showToast } from '@/components/toasts'
 import { useCanvasStore } from '@/stores/canvasStore'
 import { useListStore } from '@/stores/listStore'
 import { useLogStore } from '@/stores/logStore'
@@ -30,7 +30,13 @@ export async function setNoteDone(id: string, done: boolean): Promise<void> {
   const saved = await window.sprawl.notes.setDone(id, done)
   patchOpenNote(id, { doneAt: saved.doneAt })
   useLogStore.getState().changed()
-  if (done) showUndoToast('Marked done', () => void setNoteDone(id, false).then(changed))
+  if (done) {
+    showToast('Marked done', {
+      icon: IconCheck,
+      strong: true,
+      onUndo: () => void setNoteDone(id, false).then(changed),
+    })
+  }
 }
 
 /** Deletes a note (and its card), with "Deleted · Undo". */
@@ -39,8 +45,9 @@ export async function deleteNote(id: string): Promise<void> {
   if (ui.openNoteId === id) ui.closeNote()
   await window.sprawl.notes.remove(id)
   changed()
-  showUndoToast('Deleted', () => {
-    void window.sprawl.notes.restore(id).then(changed)
+  showToast('Deleted', {
+    icon: IconTrash,
+    onUndo: () => void window.sprawl.notes.restore(id).then(changed),
   })
 }
 
@@ -48,7 +55,7 @@ export async function duplicateNote(id: string): Promise<void> {
   if (openNote()?.id === id) useNoteStore.getState().flush()
   await window.sprawl.notes.duplicate(id)
   changed()
-  toast('Duplicated')
+  showToast('Duplicated', { icon: IconCopy })
 }
 
 /** Gives a list-only note a card in the middle of the last canvas view. */

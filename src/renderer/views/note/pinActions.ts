@@ -1,4 +1,5 @@
-import { toast } from 'sonner'
+import { IconPin, IconPinnedOff } from '@tabler/icons-react'
+import { showToast } from '@/components/toasts'
 import { useCanvasStore } from '@/stores/canvasStore'
 import { useListStore } from '@/stores/listStore'
 import { useNoteStore } from '@/stores/noteStore'
@@ -22,6 +23,8 @@ export async function setNotePinned(id: string, pinned: boolean): Promise<void> 
   useCanvasStore.getState().syncNote(id, { pinnedAt: saved.pinnedAt })
   useListStore.getState().changed()
   if (useSidebarStore.getState().collapsed) {
-    toast(pinned ? 'Pinned to the sidebar' : 'Unpinned from the sidebar')
+    showToast(pinned ? 'Pinned to the sidebar' : 'Unpinned from the sidebar', {
+      icon: pinned ? IconPin : IconPinnedOff,
+    })
   }
 }

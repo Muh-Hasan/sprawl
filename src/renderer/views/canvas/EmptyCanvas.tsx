@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { IconClipboardText, IconNote, IconSparkles, type TablerIcon } from '@tabler/icons-react'
-import { toast } from 'sonner'
 import { ShortcutKbd } from '@/components/ShortcutKbd'
+import { showToast } from '@/components/toasts'
 import { cn } from '@/lib/utils'
 import { CANVAS_SHORTCUTS, shortcutKeys } from '@/lib/shortcuts'
 import { useCanvasStore } from '@/stores/canvasStore'
@@ -66,7 +66,8 @@ function useCaptureKeys(): string[] {
 
 async function pasteList(): Promise<void> {
   const text = await navigator.clipboard.readText().catch(() => '')
-  if (!createNoteFromText(text)) toast('Copy some text first, then paste it here')
+  if (!createNoteFromText(text))
+    showToast('Copy some text first, then paste it here', { icon: IconClipboardText })
 }
 
 /** Three tilted sticky notes above the title. */

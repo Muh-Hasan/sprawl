@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
-import { IconNotebook } from '@tabler/icons-react'
+import { IconNotebook, IconTrash } from '@tabler/icons-react'
 import { dayKey } from '@shared/due'
 import type { LogEntry } from '@shared/types'
 import { EmptyState } from '@/components/EmptyState'
 import { TopBar } from '@/components/TopBar'
-import { showUndoToast } from '@/components/UndoToast'
+import { showToast } from '@/components/toasts'
 import { LOG_SHORTCUTS, matchesShortcut } from '@/lib/shortcuts'
 import { useClockStore } from '@/stores/clockStore'
 import { useLogStore } from '@/stores/logStore'
@@ -67,8 +67,10 @@ export function LogView() {
     update: (id, patch) => void window.sprawl.log.update(id, patch).then(reload),
     remove: (entry: LogEntry) => {
       void window.sprawl.log.remove(entry.id).then(reload)
-      showUndoToast('Deleted', () => {
-        void window.sprawl.log.addManual(entry.day, entry.text, entry.at).then(reload)
+      showToast('Deleted', {
+        icon: IconTrash,
+        onUndo: () =>
+          void window.sprawl.log.addManual(entry.day, entry.text, entry.at).then(reload),
       })
     },
   }

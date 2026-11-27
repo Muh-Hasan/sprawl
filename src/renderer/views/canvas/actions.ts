@@ -1,12 +1,12 @@
 import { nanoid } from 'nanoid'
-import { toast } from 'sonner'
+import { IconCheck, IconCopy, IconTrash } from '@tabler/icons-react'
 import type { NoteColor } from '@shared/constants'
 import { cascadeSpot } from '@shared/placement'
 import type { CanvasOp, CanvasRect } from '@shared/types'
 import { shownItems, useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
 import { panelCover, useUiStore } from '@/stores/uiStore'
-import { showUndoToast } from '@/components/UndoToast'
+import { showToast } from '@/components/toasts'
 import { DUPLICATE_OFFSET, inputOf, NOTE_SIZE, restackOps, snapTo, topZ } from './ops'
 import { centerOnRect, revealRect } from './camera'
 import { renderedRect } from './measure'
@@ -133,7 +133,8 @@ export function deleteSelection() {
   if (ids.length === 0) return
   const step = canvas().apply(ids.map((id): CanvasOp => ({ op: 'delete', id })))
   selection().clear()
-  if (step !== null) showUndoToast('Deleted', () => canvas().undoStep(step))
+  if (step !== null)
+    showToast('Deleted', { icon: IconTrash, onUndo: () => canvas().undoStep(step) })
 }
 
 /** Copies each selected note card as a new note with its own card, 24px down and right. */
@@ -168,7 +169,7 @@ export function duplicateSelection() {
   }
   apply(ops)
   selection().select(ids)
-  toast('Duplicated')
+  showToast('Duplicated', { icon: IconCopy })
 }
 
 export function restackSelection(to: 'front' | 'back') {
@@ -210,7 +211,11 @@ export function setCardsDone(ids: Iterable<string>, done: boolean): void {
     selection().select([...selection().selected].filter((id) => !gone.has(id)))
     if (gone.has(selection().bodyEditing ?? '')) selection().setBodyEditing(null)
   }
-  showUndoToast('Marked done', () => canvas().undoStep(step))
+  showToast('Marked done', {
+    icon: IconCheck,
+    strong: true,
+    onUndo: () => canvas().undoStep(step),
+  })
 }
 
 /**
