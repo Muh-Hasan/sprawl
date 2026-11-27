@@ -491,6 +491,7 @@ vitest.config.ts
   - The tray and start-at-login are disabled in E2E mode, and `keepInTray` is forced off, so closing the window quits the app (otherwise `autosave.spec.ts` and `relaunch.spec.ts` would hang). The capture window doesn't hide on blur.
   - The capture window is the app's second `BrowserWindow`: specs that reach for the main window in main pick it by title (the capture window's is "Sprawl quick capture" from the start), not `getAllWindows()[0]`.
   - The protocol registration (`setAsDefaultProtocolClient`) is skipped, so tests don't change your machine's `sprawl://` handler.
+  - The main window (when no position was saved) and the capture window open at the right edge of the primary screen with only a 360px strip showing, not centered over your work. Input, screenshots and painting don't depend on where the window sits.
 - **Console check:** the fixture fails a test on any console error or warning, except the ones in `tests/e2e/known-warnings.ts`. That list is only for third-party libraries (BlockNote, Excalidraw, React dev notices), and each entry has a comment saying why it's there.
 - Tests select elements with `data-testid` attributes. Every interactive element named in UI_SPEC gets one, such as `canvas`, `note-card`, `list-row`, `note-panel-title`, `log-entry` and `capture-input`.
 - Run with `workers: 1` (Electron plus SQLite on Windows is more reliable serially), `retries: 1`, and `trace: 'retain-on-failure'`.

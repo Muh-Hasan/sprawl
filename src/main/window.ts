@@ -18,6 +18,19 @@ export interface MainWindowOptions {
   textSize: TextSize
 }
 
+/** How much of an E2E window shows at the right edge of the screen; the rest hangs past it. */
+export const E2E_VISIBLE_WIDTH = 360
+
+/**
+ * Where an E2E window opens: against the right edge of the primary screen with only a strip
+ * showing, instead of centered over whatever you're working on while the tests run. Input,
+ * screenshots and painting don't depend on where the window sits.
+ */
+export function e2ePosition(width: number): { x: number; y: number } {
+  const area = screen.getPrimaryDisplay().workArea
+  return { x: area.x + area.width - Math.min(width, E2E_VISIBLE_WIDTH), y: area.y }
+}
+
 /** Creates the main window with the settings from UI_SPEC §1 and the security rules from ARCHITECTURE §2. */
 export function createMainWindow({
   saved,
@@ -25,10 +38,12 @@ export function createMainWindow({
   hidden = false,
   textSize,
 }: MainWindowOptions): BrowserWindow {
-  const bounds = initialBounds(
+  const restored = initialBounds(
     saved,
     screen.getAllDisplays().map((d) => d.workArea),
   )
+  const bounds =
+    env.e2e && restored.x === undefined ? { ...restored, ...e2ePosition(restored.width) } : restored
   const win = new BrowserWindow({
     x: bounds.x,
     y: bounds.y,
