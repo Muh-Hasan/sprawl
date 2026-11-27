@@ -72,6 +72,9 @@ test.describe('done and the daily log', () => {
     await log.open()
     await expect(log.empty).toBeVisible()
     await log.expectSummary('0 notes done', '0 things logged', '0 days in a row')
+    // The empty state's next step puts the cursor in the composer.
+    await page.getByTestId('log-empty-write').click()
+    await expect(page.getByTestId('log-composer')).toBeFocused()
   })
 
   test('mark done from the menu, Ctrl+Enter and the panel footer; Show done; the toast Undo', async ({

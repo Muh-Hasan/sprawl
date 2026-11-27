@@ -84,7 +84,7 @@ test.describe('list view', () => {
     await list.filter.fill('ALI')
     await expect.poll(() => list.titles()).toEqual(['Call Ali'])
     await list.filter.fill('zzz')
-    await expect(list.empty).toHaveText('No notes match these filters.')
+    await expect(list.emptyText).toHaveText('No notes match these filters.')
     await list.filter.fill('')
     await list.color('sage').click()
     await list.color('sky').click()
@@ -230,7 +230,7 @@ test.describe('list view', () => {
     const panel = new NotePanel(page)
     const canvas = new CanvasPage(page)
     await list.open()
-    await expect(list.empty).toHaveText('All clear. Nothing open right now.')
+    await expect(list.emptyText).toHaveText('Nothing open right now.')
 
     await page.getByTestId('list-new-note').click()
     await panel.ready()

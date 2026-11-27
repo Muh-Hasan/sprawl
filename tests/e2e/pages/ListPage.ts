@@ -19,6 +19,8 @@ export class ListPage {
   readonly rows: Locator
   readonly count: Locator
   readonly empty: Locator
+  /** The empty state's line, under its title. */
+  readonly emptyText: Locator
   readonly filter: Locator
   readonly badge: Locator
 
@@ -27,6 +29,7 @@ export class ListPage {
     this.rows = page.getByTestId('list-row')
     this.count = page.getByTestId('list-count')
     this.empty = page.getByTestId('list-empty')
+    this.emptyText = page.getByTestId('list-empty-text')
     this.filter = page.getByTestId('list-filter')
     this.badge = page.getByTestId('sidebar-list-badge')
   }
