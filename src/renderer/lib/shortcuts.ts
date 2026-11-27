@@ -51,18 +51,33 @@ export const TEXT_SIZE_SHORTCUTS = {
   reset: { codes: ['Digit0', 'Numpad0'], ctrl: true, shift: true },
 } as const satisfies Record<string, Shortcut>
 
+/** The shortcuts sheet (UI_SPEC §12): `?`, which is Shift+/. It only fires when nothing is typed. */
+export const SHEET_SHORTCUT: Shortcut = { codes: ['Slash'], shift: true }
+
 /** The keys one by one, e.g. ['Ctrl', 'Shift', '='], for a row of `kbd`s. */
 export function shortcutKeys(s: Shortcut): string[] {
   const code = s.codes[0] ?? ''
+  // `?` is a key of its own to a reader, not Shift+/.
+  if (code === 'Slash' && s.shift && !s.ctrl && !s.alt) return ['?']
   const name = CODE_LABELS[code] ?? code.replace(/^(Digit|Numpad|Key)/, '')
   return [s.ctrl && 'Ctrl', s.shift && 'Shift', s.alt && 'Alt', name].filter(
     (k): k is string => typeof k === 'string',
   )
 }
 
-/** The label shown in tooltips, e.g. "Ctrl+1". */
+/** The label passed to tooltips, e.g. "Ctrl+1". */
 export function shortcutLabel(s: Shortcut): string {
   return shortcutKeys(s).join('+')
+}
+
+/** A shortcut as menus, rows and tooltips show it: its keys with spaces, e.g. "Ctrl Enter". */
+export function shortcutHint(s: Shortcut): string {
+  return shortcutKeys(s).join(' ')
+}
+
+/** "Ctrl+Shift+=" → "Ctrl Shift =", for a shortcut that's already a label. */
+export function labelToHint(label: string): string {
+  return label.split(/\+(?=.)/).join(' ')
 }
 
 const CODE_LABELS: Record<string, string> = {
@@ -73,6 +88,7 @@ const CODE_LABELS: Record<string, string> = {
   BracketLeft: '[',
   BracketRight: ']',
   Delete: 'Del',
+  Slash: '/',
 }
 
 const key = (code: string): Shortcut => ({ codes: [code] })

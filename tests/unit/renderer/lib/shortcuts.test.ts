@@ -3,12 +3,16 @@ import {
   CANVAS_SHORTCUTS,
   matchesShortcut,
   NAV_SHORTCUTS,
+  labelToHint,
   PALETTE_SHORTCUT,
+  SHEET_SHORTCUT,
+  shortcutHint,
   shortcutKeys,
   shortcutLabel,
   SIDEBAR_SHORTCUT,
   TEXT_SIZE_SHORTCUTS,
 } from '../../../../src/renderer/lib/shortcuts'
+import { shortcutGroups } from '../../../../src/renderer/views/help/shortcutGroups'
 
 const key = (
   code: string,
@@ -111,5 +115,33 @@ describe('text size shortcuts', () => {
   it('labels them for tooltips', () => {
     expect(shortcutLabel(TEXT_SIZE_SHORTCUTS.bigger)).toBe('Ctrl+Shift+=')
     expect(shortcutLabel(TEXT_SIZE_SHORTCUTS.reset)).toBe('Ctrl+Shift+0')
+  })
+})
+
+describe('hints', () => {
+  it('spaces the keys out, as menus, rows and tooltips show them', () => {
+    expect(shortcutHint(CANVAS_SHORTCUTS.markDone)).toBe('Ctrl Enter')
+    expect(shortcutHint(CANVAS_SHORTCUTS.delete)).toBe('Del')
+    expect(labelToHint('Ctrl+Shift+=')).toBe('Ctrl Shift =')
+    expect(labelToHint('Ctrl++')).toBe('Ctrl +')
+    expect(labelToHint('Enter')).toBe('Enter')
+  })
+})
+
+describe('the shortcuts sheet', () => {
+  it('opens on ? (Shift+/) and shows it as one key', () => {
+    expect(matchesShortcut(key('Slash', { shift: true }), SHEET_SHORTCUT)).toBe(true)
+    expect(matchesShortcut(key('Slash'), SHEET_SHORTCUT)).toBe(false)
+    expect(shortcutKeys(SHEET_SHORTCUT)).toEqual(['?'])
+  })
+
+  it('lists three groups with unique rows, and quick capture as it is set', () => {
+    const groups = shortcutGroups('Ctrl+Alt+K')
+    expect(groups.map((g) => g.title)).toEqual(['Everywhere', 'Canvas', 'Notes and log'])
+    const ids = groups.flatMap((g) => g.rows.map((r) => r.id))
+    expect(new Set(ids).size).toBe(ids.length)
+    const capture = groups[0]!.rows.find((r) => r.id === 'capture')
+    expect(capture?.keys).toEqual(['Ctrl', 'Alt', 'K'])
+    expect(shortcutGroups(null)[0]!.rows.find((r) => r.id === 'capture')?.keys).toEqual([])
   })
 })

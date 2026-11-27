@@ -1,5 +1,6 @@
 import {
   IconEye,
+  IconKeyboard,
   IconEyeOff,
   IconLayoutSidebar,
   IconLayoutDashboard,
@@ -17,6 +18,7 @@ import type { NoteListRow } from '@shared/types'
 import {
   CANVAS_SHORTCUTS,
   NAV_SHORTCUTS,
+  SHEET_SHORTCUT,
   shortcutKeys,
   SIDEBAR_SHORTCUT,
   TEXT_SIZE_SHORTCUTS,
@@ -154,6 +156,14 @@ export function paletteCommands({
       keys: keys(TEXT_SIZE_SHORTCUTS.reset),
       keywords: 'font default zoom',
       run: () => textSize.set('default'),
+    },
+    {
+      id: 'shortcuts',
+      label: 'Keyboard shortcuts',
+      icon: IconKeyboard,
+      keys: keys(SHEET_SHORTCUT),
+      keywords: 'help keys hotkeys cheat sheet',
+      run: () => ui().setShortcutsOpen(true),
     },
     {
       id: 'settings',

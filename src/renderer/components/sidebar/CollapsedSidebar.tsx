@@ -12,7 +12,7 @@ import { useSidebarStore } from '@/stores/sidebarStore'
 import { useUiStore } from '@/stores/uiStore'
 import { newNote } from '@/views/search/commands'
 import { OverdueBadge } from './OverdueBadge'
-import { SETTINGS_ITEM, VIEW_ITEMS, type SidebarItem } from './sidebarItems'
+import { HELP_ITEM, SETTINGS_ITEM, VIEW_ITEMS, type SidebarItem } from './sidebarItems'
 import { useOverdueCount } from './useSidebarData'
 
 /** 40px icon buttons with a 20px icon and a 10px radius. */
@@ -45,7 +45,7 @@ function ListBadge() {
 
 /**
  * The collapsed sidebar (UI_SPEC §2): a 60px icon rail. Expand, New note, Search, the views and
- * Settings at the bottom, each with a tooltip naming it and its shortcut.
+ * Settings and Help at the bottom, each with a tooltip naming it and its shortcut.
  */
 export function CollapsedSidebar() {
   const toggle = useSidebarStore((s) => s.toggle)
@@ -98,8 +98,17 @@ export function CollapsedSidebar() {
           ))}
         </nav>
       </div>
-      <div className="mt-auto">
+      <div className="mt-auto flex flex-col items-center gap-1">
         <RailViewButton item={SETTINGS_ITEM} />
+        <IconButton
+          data-testid="sidebar-help"
+          icon={HELP_ITEM.icon}
+          label={HELP_ITEM.label}
+          shortcut={shortcutLabel(HELP_ITEM.shortcut)}
+          tooltipSide="right"
+          onClick={() => useUiStore.getState().setShortcutsOpen(true)}
+          className={RAIL_BUTTON}
+        />
       </div>
     </aside>
   )
