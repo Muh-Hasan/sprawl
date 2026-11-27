@@ -54,7 +54,7 @@ describe('settings schema', () => {
 
   it('parseSetting falls back to the default for bad values', () => {
     expect(parseSetting('panelWidth', 500)).toBe(500)
-    expect(parseSetting('panelWidth', 100)).toBe(420)
+    expect(parseSetting('panelWidth', 100)).toBe(440)
     expect(parseSetting('viewport', { x: 0, y: 0, zoom: 99 })).toEqual(defaultSettings().viewport)
     expect(parseSetting('showDone', undefined)).toBe(false)
   })

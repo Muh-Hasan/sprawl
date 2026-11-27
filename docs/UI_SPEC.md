@@ -9,21 +9,22 @@ Exact layout and anatomy for every screen. Behavior lives in `PRODUCT.md`, and t
 - **Minimum size** 960×600, default 1440×900. The window size and position are remembered.
 - **Windows (v1 target):** `titleBarStyle: 'hidden'` with `titleBarOverlay: { color: '#09090B', symbolColor: '#A1A1AA', height: 44 }`. This gives native minimize, maximize and close buttons at the top right, drawn on our dark color.
   - The top 44px of the app is a drag region (`-webkit-app-region: drag`), and every button inside it is `no-drag`.
-  - Keep **140px clear on the right of the top 44px of the window** for the overlay buttons. That band is always the window's right edge, whatever is there: the top bar, the note panel's header (§5) or a full-page note. No clickable element goes in it. Use `pr-caption` for it, never a fixed 140px (see the text size below).
+  - Keep **140px clear on the right of the top 44px of the window** for the overlay buttons. That band is always the window's right edge, whatever is there: the top bar or a full-page note's header (§5). The floating side panel starts 52px down, below it. No clickable element goes in it. Use `pr-caption` for it, never a fixed 140px (see the text size below).
   - **Text size** (Small / Default / Large / Larger, DESIGN_SYSTEM §3) zooms the page, but not the caption buttons. So the overlay's height follows the zoomed top bar (44px × the zoom factor), and `pr-caption` is `140px / --app-zoom`, which stays 140 real pixels at every size.
   - Windows 11 rounds the window corners and adds the snap-layouts flyout on the maximize button automatically. Don't fight either.
 - (Unofficial macOS: `hiddenInset` with traffic lights at `{ x: 16, y: 14 }`.)
 - **Background** is `--background` on the BrowserWindow as well (`backgroundColor: '#09090B'`), so there's no white flash.
 
 ```
-┌──────────┬────────────────────────────────────────────────┬───────────────┐
-│ Sidebar  │  top bar (44px, drag)                          │               │
-│ (248px,  ├────────────────────────────────────────────────┤  Note panel   │
-│  60px    │                                                │  (420px,      │
-│  when    │        main view (canvas / list / log)         │   resizable)  │
-│ collapsed│                                                │               │
-│  )       │                                                │               │
-└──────────┴────────────────────────────────────────────────┴───────────────┘
+┌──────────┬───────────────────────────────────────────────────────────────┐
+│ Sidebar  │  top bar (44px, drag)                                         │
+│ (248px,  ├───────────────────────────────────────────────────────────────┤
+│  60px    │                                     ╭──────────────────────╮  │
+│  when    │   main view (canvas / list / log)   │ Note panel (floating │  │
+│ collapsed│   (full width under the panel; its  │  440px, resizable,   │  │
+│  )       │    controls center on what's left)  │  12px inset)         │  │
+│          │                                     ╰──────────────────────╯  │
+└──────────┴───────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -173,30 +174,32 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 
 ## 5. Note panel (right)
 
-- Default 420px wide, resizable from 320 to 720px through the shadcn `Resizable` handle, which is a 1px `--border` that turns `--border-strong` on hover with a wider 6px hit area. The handle is the panel's left border (the panel has none of its own). The width is saved (`panelWidth`) and stays in px when the window resizes.
-- `--surface` background with a 1px left border.
-- **Full-page mode** fills the main area minus the sidebar. The content column is centered with a max width of 720px.
+- **Side mode** floats over the right of the main area: 52px from the top (under the 44px top bar), 12px from the right and the bottom. `--card` background, a 1px `--border`, radius 16, `--shadow-panel`, and it clips its content. It slides in 16px and fades over 240ms `--ease-out`. The view underneath keeps its full width.
+- Default **440px** wide, resizable from 320 to 720px from its left edge: a 6px hit area (`note-panel-handle`, a vertical separator) that shows a 2px `--border-strong` line on hover or while dragging; with focus, ← and → move it 16px. The width is saved (`panelWidth`) once a drag ends, never on each move, and stays in px when the window resizes (a window too narrow for it squeezes it to 12px from each side).
+- While it's open, the frame sets **`--canvas-inset-right`** to the width it covers (its width plus the 12px gap). The canvas toolbar, the zoom control and the empty state center on what's left (§4.2), the List and Log columns pad by it (their scrollbars stay visible), and the canvas camera centers cards, fits and places new notes in the part that shows.
+- **Full-page mode** covers the main area (everything but the sidebar) on `--surface`, with no border or radius. The content is a centered 720px column (40px side padding, 48px top, 80px bottom) and the title is `text-page-title` (36/44).
 - **Esc** steps back one level: full page → side panel → closed (PRODUCT §3.2). Esc inside the editor first leaves any open BlockNote menu.
 
-**Anatomy** (padding 24px horizontal):
-1. **Header row** (44px, drag region on its empty parts). It sits in the window's top 44px, so its right side keeps 140px clear for the Windows caption buttons (§1):
-   - **Left:** the color dot (10px swatch circle, which opens the color popover) and a breadcrumb in `text-xs` subtle showing "Note", or "Note · not on canvas" for list-only notes (clicking that places it on the canvas).
-   - **Right**, ending 140px from the window edge: ghost icon buttons for `IconArrowsDiagonal` (full page, or `IconArrowsDiagonalMinimize2` to go back), `IconDots` (Pin to sidebar or Unpin from sidebar with `IconPin` / `IconPinnedOff`, Duplicate, Export as markdown, Delete; testid `note-panel-pin`) and `IconX`.
-2. **Title:** a borderless textarea that grows, using `text-title`. The placeholder is "Untitled" in subtle text. 8px top margin. A note opened from the canvas (Enter, Open in the toolbar or menu) gets the cursor at the end of the body, or in the title while it has none; a new list note gets it in the title.
-3. **Editor:** BlockNote with 16px top margin (styling in §5.1).
-4. **Meta section:** 32px top margin, a 1px top border, 16px padding. Rows are 32px tall and `text-sm`, with a 16px icon in subtle and the label in muted:
-   - **Links:** each link is a row showing the domain letter square (16px), the label or URL with an ellipsis, and hover actions (edit, remove). Below them is an "Add link" ghost row; clicking it turns the row into an input with the placeholder "Paste a URL".
-   - **Due:** "Add due date" or the formatted date as a chip ("Fri 28 Nov · 15:00"). Clicking either opens the **DuePicker** popover (300px):
+**Anatomy** (side padding 32px, 28px above the title):
+1. **Header** (52px, 1px bottom border, 18px left and 10px right padding):
+   - **Left:** the color swatch (12px square, radius 4, in a 24px button that opens the color popover) and the breadcrumb in `text-xs`: where the note lives in subtle ("Canvas", or "Not on canvas" for list-only notes), a `--border-strong` "/", then the title at 80% `--foreground` ("Untitled" when empty), truncated.
+   - **Right:** **Mark done** (a ghost sm button with `IconCheck` and the label in `text-xs` 500, tooltip "Mark done · Ctrl ↵"), then 32px ghost icon buttons: `IconArrowsDiagonal` (full page, or `IconArrowsDiagonalMinimize2` to go back), `IconDots` (Pin to sidebar or Unpin from sidebar with `IconPin` / `IconPinnedOff`, Duplicate, Export as markdown, Delete; testid `note-panel-pin`) and `IconX` (close, side mode only).
+   - When done, Mark done is replaced by "Done · 18:30" in `text-xs` muted with an **Undo** ghost button.
+   - On the full page the header spans the window's top: it's the drag region, its buttons are `no-drag`, it pads 20px left and `pr-caption` + 16px right, and it has no close button (Esc goes back).
+2. **Title:** a borderless textarea that grows, using `text-title` (`text-page-title` on the full page). The placeholder is "Untitled" in subtle text.
+3. **Meta rows**, under the title (16px above, 20px on the full page; 6px between rows), then a 1px divider with 20px above and below it (28px below on the full page). Each row has a 96px label column (110px on the full page) with a 16px icon and the label in subtle `text-sm`, then the value; rows are at least 32px:
+   - **Due:** "Add due date", or the date as a 28px chip with radius 8 in `text-sm` ("Fri 28 Nov · 15:00"). Clicking either opens the **DuePicker** popover (300px):
      - Left column: quick picks as ghost buttons (Today, Tomorrow, Next week (next Monday), Clear). Right: the Calendar (weeks start on Monday).
      - Below, separated by a 1px border: a **Time** row ("Add time" ghost button, which turns into an `HH:mm` input with 15-minute steps and arrow-key nudging, plus a clear button) and a **Remind me** row (shadcn `Select`: None, At due time, 15 min before, 1 hour before, Morning of (9:00), 1 day before). The options that need a time are disabled until a time is set, with "· Add a time first" after their label (a disabled select item takes no pointer events, so it can't show a tooltip). The time is typed (9, 930, 9:30…) or stepped by 15 minutes with ↑/↓, and saved on Enter or on leaving the field. Clearing the time while one of them is selected resets Remind me to None.
-   - **Reminder row** (shown only when a reminder is set): a `IconBell` icon with "Reminds you Fri 14:45", or "Reminded" in subtle text after it fires.
+   - **Remind** (shown only when a reminder is set): `IconBell` with "Reminds you Fri 14:45", or "Reminded" in subtle text after it fires.
+   - **Links:** each link is a 32px row showing the domain letter square (16px), the label or URL with an ellipsis, and hover actions (edit, remove); rows drag to reorder. Below them is an "Add link" ghost button; clicking it turns into an input with the placeholder "Paste a URL".
    - **Color:** six 16px swatch circles with an 8px gap. The selected one gets a 2px `--foreground` ring with a 2px offset.
-   - **Linked from:** only shown if the note has backlinks. Each backlink is a row with the color dot and title.
-5. **Footer:** sticky at the bottom, 56px tall, with a 1px top border and a `--surface` background.
-   - **Left:** "Saved" or "Saving…" in `text-xs` subtle.
-   - **Right:** a **Mark done** button (default/white, sm, `IconCheck` icon) with `kbd Ctrl ↵` next to it.
-   - When done, the footer reads "Done · 18:30" with an **Undo** ghost button instead.
-   - Ctrl+Enter anywhere in the panel toggles it, except in a checklist item, where BlockNote uses it to tick the item. On the canvas, marking done from the panel is a canvas step (Ctrl+Z undoes it); the panel stays open on the done note. testids `note-panel-mark-done`, `note-panel-done`, `note-panel-undo-done`.
+4. **Editor:** BlockNote (styling in §5.1).
+5. **Linked from** (phase 9): under the body, only if the note has backlinks. Each backlink is a row with the color dot and title.
+6. **Footer:** 40px, a 1px top border, 18px side padding (24px on the full page), `text-2xs` 400 subtle:
+   - **Left:** when the note was last edited: "Edited just now", "Edited 12 min ago", the time today, "Edited yesterday", then the date (`note-panel-edited`).
+   - **Right:** "Saved" or "Saving…" (`note-panel-status`), in `--destructive` if a save failed.
+- Ctrl+Enter anywhere in the panel toggles done, except in a checklist item, where BlockNote uses it to tick the item. On the canvas, marking done from the panel is a canvas step (Ctrl+Z undoes it); the panel stays open on the done note. testids `note-panel-mark-done`, `note-panel-done`, `note-panel-undo-done`.
 
 ### 5.1 Editor styling (BlockNote via `@blocknote/shadcn`)
 - `@blocknote/shadcn` brings its own shadcn components (on Base UI), styled by the same theme variables, so menus and popovers match (ARCHITECTURE §6, Editor notes). Set `theme="dark"` and override BlockNote's CSS variables to the tokens: editor background transparent, text `--foreground`, menus `--popover`, hover `--muted`, borders `--border`.
@@ -228,7 +231,7 @@ Items in order: Open (Enter) · Mark done (Ctrl+Enter) · Color ▸ (six swatche
 - **Done tab:** rows show the done time instead of the edited time, and the checkbox is checked (unticking undoes done).
 - Ticking a row's checkbox fades the row out over 180ms in the Open and Due tabs.
 - **Empty states:** see PRODUCT §5. Done: "Nothing done yet. Tick a note and it shows up here." All: "No notes yet." With a color or title filter on: "No notes match these filters."
-- **New note** opens the note in the panel with the cursor in the title; its breadcrumb reads "Note · not on canvas" until it's placed.
+- **New note** opens the note in the panel with the cursor in the title; its breadcrumb reads "Not on canvas / …" until it's placed.
 
 ## 5c. Quick capture window
 

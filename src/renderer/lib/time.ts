@@ -1,4 +1,9 @@
-/** Time-of-day helpers for the DuePicker's time field (UI_SPEC §5). Times are `HH:mm`. */
+import { differenceInCalendarDays, format } from 'date-fns'
+
+/**
+ * Time helpers for the note panel (UI_SPEC §5): the DuePicker's time field (times are `HH:mm`)
+ * and the footer's "Edited …" label.
+ */
 
 const DAY_MINUTES = 24 * 60
 
@@ -52,4 +57,22 @@ export function nudgeTime(time: string, steps: number, step = 15): string {
   if (steps === 0) return toTime(minutes)
   const snapped = steps > 0 ? Math.floor(minutes / step) * step : Math.ceil(minutes / step) * step
   return toTime(snapped + steps * step)
+}
+
+const MINUTE = 60_000
+
+/**
+ * When a note was last edited, for the panel footer (UI_SPEC §5): "Edited just now" under a
+ * minute, "Edited 12 min ago" under an hour, then the time today, "yesterday" and the date
+ * (with the year once it isn't this year's).
+ */
+export function editedLabel(updatedAt: number, now: number): string {
+  const ago = now - updatedAt
+  if (ago < MINUTE) return 'Edited just now'
+  if (ago < 60 * MINUTE) return `Edited ${Math.floor(ago / MINUTE)} min ago`
+  const days = differenceInCalendarDays(now, updatedAt)
+  if (days === 0) return `Edited ${format(updatedAt, 'HH:mm')}`
+  if (days === 1) return 'Edited yesterday'
+  const sameYear = new Date(now).getFullYear() === new Date(updatedAt).getFullYear()
+  return `Edited ${format(updatedAt, sameYear ? 'd MMM' : 'd MMM yyyy')}`
 }

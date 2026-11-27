@@ -1,4 +1,5 @@
 import { shownItems, useCanvasStore, viewportTarget } from '@/stores/canvasStore'
+import { panelCover } from '@/stores/uiStore'
 import type { CanvasRect } from '@shared/types'
 import { boundsOf, fitViewport, revealViewport, stepZoom, zoomAt } from './Viewport'
 
@@ -14,8 +15,17 @@ const JUMP_MS = 240
 
 const canvas = () => useCanvasStore.getState()
 
-function screenCenter() {
+/**
+ * The part of the canvas that shows: all of it but what the floating note panel covers on the
+ * right. Camera moves center and fit in it, so a card never lands behind the panel.
+ */
+function visibleSize() {
   const { size } = canvas()
+  return { width: Math.max(1, size.width - panelCover(size.width)), height: size.height }
+}
+
+function screenCenter() {
+  const size = visibleSize()
   return { x: size.width / 2, y: size.height / 2 }
 }
 
@@ -32,20 +42,19 @@ export function zoomReset(): void {
 
 /** Fits every card in view. */
 export function zoomToFit(): void {
-  const { size } = canvas()
-  canvas().animateViewport(fitViewport(boundsOf(shownItems().values()), size), JUMP_MS)
+  canvas().animateViewport(fitViewport(boundsOf(shownItems().values()), visibleSize()), JUMP_MS)
 }
 
 /** Brings a card into view at a readable zoom (100% or more), if it isn't already. */
 export function revealRect(rect: CanvasRect): void {
   const vp = viewportTarget()
-  const next = revealViewport(vp, rect, canvas().size)
+  const next = revealViewport(vp, rect, visibleSize())
   if (next !== vp) canvas().animateViewport(next, JUMP_MS)
 }
 
 /** Glides to center a card, at 100% or closer ("Show on canvas" from the list). */
 export function centerOnRect(rect: CanvasRect): void {
-  const { size } = canvas()
+  const size = visibleSize()
   const zoom = Math.max(viewportTarget().zoom, 1)
   canvas().animateViewport(
     {

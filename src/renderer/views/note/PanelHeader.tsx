@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { format } from 'date-fns'
 import {
   IconArrowsDiagonal,
+  IconCheck,
   IconArrowsDiagonalMinimize2,
   IconCopy,
   IconDots,
@@ -13,6 +15,7 @@ import { ColorSwatches } from '@/components/ColorSwatches'
 import { HintTooltip } from '@/components/HintTooltip'
 import { IconButton } from '@/components/IconButton'
 import { DropdownMenuContent, DropdownMenuItem } from '@/components/Menu'
+import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { NOTE_COLOR_CLASSES } from '@/lib/noteColors'
@@ -40,9 +43,10 @@ function selectCard(noteId: string): boolean {
 }
 
 /**
- * The panel's header row (UI_SPEC §5): the color dot and breadcrumb on the left; full page, the
- * ⋯ menu and close on the right, ending 140px from the window edge (the caption buttons).
- * Its empty parts are the window's drag region. A list-only note reads "Note · not on canvas".
+ * The panel's header row (UI_SPEC §5), 52px with a bottom border: the color swatch and the
+ * breadcrumb (where the note lives, then its title) on the left; Mark done, full page, the ⋯
+ * menu and close on the right. On the full page it spans the window's top, so it's the drag
+ * region there and keeps clear of the caption buttons, and it has no close button.
  * later: phase-11 adds Export as markdown to the menu.
  */
 export function PanelHeader() {
@@ -64,80 +68,127 @@ export function PanelHeader() {
   }
 
   return (
-    <header className="flex h-11 shrink-0 items-center justify-between gap-2 pr-caption pl-6 [-webkit-app-region:drag]">
-      <div className="flex min-w-0 items-center gap-2 [&>*]:[-webkit-app-region:no-drag]">
-        <Popover open={colorOpen} onOpenChange={setColorOpen}>
-          <HintTooltip label="Color">
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                data-testid="note-panel-color-dot"
-                aria-label="Color"
-                className="flex size-5 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <span
-                  className={cn('size-2.5 rounded-full', NOTE_COLOR_CLASSES[note.color].swatch)}
-                />
-              </button>
-            </PopoverTrigger>
-          </HintTooltip>
-          <PopoverContent align="start" className="w-auto p-3 shadow-(--shadow-popover)">
-            <ColorSwatches
-              value={note.color}
-              testIdPrefix="note-panel-dot-color"
-              onChange={(color) => {
-                useNoteStore.getState().setColor(color)
-                setColorOpen(false)
-              }}
-            />
-          </PopoverContent>
-        </Popover>
-        <span data-testid="note-panel-breadcrumb" className="text-xs text-subtle-foreground">
-          {note.onCanvas ? 'Note' : 'Note · not on canvas'}
-        </span>
-      </div>
-      <div className="flex items-center gap-0.5 [&>*]:[-webkit-app-region:no-drag]">
-        <IconButton
-          data-testid="note-panel-full"
-          icon={full ? IconArrowsDiagonalMinimize2 : IconArrowsDiagonal}
-          label={full ? 'Back to side panel' : 'Full page'}
-          shortcut={shortcutLabel(PANEL_SHORTCUTS.fullPage)}
-          onClick={() => useUiStore.getState().setPanelMode(full ? 'side' : 'full')}
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <IconButton data-testid="note-panel-menu" icon={IconDots} label="More" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-44">
-            <DropdownMenuItem
-              data-testid="note-panel-pin"
-              onSelect={() => void setNotePinned(note.id, !pinned)}
+    <header
+      className={cn(
+        'flex h-13 shrink-0 items-center gap-1 border-b border-border',
+        full
+          ? 'pr-[calc(var(--spacing-caption)+16px)] pl-5 [-webkit-app-region:drag] [&_button]:[-webkit-app-region:no-drag]'
+          : 'pr-2.5 pl-[18px]',
+      )}
+    >
+      <Popover open={colorOpen} onOpenChange={setColorOpen}>
+        <HintTooltip label="Color">
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              data-testid="note-panel-color-dot"
+              aria-label="Color"
+              className="-ml-1 flex size-6 shrink-0 items-center justify-center rounded-md outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {pinned ? <IconPinnedOff stroke={1.75} /> : <IconPin stroke={1.75} />}
-              {pinLabel(pinned)}
-            </DropdownMenuItem>
-            <DropdownMenuItem data-testid="note-panel-duplicate" onSelect={duplicate}>
-              <IconCopy stroke={1.75} />
-              Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              data-testid="note-panel-delete"
-              variant="destructive"
-              onSelect={remove}
-            >
-              <IconTrash stroke={1.75} />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <span className={cn('size-3 rounded-[4px]', NOTE_COLOR_CLASSES[note.color].swatch)} />
+            </button>
+          </PopoverTrigger>
+        </HintTooltip>
+        <PopoverContent align="start" className="w-auto p-3 shadow-(--shadow-popover)">
+          <ColorSwatches
+            value={note.color}
+            testIdPrefix="note-panel-dot-color"
+            onChange={(color) => {
+              useNoteStore.getState().setColor(color)
+              setColorOpen(false)
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+      <span
+        data-testid="note-panel-breadcrumb"
+        className="ml-1 min-w-0 flex-1 truncate text-xs text-subtle-foreground"
+      >
+        {note.onCanvas ? 'Canvas' : 'Not on canvas'}
+        <span className="text-border-strong"> / </span>
+        <span className="text-foreground/80">{note.title.trim() || 'Untitled'}</span>
+      </span>
+      <DoneControl />
+      <IconButton
+        data-testid="note-panel-full"
+        size="md"
+        icon={full ? IconArrowsDiagonalMinimize2 : IconArrowsDiagonal}
+        label={full ? 'Back to side panel' : 'Full page'}
+        shortcut={shortcutLabel(PANEL_SHORTCUTS.fullPage)}
+        onClick={() => useUiStore.getState().setPanelMode(full ? 'side' : 'full')}
+      />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <IconButton data-testid="note-panel-menu" size="md" icon={IconDots} label="More" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-44">
+          <DropdownMenuItem
+            data-testid="note-panel-pin"
+            onSelect={() => void setNotePinned(note.id, !pinned)}
+          >
+            {pinned ? <IconPinnedOff stroke={1.75} /> : <IconPin stroke={1.75} />}
+            {pinLabel(pinned)}
+          </DropdownMenuItem>
+          <DropdownMenuItem data-testid="note-panel-duplicate" onSelect={duplicate}>
+            <IconCopy stroke={1.75} />
+            Duplicate
+          </DropdownMenuItem>
+          <DropdownMenuItem data-testid="note-panel-delete" variant="destructive" onSelect={remove}>
+            <IconTrash stroke={1.75} />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {!full && (
         <IconButton
           data-testid="note-panel-close"
+          size="md"
           icon={IconX}
           label="Close"
           shortcut="Esc"
           onClick={() => useUiStore.getState().closeNote()}
         />
-      </div>
+      )}
     </header>
+  )
+}
+
+/**
+ * Mark done (Ctrl+Enter) as a ghost button, or "Done · 18:30" with Undo once the note is done.
+ */
+function DoneControl() {
+  const doneAt = useNoteStore((s) => s.note?.doneAt ?? null)
+  const setDone = useNoteStore((s) => s.setDone)
+  if (doneAt !== null) {
+    return (
+      <div className="flex shrink-0 items-center gap-1">
+        <span data-testid="note-panel-done" className="px-1 text-xs text-muted-foreground">
+          Done · {format(doneAt, 'HH:mm')}
+        </span>
+        <Button
+          data-testid="note-panel-undo-done"
+          variant="ghost"
+          size="sm"
+          className="text-foreground hover:bg-muted dark:hover:bg-muted"
+          onClick={() => setDone(false)}
+        >
+          Undo
+        </Button>
+      </div>
+    )
+  }
+  return (
+    <HintTooltip label="Mark done" shortcut={shortcutLabel(PANEL_SHORTCUTS.markDone)}>
+      <Button
+        data-testid="note-panel-mark-done"
+        variant="ghost"
+        size="sm"
+        className="shrink-0 gap-1.5 px-2.5 text-xs font-medium text-foreground/85 hover:bg-muted hover:text-foreground dark:hover:bg-muted"
+        onClick={() => setDone(true)}
+      >
+        <IconCheck className="size-4" stroke={2} aria-hidden />
+        Mark done
+      </Button>
+    </HintTooltip>
   )
 }

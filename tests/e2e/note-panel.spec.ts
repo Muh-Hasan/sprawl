@@ -292,7 +292,7 @@ test.describe('note panel', () => {
     await page.keyboard.press('Enter')
     await panel.ready()
     const width = async () => (await panel.root.boundingBox())?.width ?? 0
-    expect(Math.round(await width())).toBe(420)
+    expect(Math.round(await width())).toBe(440)
 
     const handle = page.getByTestId('note-panel-handle')
     const drag = async (dx: number) => {
@@ -321,5 +321,71 @@ test.describe('note panel', () => {
     await page.keyboard.press('Enter')
     await panel.ready()
     expect(Math.round(await width())).toBe(500)
+
+    // With focus, the arrow keys move the edge in 16px steps.
+    await handle.focus()
+    await page.keyboard.press('ArrowLeft')
+    await page.keyboard.press('ArrowLeft')
+    await expect.poll(async () => Math.round(await width())).toBe(532)
+    await page.keyboard.press('ArrowRight')
+    await expect.poll(() => page.evaluate(() => self.sprawl.settings.get('panelWidth'))).toBe(516)
+  })
+
+  test('the panel floats over the canvas, which centers its controls on what is left', async ({
+    window: page,
+  }) => {
+    const canvas = new CanvasPage(page)
+    const panel = new NotePanel(page)
+    await canvas.ready()
+    await canvas.seed([{ key: 'a', x: 100, y: 120, title: 'Homepage redo' }])
+    const view = page.getByTestId('view-canvas')
+    const toolbar = page.getByTestId('canvas-toolbar')
+    const before = (await view.boundingBox())!
+    await canvas.cards.first().click()
+    await page.keyboard.press('Enter')
+    await panel.ready()
+
+    // 12px from the right and the bottom, 52px from the top (under the 44px top bar); the canvas
+    // keeps its full width underneath.
+    const box = (await panel.root.boundingBox())!
+    const area = (await view.boundingBox())!
+    expect(area.width).toBeCloseTo(before.width, 0)
+    expect(area.x + area.width - (box.x + box.width)).toBeCloseTo(12, 0)
+    expect(area.y + area.height - (box.y + box.height)).toBeCloseTo(12, 0)
+    expect(box.y - area.y).toBeCloseTo(52, 0)
+    expect(await panel.root.evaluate((el) => getComputedStyle(el).borderRadius)).toBe('16px')
+
+    // The toolbar centers on the canvas left of the panel.
+    await expect
+      .poll(async () => {
+        const bar = (await toolbar.boundingBox())!
+        return Math.round(bar.x + bar.width / 2 - (area.x + (box.x - area.x) / 2))
+      })
+      .toBe(0)
+
+    // The header reads where the note lives and its title; the footer, when it was edited.
+    await expect(page.getByTestId('note-panel-breadcrumb')).toHaveText('Canvas / Homepage redo')
+    await expect(page.getByTestId('note-panel-edited')).toHaveText(/^Edited /)
+    await expect(panel.status).toHaveText('Saved')
+
+    // Full page covers the main area, with the title in a centered 720px column; it has no
+    // resize handle and no close button (Esc goes back).
+    await page.getByTestId('note-panel-full').click()
+    await expect(panel.root).toHaveAttribute('data-mode', 'full')
+    await expect
+      .poll(async () => {
+        const full = (await panel.root.boundingBox())!
+        return [full.x - area.x, full.y - area.y, full.width - area.width].map(Math.round)
+      })
+      .toEqual([0, 0, 0])
+    await expect(page.getByTestId('note-panel-handle')).toHaveCount(0)
+    await expect(page.getByTestId('note-panel-close')).toHaveCount(0)
+    const title = (await panel.title.boundingBox())!
+    expect(title.width).toBeCloseTo(720 - 80, 0)
+    expect(await panel.title.evaluate((el) => getComputedStyle(el).fontSize)).toBe('36px')
+    await page.keyboard.press('Escape')
+    await expect(panel.root).toHaveAttribute('data-mode', 'side')
+    await page.getByTestId('note-panel-close').click()
+    await expect(panel.root).toHaveCount(0)
   })
 })

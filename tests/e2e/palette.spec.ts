@@ -59,15 +59,16 @@ test.describe('command palette', () => {
     expect(await panel.noteId()).toBe('far')
     await canvas.ready()
     await expect(canvas.card('Far away')).toHaveAttribute('data-selected', /.*/)
-    // The card ends up in the middle of the canvas the panel leaves.
+    // The card ends up in the middle of the canvas the panel leaves (it floats over the right).
     await expect
       .poll(async () => {
-        const [card, view] = await Promise.all([
+        const [card, view, side] = await Promise.all([
           canvas.card('Far away').boundingBox(),
           canvas.root.boundingBox(),
+          panel.root.boundingBox(),
         ])
-        if (!card || !view) return Infinity
-        const dx = card.x + card.width / 2 - (view.x + view.width / 2)
+        if (!card || !view || !side) return Infinity
+        const dx = card.x + card.width / 2 - (view.x + (side.x - view.x) / 2)
         const dy = card.y + card.height / 2 - (view.y + view.height / 2)
         return Math.round(Math.hypot(dx, dy))
       })

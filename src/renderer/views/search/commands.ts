@@ -54,8 +54,9 @@ export function newNote(title = ''): void {
 }
 
 /**
- * Opens a note result in the panel and, if it has a card on show, glides the canvas to it. The
- * glide waits two frames, so it centers in the canvas the opening panel leaves.
+ * Opens a note result in the panel and, if it has a card on show, glides the canvas to it,
+ * centering it in the part the panel leaves. The glide waits two frames, for a view switch to
+ * lay out the canvas first.
  */
 export function openNoteResult(row: NoteListRow): void {
   ui().openNote(row.id)

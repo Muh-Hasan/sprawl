@@ -219,7 +219,7 @@ test.describe('list view', () => {
 
     await page.getByTestId('list-new-note').click()
     await panel.ready()
-    await expect(page.getByTestId('note-panel-breadcrumb')).toHaveText('Note · not on canvas')
+    await expect(page.getByTestId('note-panel-breadcrumb')).toHaveText('Not on canvas / Untitled')
     await expect(panel.title).toBeFocused()
     await page.keyboard.type('Plan the trip')
     await expect(list.row('Plan the trip')).toBeVisible()

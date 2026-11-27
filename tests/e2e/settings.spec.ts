@@ -44,5 +44,5 @@ test('main rejects invalid IPC input', async ({ window }) => {
     ]
   })
   for (const error of errors) expect(error).toMatch(/\[invalid-input\]/)
-  expect(await window.evaluate(() => self.sprawl.settings.get('panelWidth'))).toBe(420)
+  expect(await window.evaluate(() => self.sprawl.settings.get('panelWidth'))).toBe(440)
 })

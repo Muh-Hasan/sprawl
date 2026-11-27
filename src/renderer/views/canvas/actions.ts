@@ -5,7 +5,7 @@ import { cascadeSpot } from '@shared/placement'
 import type { CanvasOp, CanvasRect } from '@shared/types'
 import { shownItems, useCanvasStore } from '@/stores/canvasStore'
 import { useSelectionStore } from '@/stores/selectionStore'
-import { useUiStore } from '@/stores/uiStore'
+import { panelCover, useUiStore } from '@/stores/uiStore'
 import { showUndoToast } from '@/components/UndoToast'
 import { DUPLICATE_OFFSET, inputOf, NOTE_SIZE, restackOps, snapTo, topZ } from './ops'
 import { centerOnRect, revealRect } from './camera'
@@ -52,10 +52,11 @@ export function editCardBody(id: string): void {
   selection().setBodyEditing(id)
 }
 
-/** The world point in the middle of the view. */
+/** The world point in the middle of the view, left of the note panel if one is open. */
 export function viewCenter(): Point {
   const { viewport, size } = canvas()
-  return screenToWorld(viewport, { x: size.width / 2, y: size.height / 2 })
+  const width = size.width - panelCover(size.width)
+  return screenToWorld(viewport, { x: width / 2, y: size.height / 2 })
 }
 
 interface NewNoteOptions {

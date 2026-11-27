@@ -34,7 +34,7 @@ describe('SettingsService', () => {
   it('returns the defaults when nothing is stored', () => {
     const { service } = setup()
     expect(service.getAll()).toEqual(defaultSettings())
-    expect(service.get('panelWidth')).toBe(420)
+    expect(service.get('panelWidth')).toBe(440)
     expect(service.get('captureShortcut')).toBe('Ctrl+Shift+Space')
   })
 
@@ -99,7 +99,7 @@ describe('SettingsService', () => {
     const insert = handle!.sqlite.prepare('INSERT INTO settings (key, value) VALUES (?, ?)')
     insert.run('panelWidth', '"wide"')
     insert.run('viewport', '{not json')
-    expect(service.get('panelWidth')).toBe(420)
+    expect(service.get('panelWidth')).toBe(440)
     expect(service.get('viewport')).toEqual({ x: 0, y: 0, zoom: 1 })
   })
 

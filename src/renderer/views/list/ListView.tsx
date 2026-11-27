@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { DONE_EXIT_MS } from '@/stores/canvasStore'
 import { useClockStore } from '@/stores/clockStore'
 import { useListStore } from '@/stores/listStore'
+import { PANEL_INSET } from '@/lib/panelInset'
+import { cn } from '@/lib/utils'
 import { useUiStore } from '@/stores/uiStore'
 import { showNoteOnCanvas } from '@/views/canvas/actions'
 import {
@@ -141,56 +143,58 @@ export function ListView() {
   return (
     <div data-testid="list-view" className="flex h-full flex-col bg-background">
       <TopBar />
-      <div className="mx-auto w-full max-w-[960px] shrink-0 px-6">
-        <div className="flex h-14 items-center justify-between">
-          <div className="flex items-baseline gap-2">
-            <h1 className="text-lg font-semibold">Notes</h1>
-            <span data-testid="list-count" className="text-sm text-muted-foreground">
-              {rows && countLabel(filter.tab, rows.length)}
-            </span>
-          </div>
-          <Button
-            data-testid="list-new-note"
-            variant="secondary"
-            size="sm"
-            onClick={() => void createListNote()}
-          >
-            <IconPlus stroke={2} aria-hidden />
-            New note
-          </Button>
-        </div>
-        <ListFilters onFilterKey={onFilterKey} />
-      </div>
-      <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
-        <div
-          role="listbox"
-          aria-label="Notes"
-          data-testid="list-rows"
-          className="mx-auto w-full max-w-[960px] px-6 pb-6"
-        >
-          {rows !== null && rows.length === 0 && (
-            <div className="h-64">
-              <EmptyState icon={IconListCheck} testId="list-empty">
-                {filtering ? 'No notes match these filters.' : EMPTY[filter.tab]}
-              </EmptyState>
+      <div className={cn('flex min-h-0 flex-1 flex-col', PANEL_INSET)}>
+        <div className="mx-auto w-full max-w-[960px] shrink-0 px-6">
+          <div className="flex h-14 items-center justify-between">
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-lg font-semibold">Notes</h1>
+              <span data-testid="list-count" className="text-sm text-muted-foreground">
+                {rows && countLabel(filter.tab, rows.length)}
+              </span>
             </div>
-          )}
-          {filter.tab === 'due'
-            ? groupByDue(shown, now).map(({ group, rows: groupRows }) => (
-                <section key={group} data-testid={`list-group-${group}`}>
-                  <h2
-                    className={
-                      group === 'overdue'
-                        ? 'sticky top-0 z-10 flex h-8 items-center bg-background px-3 text-2xs font-semibold text-due-overdue'
-                        : 'sticky top-0 z-10 flex h-8 items-center bg-background px-3 text-2xs font-semibold text-subtle-foreground'
-                    }
-                  >
-                    {DUE_GROUP_LABELS[group]}
-                  </h2>
-                  {groupRows.map(renderRow)}
-                </section>
-              ))
-            : shown.map(renderRow)}
+            <Button
+              data-testid="list-new-note"
+              variant="secondary"
+              size="sm"
+              onClick={() => void createListNote()}
+            >
+              <IconPlus stroke={2} aria-hidden />
+              New note
+            </Button>
+          </div>
+          <ListFilters onFilterKey={onFilterKey} />
+        </div>
+        <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
+          <div
+            role="listbox"
+            aria-label="Notes"
+            data-testid="list-rows"
+            className="mx-auto w-full max-w-[960px] px-6 pb-6"
+          >
+            {rows !== null && rows.length === 0 && (
+              <div className="h-64">
+                <EmptyState icon={IconListCheck} testId="list-empty">
+                  {filtering ? 'No notes match these filters.' : EMPTY[filter.tab]}
+                </EmptyState>
+              </div>
+            )}
+            {filter.tab === 'due'
+              ? groupByDue(shown, now).map(({ group, rows: groupRows }) => (
+                  <section key={group} data-testid={`list-group-${group}`}>
+                    <h2
+                      className={
+                        group === 'overdue'
+                          ? 'sticky top-0 z-10 flex h-8 items-center bg-background px-3 text-2xs font-semibold text-due-overdue'
+                          : 'sticky top-0 z-10 flex h-8 items-center bg-background px-3 text-2xs font-semibold text-subtle-foreground'
+                      }
+                    >
+                      {DUE_GROUP_LABELS[group]}
+                    </h2>
+                    {groupRows.map(renderRow)}
+                  </section>
+                ))
+              : shown.map(renderRow)}
+          </div>
         </div>
       </div>
     </div>
