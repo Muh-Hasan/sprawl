@@ -36,7 +36,7 @@ Short, plain and lowercase-friendly. Use sentence case everywhere, with no excla
 | Token | Hex | Use |
 |---|---|---|
 | `--background` | `#09090B` | App background, canvas |
-| `--surface` | `#0F0F11` | Sidebar, note panel, log page |
+| `--surface` | `#0F0F11` | Sidebar, full-page note, log page |
 | `--card` | `#141416` | Cards, palette, menus |
 | `--popover` | `#18181B` | Popovers, dropdowns, tooltips |
 | `--muted` / `--accent` (shadcn) | `#1F1F23` | Hover fills, selected rows, chips |
@@ -136,6 +136,7 @@ Three fonts, all bundled locally as `.woff2` with `@font-face` in `globals.css` 
   - `--shadow-popover`: `0 16px 48px -12px rgb(0 0 0 / 0.8), 0 0 0 1px #27272A`
   - `--shadow-palette` (the command palette): `0 32px 80px -20px rgb(0 0 0 / 0.9)`
   - `--shadow-toolbar` (the canvas toolbar): `0 20px 48px -16px rgb(0 0 0 / 0.85), 0 1px 0 rgb(255 255 255 / 0.04) inset`
+  - `--shadow-panel` (the floating note panel): `0 24px 64px -16px rgb(0 0 0 / 0.85)`
 
 ---
 
@@ -184,7 +185,7 @@ Three fonts, all bundled locally as `.woff2` with `@font-face` in `globals.css` 
 
 - **Durations:** fast 120ms (hover, press, chips), base 180ms (popovers, panel), slow 260ms (view switch fade).
 - **Easing:** `cubic-bezier(0.2, 0.8, 0.2, 1)` (ease-out) for entering, and `cubic-bezier(0.4, 0, 1, 1)` for exiting.
-- **Note panel:** slides in 16px plus fades over 180ms.
+- **Note panel:** the floating panel slides in 16px from the right and fades over 240ms `--ease-out`; the canvas toolbar and zoom control slide with its edge (240ms).
 - **Card lift:** on hover a card rises 2px with `--shadow-lift` over 180ms ease-out; while dragged it also scales to 1.02. Reduced motion keeps the shadow and drops the movement.
 - **New card:** fades in over 150ms. Opacity only: a scale-in moves the card's hit area while it runs, so a quick grab right after creating a note would miss.
 - **Mark done:** the card fades to 0 and scales to 0.96 over 180ms, then is removed. The log gets a one-time row highlight (a `--muted` background fading out over 600ms).
@@ -357,6 +358,7 @@ Never edit `components/ui/*`. Theme shadcn components through the CSS variables,
   --shadow-popover: 0 16px 48px -12px rgb(0 0 0 / 0.8), 0 0 0 1px #27272a;
   --shadow-palette: 0 32px 80px -20px rgb(0 0 0 / 0.9);
   --shadow-toolbar: 0 20px 48px -16px rgb(0 0 0 / 0.85), 0 1px 0 rgb(255 255 255 / 0.04) inset;
+  --shadow-panel: 0 24px 64px -16px rgb(0 0 0 / 0.85);
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
 }
