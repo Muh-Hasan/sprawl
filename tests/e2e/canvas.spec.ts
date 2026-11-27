@@ -240,7 +240,6 @@ test.describe('notes on the canvas', () => {
     await expect(window.getByTestId('selection-color-sage')).not.toBeFocused()
 
     await a.click({ button: 'right' })
-    await window.getByTestId('menu-color').hover()
     await window.getByTestId('menu-color-rose').click()
     await expect(a).toHaveClass(/bg-note-rose/)
     await expect(window.getByTestId('canvas-menu')).toBeHidden()
